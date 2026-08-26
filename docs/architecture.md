@@ -6,5 +6,8 @@ The initial public paths are `/usr/share/frost`, `/usr/bin/frost`, `/etc/frost`,
 
 The session architecture is UWSM → Hyprland → `frost-session.target`. Mako, Hyprlock and hyprpolkitagent retain exclusive ownership of notifications, lock/PAM and Polkit. Quickshell is statically composed and has no plugin registry or user QML loading.
 
-Phase 1 intentionally contains no live session entry, global settings, package choice, updater, migration runner, or privileged helper. Those enter only in their gated phases.
+The Phase 2 session is entered only through `/usr/share/wayland-sessions/frost.desktop`, which asks UWSM to launch `/usr/lib/frost/frost-hyprland`. That wrapper fixes the package-owned Hyprland configuration and marks the process tree as Frost. The Hyprland configuration starts `frost-session.target`; no Frost unit is enabled in `default.target` or `graphical-session.target`.
 
+`frost-session.target` is bound to `graphical-session.target` and owns only `frost-*` user units. The notification, Polkit and idle services conflict with their upstream generic unit names so a pre-enabled upstream unit cannot become a second authority inside Frost. Hyprlock is an on-demand `frost-lock.service`; it is never treated as a shell component.
+
+Phase 2 intentionally contains no global settings package, final package selection, updater, migration runner, privileged helper, or static shell. Those enter only in their gated phases.

@@ -1,0 +1,11 @@
+[Unit]
+Description=Frost idle management
+PartOf=frost-session.target
+After=graphical-session.target
+Conflicts=hypridle.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/hypridle --config /usr/share/frost/default/hypr/hypridle.conf
+Restart=on-failure
+RestartSec=1

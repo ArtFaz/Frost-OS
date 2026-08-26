@@ -1,0 +1,8 @@
+[Unit]
+Description=Frost session lock
+PartOf=frost-session.target
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/hyprlock --config /usr/share/frost/default/hypr/hyprlock.conf

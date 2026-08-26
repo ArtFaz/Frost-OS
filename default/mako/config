@@ -1,0 +1,17 @@
+font=sans-serif 11
+background-color=#101a28ee
+text-color=#e8f1ffff
+border-color=#9ed8ffff
+border-size=1
+border-radius=12
+default-timeout=5000
+ignore-timeout=0
+anchor=top-right
+layer=overlay
+margin=12
+padding=12
+width=360
+height=120
+max-visible=5
+icons=1
+max-icon-size=48

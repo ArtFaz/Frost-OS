@@ -1,0 +1,11 @@
+background = 101a28
+foreground = e8f1ff
+background-opacity = 0.90
+background-blur-radius = 20
+cursor-color = 9ed8ff
+selection-background = 27435f
+selection-foreground = f5fbff
+window-decoration = false
+window-padding-x = 12
+window-padding-y = 10
+confirm-close-surface = false

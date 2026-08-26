@@ -7,6 +7,7 @@ use std::process::{Command, ExitCode, Stdio};
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const SHARE_DIR: &str = "/usr/share/frost";
 const ADMIN_CONFIG_DIR: &str = "/etc/frost";
+const HYPRLAND_CONFIG: &str = "/usr/share/frost/default/hypr/hyprland.conf";
 
 #[derive(Debug)]
 enum CliError {
@@ -49,14 +50,17 @@ impl ServiceState {
 #[derive(Debug)]
 struct RuntimeStatus {
     frost_session: bool,
+    hyprland_config: Option<String>,
     share_dir: bool,
     admin_config_dir: bool,
     user_config_dir: bool,
     user_state_dir: bool,
     shell: ServiceState,
+    session_target: ServiceState,
     notifications: ServiceState,
     polkit: ServiceState,
     idle: ServiceState,
+    lock: ServiceState,
 }
 
 #[derive(Debug)]
@@ -157,17 +161,34 @@ fn service_state(unit: &str) -> ServiceState {
 }
 
 fn collect_status() -> RuntimeStatus {
+    let frost_session = frost_session_environment();
     RuntimeStatus {
-        frost_session: env::var_os("FROST_SESSION").is_some_and(|value| value == "1"),
+        frost_session,
+        hyprland_config: frost_session
+            .then(|| env::var("FROST_HYPRLAND_CONFIG").unwrap_or_else(|_| HYPRLAND_CONFIG.into())),
         share_dir: Path::new(SHARE_DIR).is_dir(),
         admin_config_dir: Path::new(ADMIN_CONFIG_DIR).is_dir(),
         user_config_dir: config_home().is_some_and(|path| path.join("frost").is_dir()),
         user_state_dir: state_home().is_some_and(|path| path.join("frost").is_dir()),
         shell: service_state("frost-shell.service"),
-        notifications: service_state("mako.service"),
-        polkit: service_state("hyprpolkitagent.service"),
-        idle: service_state("hypridle.service"),
+        session_target: service_state("frost-session.target"),
+        notifications: service_state("frost-notifications.service"),
+        polkit: service_state("frost-polkit.service"),
+        idle: service_state("frost-idle.service"),
+        lock: service_state("frost-lock.service"),
     }
+}
+
+fn frost_session_environment() -> bool {
+    if env::var_os("FROST_SESSION").is_some_and(|value| value == "1") {
+        return true;
+    }
+
+    env::var("XDG_CURRENT_DESKTOP").is_ok_and(|desktops| {
+        desktops
+            .split(':')
+            .any(|desktop| desktop.eq_ignore_ascii_case("frost"))
+    })
 }
 
 fn status_command(args: &[String]) -> Result<(), CliError> {
@@ -185,10 +206,19 @@ fn status_command(args: &[String]) -> Result<(), CliError> {
                 "other"
             }
         );
+        println!(
+            "hyprland config: {}",
+            status
+                .hyprland_config
+                .as_deref()
+                .unwrap_or("not a Frost session")
+        );
+        println!("session target: {}", status.session_target.as_str());
         println!("shell: {}", status.shell.as_str());
         println!("notifications: {}", status.notifications.as_str());
         println!("polkit: {}", status.polkit.as_str());
         println!("idle: {}", status.idle.as_str());
+        println!("lock: {}", status.lock.as_str());
         println!("share: {}", present(status.share_dir));
         println!("admin config: {}", present(status.admin_config_dir));
         println!("user config: {}", present(status.user_config_dir));
@@ -199,17 +229,24 @@ fn status_command(args: &[String]) -> Result<(), CliError> {
 
 fn status_json(status: &RuntimeStatus) -> String {
     format!(
-        "{{\"schemaVersion\":1,\"version\":\"{}\",\"frostSession\":{},\"paths\":{{\"share\":{},\"adminConfig\":{},\"userConfig\":{},\"userState\":{}}},\"services\":{{\"shell\":\"{}\",\"notifications\":\"{}\",\"polkit\":\"{}\",\"idle\":\"{}\"}}}}",
+        "{{\"schemaVersion\":1,\"version\":\"{}\",\"frostSession\":{},\"hyprlandConfig\":{},\"paths\":{{\"share\":{},\"adminConfig\":{},\"userConfig\":{},\"userState\":{}}},\"services\":{{\"sessionTarget\":\"{}\",\"shell\":\"{}\",\"notifications\":\"{}\",\"polkit\":\"{}\",\"idle\":\"{}\",\"lock\":\"{}\"}}}}",
         json_escape(VERSION),
         status.frost_session,
+        status
+            .hyprland_config
+            .as_ref()
+            .map(|path| format!("\"{}\"", json_escape(path)))
+            .unwrap_or_else(|| "null".to_owned()),
         status.share_dir,
         status.admin_config_dir,
         status.user_config_dir,
         status.user_state_dir,
+        status.session_target.as_str(),
         status.shell.as_str(),
         status.notifications.as_str(),
         status.polkit.as_str(),
-        status.idle.as_str()
+        status.idle.as_str(),
+        status.lock.as_str()
     )
 }
 
@@ -222,10 +259,12 @@ fn collect_checks(strict: bool) -> Vec<Check> {
     for command in [
         "Hyprland",
         "uwsm",
-        "quickshell",
+        "ghostty",
         "mako",
         "hyprlock",
-        "hyprpolkitagent",
+        "hypridle",
+        "wl-paste",
+        "cliphist",
         "systemctl",
     ] {
         checks.push(Check {
@@ -234,6 +273,13 @@ fn collect_checks(strict: bool) -> Vec<Check> {
             detail: command.to_owned(),
         });
     }
+
+    let polkit_agent = PathBuf::from("/usr/lib/hyprpolkitagent/hyprpolkitagent");
+    checks.push(Check {
+        name: "command:hyprpolkitagent".to_owned(),
+        ok: executable_regular_file(&polkit_agent),
+        detail: polkit_agent.display().to_string(),
+    });
 
     for (name, path) in [
         ("path:share", PathBuf::from(SHARE_DIR)),
@@ -247,12 +293,20 @@ fn collect_checks(strict: bool) -> Vec<Check> {
     }
 
     if strict {
-        let defaults = Path::new(SHARE_DIR).join("config/shell.json");
-        checks.push(Check {
-            name: "file:shell-defaults".to_owned(),
-            ok: regular_non_executable_file(&defaults),
-            detail: defaults.display().to_string(),
-        });
+        for (name, relative_path) in [
+            ("file:shell-defaults", "config/shell.json"),
+            ("file:hyprland-config", "default/hypr/hyprland.conf"),
+            ("file:hypridle-config", "default/hypr/hypridle.conf"),
+            ("file:hyprlock-config", "default/hypr/hyprlock.conf"),
+            ("file:mako-config", "default/mako/config"),
+        ] {
+            let defaults = Path::new(SHARE_DIR).join(relative_path);
+            checks.push(Check {
+                name: name.to_owned(),
+                ok: regular_non_executable_file(&defaults),
+                detail: defaults.display().to_string(),
+            });
+        }
     }
     checks
 }
@@ -314,6 +368,11 @@ fn regular_non_executable_file(path: &Path) -> bool {
         .is_ok_and(|metadata| metadata.file_type().is_file() && metadata.mode() & 0o111 == 0)
 }
 
+fn executable_regular_file(path: &Path) -> bool {
+    fs::symlink_metadata(path)
+        .is_ok_and(|metadata| metadata.file_type().is_file() && metadata.mode() & 0o111 != 0)
+}
+
 fn command_exists(program: &str) -> bool {
     let Some(path) = env::var_os("PATH") else {
         return false;
@@ -367,18 +426,25 @@ mod tests {
     fn status_json_is_machine_readable_shape() {
         let status = RuntimeStatus {
             frost_session: true,
+            hyprland_config: Some(HYPRLAND_CONFIG.to_owned()),
             share_dir: true,
             admin_config_dir: false,
             user_config_dir: true,
             user_state_dir: false,
             shell: ServiceState::Active,
+            session_target: ServiceState::Active,
             notifications: ServiceState::Inactive,
             polkit: ServiceState::Unavailable,
             idle: ServiceState::Active,
+            lock: ServiceState::Inactive,
         };
         let json = status_json(&status);
         assert!(json.starts_with("{\"schemaVersion\":1,"));
         assert!(json.contains("\"frostSession\":true"));
+        assert!(
+            json.contains("\"hyprlandConfig\":\"/usr/share/frost/default/hypr/hyprland.conf\"")
+        );
+        assert!(json.contains("\"sessionTarget\":\"active\""));
         assert!(json.contains("\"shell\":\"active\""));
     }
 

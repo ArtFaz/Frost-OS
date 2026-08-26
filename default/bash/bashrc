@@ -1,0 +1,13 @@
+# Package-owned Frost Bash defaults. This file is not copied over user config.
+
+case $- in
+    *i*) ;;
+    *) return ;;
+esac
+
+HISTCONTROL=ignoreboth:erasedups
+HISTSIZE=10000
+HISTFILESIZE=20000
+shopt -s histappend checkwinsize
+
+PS1='\[\e[38;5;117m\]\u\[\e[0m\]@\[\e[38;5;153m\]\h\[\e[0m\] \[\e[38;5;110m\]\w\[\e[0m\] \\$ '

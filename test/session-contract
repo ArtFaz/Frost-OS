@@ -1,0 +1,99 @@
+#!/bin/bash
+
+set -euo pipefail
+
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+units=$root/default/systemd/user
+
+fail() {
+  printf 'session contract: %s\n' "$1" >&2
+  exit 1
+}
+
+required_files=(
+  bin/frost-hyprland
+  bin/frost-terminal
+  default/wayland-sessions/frost.desktop
+  default/hypr/hyprland.conf
+  default/hypr/hypridle.conf
+  default/hypr/hyprlock.conf
+  default/mako/config
+  default/ghostty/config
+  default/bash/bashrc
+  default/systemd/user/frost-session.target
+  default/systemd/user/frost-notifications.service
+  default/systemd/user/frost-polkit.service
+  default/systemd/user/frost-idle.service
+  default/systemd/user/frost-lock.service
+  default/systemd/user/frost-clipboard-text.service
+  default/systemd/user/frost-clipboard-image.service
+)
+for relative_path in "${required_files[@]}"; do
+  [[ -f $root/$relative_path && ! -L $root/$relative_path ]] ||
+    fail "missing regular file: $relative_path"
+done
+
+for executable in "$root/bin/frost-hyprland" "$root/bin/frost-terminal"; do
+  [[ -x $executable ]] || fail "wrapper is not executable: ${executable#$root/}"
+done
+
+while IFS= read -r unit; do
+  [[ ${unit##*/} == frost-* ]] || fail "non-Frost unit name: ${unit##*/}"
+done < <(find "$units" -maxdepth 1 -type f -print)
+
+target=$units/frost-session.target
+for wanted in \
+  frost-notifications.service \
+  frost-polkit.service \
+  frost-idle.service \
+  frost-clipboard-text.service \
+  frost-clipboard-image.service; do
+  rg -q "^Wants=.*\\b${wanted//./\\.}\\b" "$target" || fail "target does not want $wanted"
+done
+rg -q '^BindsTo=graphical-session\.target$' "$target" || fail 'target is not bound to graphical-session.target'
+
+if rg -n '^\[Install\]|WantedBy=' "$units"; then
+  fail 'session units must not be globally enabled'
+fi
+if rg -n -i '(omarchy|omacom|pkgs\.omarchy)' "$root/bin" "$root/default"; then
+  fail 'donor guard, identity, or endpoint found in Frost session assets'
+fi
+if rg -n '^\s*source\s*=' "$root/default/hypr/hyprland.conf"; then
+  fail 'Hyprland config may not source an external runtime tree'
+fi
+
+rg -q '^exec-once = systemctl --user start --no-block frost-session\.target$' \
+  "$root/default/hypr/hyprland.conf" || fail 'Hyprland does not start only the Frost target'
+rg -q '^Exec=uwsm start -e -D Frost /usr/lib/frost/frost-hyprland$' \
+  "$root/default/wayland-sessions/frost.desktop" || fail 'desktop entry does not use the Frost UWSM wrapper'
+
+lock_config=$root/default/hypr/hyprlock.conf
+rg -q '^\s*module = hyprlock$' "$lock_config" || fail 'Hyprlock PAM module is not explicit'
+rg -q '^\s*ignore_empty_input = false$' "$lock_config" || fail 'empty lock input is not explicitly rejected'
+if rg -n -i '(nullok|on-click|onclick|cmd\[)' "$lock_config"; then
+  fail 'unsafe lock authentication/action setting found'
+fi
+if rg -n -i '^(on-notify|on-button|on-touch)=' "$root/default/mako/config"; then
+  fail 'Mako config may not execute notification hooks'
+fi
+
+bash -n "$root/bin/frost-hyprland" "$root/bin/frost-terminal" "$root/default/bash/bashrc"
+desktop-file-validate "$root/default/wayland-sessions/frost.desktop"
+
+if command -v Hyprland >/dev/null; then
+  Hyprland --verify-config --config "$root/default/hypr/hyprland.conf" >/dev/null
+fi
+
+if command -v ghostty >/dev/null; then
+  ghostty_config_home=$(mktemp -d /tmp/frost-ghostty-config.XXXXXX)
+  case $ghostty_config_home in
+    /tmp/frost-ghostty-config.*) ;;
+    *) fail 'unsafe Ghostty test directory' ;;
+  esac
+  trap 'rm -rf -- "$ghostty_config_home"' EXIT
+  mkdir -p "$ghostty_config_home/ghostty"
+  cp "$root/default/ghostty/config" "$ghostty_config_home/ghostty/config"
+  XDG_CONFIG_HOME=$ghostty_config_home ghostty +validate-config
+fi
+
+printf '%s\n' 'session contract: ok'

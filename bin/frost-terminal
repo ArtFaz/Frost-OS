@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -euo pipefail
+
+exec /usr/bin/ghostty \
+  --config-default-files=false \
+  --config-file=/usr/share/frost/default/ghostty/config \
+  "$@"

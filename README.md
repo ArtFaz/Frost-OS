@@ -4,7 +4,7 @@ Frost is an independent Arch Linux desktop built around UWSM, Hyprland, a static
 
 This repository is the Frost runtime and user-facing CLI. It has a new history and no operational dependency on any donor distribution or repository.
 
-Current status: private implementation, Phase 1 foundation. Publication is blocked until every reused source and asset has complete provenance and redistribution terms.
+Current status: private implementation, Phase 2 parallel session. The session assets are isolated and statically testable; installation and graphical testing remain behind an explicit approval gate. Publication is blocked until every reused source and asset has complete provenance and redistribution terms.
 
 ## Repository boundaries
 
@@ -16,4 +16,3 @@ Current status: private implementation, Phase 1 foundation. Publication is block
 - Machine state belongs below `/var/lib/frost`.
 
 Donor checkouts are audit references only. They are never build inputs, submodules, remotes, update channels, or runtime fallbacks.
-

@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Frost
+Comment=Independent Frost desktop session
+Exec=uwsm start -e -D Frost /usr/lib/frost/frost-hyprland
+TryExec=/usr/lib/frost/frost-hyprland
+Type=Application
