@@ -9,4 +9,4 @@ for script in "$root"/tools/* "$root"/test/*; do
 done
 "$root/tools/validate-package-config"
 "$root/test/package-build"
-
+"$root/test/signatures"

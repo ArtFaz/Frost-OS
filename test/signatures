@@ -1,0 +1,42 @@
+#!/bin/bash
+
+set -euo pipefail
+
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+repo=${FROST_REPO_DIR:-$root/repo/x86_64}
+keyring="$root/pkgbuilds/frost-keyring/frost.gpg"
+
+if [[ ! -d $repo ]]; then
+  printf '%s\n' 'signatures: skipped (no local repository)'
+  exit 0
+fi
+
+mapfile -t packages < <(find "$repo" -maxdepth 1 -type f -name '*.pkg.tar.*' ! -name '*.sig' -print | sort)
+if ((${#packages[@]} < 2)); then
+  printf '%s\n' 'signed repository must contain frost and frost-keyring' >&2
+  exit 1
+fi
+
+for package in "${packages[@]}"; do
+  [[ -f $package.sig ]] || {
+    printf 'missing signature: %s.sig\n' "$package" >&2
+    exit 1
+  }
+  gpgv --keyring "$keyring" "$package.sig" "$package" >/dev/null
+done
+
+for database in frost.db.tar.gz frost.files.tar.gz; do
+  [[ -f $repo/$database && -f $repo/$database.sig ]] || {
+    printf 'missing signed database: %s\n' "$database" >&2
+    exit 1
+  }
+  gpgv --keyring "$keyring" "$repo/$database.sig" "$repo/$database" >/dev/null
+done
+
+names=$(bsdtar -xOf "$repo/frost.db.tar.gz" '*/desc' | sed -n '/^%NAME%$/{n;p;}' | sort)
+if [[ $names != $'frost\nfrost-keyring' ]]; then
+  printf 'unexpected repository package set:\n%s\n' "$names" >&2
+  exit 1
+fi
+
+printf '%s\n' 'signatures: ok'

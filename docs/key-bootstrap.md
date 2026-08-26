@@ -2,31 +2,30 @@
 
 The Frost v1 repository is local and signed. The private signing key never enters Git, a package, the repository directory, or an ISO. Only the exported public keyring files belong under `pkgbuilds/frost-keyring`.
 
-Creating the real key is a gated action. Do not run the commands below until the owner explicitly authorizes key creation and chooses the identity and expiration.
+## Active private trust root
 
-## Proposed private-key location
+- Identity: `Frost Local Repository <packages@frost.local>`
+- Full fingerprint: `9F8D 6316 5ACC 27A4 FDCC ED02 FD40 A388 11ED D104`
+- Algorithm/capability: Ed25519 signing key
+- Created: 2026-08-26
+- Expires: 2028-08-25
+- Private GnuPG home: `~/.local/share/frost/repository-gnupg`, mode `0700`
+- Protection: no passphrase, so local builds can sign non-interactively
 
-Use a dedicated GnuPG home outside both repositories, for example `~/.local/share/frost/repository-gnupg`, mode `0700`. Back it up separately and never point build logs at its private material.
+The lack of a passphrase makes filesystem and backup access control essential. Back up the dedicated GnuPG home to encrypted offline storage before the machine trusts Frost packages for daily operation. The automatically generated revocation certificate is inside that private home and must be included in the backup.
 
-## Proposed creation and export flow
+Only these public files are tracked:
 
-```bash
-export GNUPGHOME="$HOME/.local/share/frost/repository-gnupg"
-install -d -m 0700 "$GNUPGHOME"
-gpg --quick-generate-key 'Frost Local Repository <packages@frost.local>' ed25519 sign 2y
-gpg --list-secret-keys --with-colons
-gpg --export FINGERPRINT > pkgbuilds/frost-keyring/frost.gpg
-printf '%s:4:\n' FINGERPRINT > pkgbuilds/frost-keyring/frost-trusted
-: > pkgbuilds/frost-keyring/frost-revoked
-```
-
-The final identity, expiration and fingerprint must be recorded in the master plan after approval. The private key must be backed up before any live system trusts it.
+- `pkgbuilds/frost-keyring/frost.gpg`
+- `pkgbuilds/frost-keyring/frost-trusted`
+- `pkgbuilds/frost-keyring/frost-revoked`
 
 ## Build and verify
 
-With the same dedicated `GNUPGHOME` and the approved full fingerprint:
+With the dedicated `GNUPGHOME` and full fingerprint:
 
 ```bash
+export GNUPGHOME="$HOME/.local/share/frost/repository-gnupg"
 ./tools/build-local-repo --key FINGERPRINT
 ```
 
@@ -36,3 +35,9 @@ The tool builds from the committed sibling Frost repository, signs every package
 
 Before `frost-keyring` can maintain pacman trust, manually verify the public fingerprint and the package signature using the dedicated GnuPG home. Installing the first keyring package or modifying pacman configuration is a live privileged action and requires separate approval. Subsequent keyring upgrades are verified through the already-installed Frost trust root.
 
+An independent public-key-only check is:
+
+```bash
+gpgv --keyring pkgbuilds/frost-keyring/frost.gpg PACKAGE.sig PACKAGE
+gpgv --keyring pkgbuilds/frost-keyring/frost.gpg frost.db.tar.gz.sig frost.db.tar.gz
+```
