@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -euo pipefail
+
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+
+"$root/test/source-contract"
+"$root/test/source-contract-test"
+cargo fmt --manifest-path "$root/cli/Cargo.toml" -- --check
+cargo test --manifest-path "$root/cli/Cargo.toml"
+

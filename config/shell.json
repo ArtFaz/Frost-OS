@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "bar": {
+    "enabled": true,
+    "position": "top"
+  },
+  "osd": {
+    "enabled": true
+  },
+  "surfaces": {
+    "commandCenter": true,
+    "notificationCenter": true
+  }
+}
+

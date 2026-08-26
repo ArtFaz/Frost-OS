@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://frost.invalid/schema/shell.schema.json",
+  "title": "Frost shell configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "bar", "osd", "surfaces"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "bar": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "position"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "position": { "enum": ["top", "bottom"] }
+      }
+    },
+    "osd": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled"],
+      "properties": {
+        "enabled": { "type": "boolean" }
+      }
+    },
+    "surfaces": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["commandCenter", "notificationCenter"],
+      "properties": {
+        "commandCenter": { "type": "boolean" },
+        "notificationCenter": { "type": "boolean" }
+      }
+    }
+  }
+}
+

@@ -1,0 +1,45 @@
+#!/bin/bash
+
+set -euo pipefail
+
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+fixture=$(mktemp -d /tmp/frost-source-contract.XXXXXX)
+case $fixture in
+  /tmp/frost-source-contract.*) ;;
+  *) exit 1 ;;
+esac
+trap 'rm -rf -- "$fixture"' EXIT
+
+mkdir -p "$fixture/cli" "$fixture/shell" "$fixture/themes/frost"
+printf '%s\n' 'safe source' >"$fixture/cli/main.rs"
+printf '%s\n' 'schemaVersion = 1' >"$fixture/themes/frost/theme.toml"
+FROST_SOURCE_ROOT="$fixture" "$root/test/source-contract" >/dev/null
+
+printf '%s\n' 'omarchy' >"$fixture/cli/main.rs"
+if FROST_SOURCE_ROOT="$fixture" "$root/test/source-contract" >/dev/null 2>&1; then
+  printf '%s\n' 'expected donor identity fixture to fail' >&2
+  exit 1
+fi
+printf '%s\n' 'safe source' >"$fixture/cli/main.rs"
+
+printf '%s\n' 'Process {' >"$fixture/shell/Bad.qml"
+if FROST_SOURCE_ROOT="$fixture" "$root/test/source-contract" >/dev/null 2>&1; then
+  printf '%s\n' 'expected generic QML process fixture to fail' >&2
+  exit 1
+fi
+rm "$fixture/shell/Bad.qml"
+
+printf '%s\n' '#!/bin/bash' >"$fixture/themes/frost/install.sh"
+if FROST_SOURCE_ROOT="$fixture" "$root/test/source-contract" >/dev/null 2>&1; then
+  printf '%s\n' 'expected executable theme fixture to fail' >&2
+  exit 1
+fi
+rm "$fixture/themes/frost/install.sh"
+
+ln -s /tmp "$fixture/themes/frost/outside"
+if FROST_SOURCE_ROOT="$fixture" "$root/test/source-contract" >/dev/null 2>&1; then
+  printf '%s\n' 'expected theme symlink fixture to fail' >&2
+  exit 1
+fi
+
+printf '%s\n' 'source contract fixtures: ok'

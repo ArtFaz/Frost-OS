@@ -1,0 +1,52 @@
+#!/bin/bash
+
+set -euo pipefail
+
+root=${FROST_SOURCE_ROOT:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)}
+active_roots=()
+for path in bin cli config default install migrations shell themes; do
+  [[ -e $root/$path ]] && active_roots+=("$root/$path")
+done
+
+fail() {
+  printf 'source contract: %s\n' "$1" >&2
+  exit 1
+}
+
+if ((${#active_roots[@]} > 0)); then
+  if rg -n -i '(omarchy|omacom|pkgs\.omarchy|github\.com/basecamp)' "${active_roots[@]}"; then
+    fail 'donor identity or endpoint found in active source'
+  fi
+fi
+
+qml_roots=()
+for path in shell default; do
+  [[ -d $root/$path ]] && qml_roots+=("$root/$path")
+done
+
+if ((${#qml_roots[@]} > 0)); then
+  if rg -n --glob '*.qml' --glob '*.js' '(PluginRegistry|plugin-index|rescanPlugins|setPluginEnabled|listPlugins|NotificationServer|PamContext|PolkitAgent)' "${qml_roots[@]}"; then
+    fail 'forbidden dynamic or security-sensitive QML primitive found'
+  fi
+  if rg -n --glob '*.qml' --glob '*.js' '(Quickshell\.execDetached|\bProcess\s*\{|bash[[:space:]]+-c|sh[[:space:]]+-c)' "${qml_roots[@]}"; then
+    fail 'generic process execution found in QML/JavaScript'
+  fi
+fi
+
+if [[ -d $root/themes ]]; then
+  if find "$root/themes" -type l -print -quit | grep -q .; then
+    fail 'theme symlink found'
+  fi
+  if find "$root/themes" -type f -perm /111 -print -quit | grep -q .; then
+    fail 'executable theme file found'
+  fi
+  while IFS= read -r -d '' file; do
+    case ${file##*.} in
+      toml|json|jsonc|conf|css|png|jpg|jpeg|webp|svg) ;;
+      *) fail "theme file type is not data-only: ${file#$root/}" ;;
+    esac
+  done < <(find "$root/themes" -type f -print0)
+fi
+
+printf '%s\n' 'source contract: ok'
+

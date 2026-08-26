@@ -1,0 +1,13 @@
+schemaVersion = 1
+name = "Frost"
+
+[colors]
+background = "#0f1724"
+foreground = "#eef6ff"
+accent = "#8ed8ff"
+surface = "#1a2738"
+
+[glass]
+opacity = 0.78
+blurRadius = 24
+
