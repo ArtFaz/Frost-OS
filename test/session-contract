@@ -55,6 +55,9 @@ rg -q '^BindsTo=graphical-session\.target$' "$target" || fail 'target is not bou
 if rg -n '^\[Install\]|WantedBy=' "$units"; then
   fail 'session units must not be globally enabled'
 fi
+if rg -n '^BusName=org\.freedesktop\.Notifications$' "$units"; then
+  fail 'Frost units may not duplicate the upstream Mako systemd bus reservation'
+fi
 if rg -n -i '(omarchy|omacom|pkgs\.omarchy)' "$root/bin" "$root/default"; then
   fail 'donor guard, identity, or endpoint found in Frost session assets'
 fi
