@@ -1,0 +1,11 @@
+[package]
+name = "frost"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+description = "Frost control and diagnostics CLI"
+
+[[bin]]
+name = "frost"
+path = "src/main.rs"
+
