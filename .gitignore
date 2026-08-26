@@ -1,0 +1,6 @@
+/repo/
+/build/
+/keys/private/
+*.pkg.tar.*
+*.sig
+
