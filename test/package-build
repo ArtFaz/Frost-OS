@@ -18,12 +18,53 @@ if [[ -z $package ]]; then
 fi
 
 mapfile -t paths < <(bsdtar -tf "$package")
-for expected in usr/bin/frost usr/share/frost/config/shell.json usr/share/frost/themes/frost/theme.toml; do
+for expected in \
+  usr/bin/frost \
+  usr/lib/frost/frost-hyprland \
+  usr/lib/frost/frost-terminal \
+  usr/lib/systemd/user/frost-session.target \
+  usr/lib/systemd/user/frost-notifications.service \
+  usr/lib/systemd/user/frost-polkit.service \
+  usr/lib/systemd/user/frost-idle.service \
+  usr/lib/systemd/user/frost-lock.service \
+  usr/share/wayland-sessions/frost.desktop \
+  usr/share/frost/default/hypr/hyprland.conf \
+  usr/share/frost/default/hypr/hypridle.conf \
+  usr/share/frost/default/hypr/hyprlock.conf \
+  usr/share/frost/default/mako/config \
+  usr/share/frost/default/ghostty/config \
+  usr/share/frost/default/bash/bashrc \
+  usr/share/frost/config/shell.json \
+  usr/share/frost/themes/frost/theme.toml; do
   if ! printf '%s\n' "${paths[@]}" | grep -qx "$expected"; then
     printf 'package is missing %s\n' "$expected" >&2
     exit 1
   fi
 done
+
+package_info=$(bsdtar -xOf "$package" .PKGINFO)
+for dependency in \
+  bash \
+  cliphist \
+  ghostty \
+  hypridle \
+  hyprland \
+  hyprlock \
+  hyprpolkitagent \
+  mako \
+  systemd \
+  uwsm \
+  wl-clipboard; do
+  if ! grep -Eq "^depend = ${dependency}([<=>].*)?$" <<<"$package_info"; then
+    printf 'package is missing fixed session dependency %s\n' "$dependency" >&2
+    exit 1
+  fi
+done
+
+if printf '%s\n' "${paths[@]}" | grep -Eq '^usr/lib/systemd/user/(default|graphical-session)\.target\.wants/'; then
+  printf '%s\n' 'package globally enables a Frost user unit' >&2
+  exit 1
+fi
 
 if printf '%s\n' "${paths[@]}" | grep -Eiq '(omarchy|omacom)'; then
   printf '%s\n' 'package contains a donor path' >&2

@@ -1,20 +1,29 @@
 pkgname=frost
-pkgver=0.1.0
+pkgver=0.2.0
 pkgrel=1
 pkgdesc='Independent Frost desktop runtime and diagnostics CLI'
 arch=('x86_64')
 url='https://github.com/ArtFaz/Frost-OS'
 license=('MIT')
-depends=('glibc')
+depends=(
+  'bash'
+  'cliphist'
+  'ghostty'
+  'glibc'
+  'hypridle'
+  'hyprland'
+  'hyprlock'
+  'hyprpolkitagent'
+  'mako'
+  'systemd'
+  'uwsm'
+  'wl-clipboard'
+)
 optdepends=(
-  'hyprland: Frost compositor'
-  'uwsm: Frost session lifecycle'
-  'quickshell: Frost shell runtime'
-  'mako: notification service'
-  'hyprlock: session lock'
-  'hyprpolkitagent: Polkit authentication agent'
+  'quickshell: static Frost shell runtime beginning in Phase 3'
 )
 makedepends=('cargo')
+checkdepends=('desktop-file-utils')
 options=('!debug')
 source=("${pkgname}-${pkgver}.tar.gz")
 sha256sums=('SKIP')
@@ -30,16 +39,16 @@ build() {
 
 check() {
   cd "$srcdir/${pkgname}-${pkgver}"
-  CARGO_TARGET_DIR="$srcdir/target" cargo test \
-    --locked \
-    --offline \
-    --manifest-path cli/Cargo.toml
+  CARGO_TARGET_DIR="$srcdir/target" ./test/all
 }
 
 package() {
   cd "$srcdir/${pkgname}-${pkgver}"
 
   install -Dm755 "$srcdir/target/release/frost" "$pkgdir/usr/bin/frost"
+  install -Dm755 bin/frost-hyprland "$pkgdir/usr/lib/frost/frost-hyprland"
+  install -Dm755 bin/frost-terminal "$pkgdir/usr/lib/frost/frost-terminal"
+
   install -Dm644 config/shell.json "$pkgdir/usr/share/frost/config/shell.json"
   install -Dm644 config/schema/shell.schema.json \
     "$pkgdir/usr/share/frost/config/schema/shell.schema.json"
@@ -47,8 +56,31 @@ package() {
   cp -r themes/. "$pkgdir/usr/share/frost/themes/"
   find "$pkgdir/usr/share/frost/themes" -type d -exec chmod 0755 {} +
   find "$pkgdir/usr/share/frost/themes" -type f -exec chmod 0644 {} +
+
+  install -Dm644 default/hypr/hyprland.conf \
+    "$pkgdir/usr/share/frost/default/hypr/hyprland.conf"
+  install -Dm644 default/hypr/hypridle.conf \
+    "$pkgdir/usr/share/frost/default/hypr/hypridle.conf"
+  install -Dm644 default/hypr/hyprlock.conf \
+    "$pkgdir/usr/share/frost/default/hypr/hyprlock.conf"
+  install -Dm644 default/mako/config \
+    "$pkgdir/usr/share/frost/default/mako/config"
+  install -Dm644 default/ghostty/config \
+    "$pkgdir/usr/share/frost/default/ghostty/config"
+  install -Dm644 default/bash/bashrc \
+    "$pkgdir/usr/share/frost/default/bash/bashrc"
+
+  for unit in default/systemd/user/*; do
+    install -Dm644 "$unit" "$pkgdir/usr/lib/systemd/user/${unit##*/}"
+  done
+  install -Dm644 default/wayland-sessions/frost.desktop \
+    "$pkgdir/usr/share/wayland-sessions/frost.desktop"
+
+  install -d -m0755 "$pkgdir/etc/frost"
   install -Dm644 docs/architecture.md \
     "$pkgdir/usr/share/doc/frost/architecture.md"
+  install -Dm644 docs/preview-session.md \
+    "$pkgdir/usr/share/doc/frost/preview-session.md"
   install -Dm644 docs/security-boundaries.md \
     "$pkgdir/usr/share/doc/frost/security-boundaries.md"
   install -Dm644 LICENSE "$pkgdir/usr/share/licenses/frost/LICENSE"

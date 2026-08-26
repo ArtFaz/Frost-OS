@@ -25,6 +25,18 @@ if [[ ! -f $root/pkgbuilds/frost-keyring/PKGBUILD ]]; then
   fail 'frost-keyring PKGBUILD is missing'
 fi
 
+for required_dependency in \
+  hyprland uwsm mako hyprlock hypridle hyprpolkitagent ghostty wl-clipboard cliphist; do
+  if ! rg -q "^[[:space:]]*'${required_dependency}'$" "$root/pkgbuilds/frost/PKGBUILD"; then
+    fail "missing fixed Phase 2 dependency: $required_dependency"
+  fi
+done
+
+if rg -n '(default|graphical-session)\.target\.wants|systemctl[[:space:]]+--user[[:space:]]+enable' \
+  "$root/pkgbuilds/frost"; then
+  fail 'Frost package may not globally enable session services'
+fi
+
 for name in frost-settings frost-meta; do
   if [[ -f $root/pkgbuilds/$name/PKGBUILD ]]; then
     fail "$name must not be defined before its gate"
@@ -32,4 +44,3 @@ for name in frost-settings frost-meta; do
 done
 
 printf '%s\n' 'package contract: ok'
-

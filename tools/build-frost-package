@@ -38,8 +38,7 @@ git -C "$source_repo" archive \
 
 (
   cd "$build_dir/pkg"
-  PKGDEST="$destination" makepkg --cleanbuild --force --noconfirm
+  PKGDEST="$destination" makepkg --cleanbuild --force --noconfirm --nodeps
 )
 
 find "$destination" -maxdepth 1 -type f -name 'frost-*.pkg.tar.*' -print
-
