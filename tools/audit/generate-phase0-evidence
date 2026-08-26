@@ -1,0 +1,327 @@
+#!/bin/bash
+
+set -euo pipefail
+
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+workspace=$(cd -- "$script_dir/../../.." && pwd)
+output_dir="$workspace/frost/docs/audit/generated"
+omarchy="$workspace/Definitive Frost-OS/omarchy"
+omarchy_pkgs="$workspace/Definitive Frost-OS/omarchy-pkgs"
+
+mkdir -p "$output_dir"
+
+snapshot_file="$output_dir/source-snapshots.tsv"
+printf 'source\tcommit\tworktree\tremote\n' >"$snapshot_file"
+for source in \
+  'Frost-OS' \
+  'staging' \
+  'Definitive Frost-OS/omarchy' \
+  'Definitive Frost-OS/omarchy-pkgs' \
+  'Definitive Frost-OS/omarchy-iso' \
+  'omanix' \
+  'nixarchy'; do
+  source_path="$workspace/$source"
+  commit=$(git -C "$source_path" rev-parse HEAD)
+  if [[ -z $(git -C "$source_path" status --porcelain) ]]; then
+    worktree=clean
+  else
+    worktree=dirty
+  fi
+  remote=$(git -C "$source_path" remote get-url origin 2>/dev/null || printf '%s' 'none')
+  printf '%s\t%s\t%s\t%s\n' "$source" "$commit" "$worktree" "$remote" >>"$snapshot_file"
+done
+
+audit_tmp=$(mktemp -d /tmp/frost-phase0.XXXXXX)
+case "$audit_tmp" in
+  /tmp/frost-phase0.*) ;;
+  *)
+    printf 'Refusing unsafe temporary directory: %s\n' "$audit_tmp" >&2
+    exit 1
+    ;;
+esac
+trap 'rm -rf -- "$audit_tmp"' EXIT
+
+mkdir -p "$audit_tmp/src" "$audit_tmp/pkg-omarchy" "$audit_tmp/pkg-settings" "$audit_tmp/pkg-keyring"
+ln -s "$omarchy" "$audit_tmp/src/omarchy"
+
+(
+  export OMARCHY_SRC="$omarchy"
+  srcdir="$audit_tmp/src"
+  pkgdir="$audit_tmp/pkg-omarchy"
+  source "$omarchy_pkgs/pkgbuilds/omarchy/PKGBUILD"
+  package
+)
+
+(
+  export OMARCHY_SRC="$omarchy"
+  srcdir="$audit_tmp/src"
+  pkgdir="$audit_tmp/pkg-settings"
+  source "$omarchy_pkgs/pkgbuilds/omarchy-settings/PKGBUILD"
+  package
+)
+
+(
+  srcdir="$omarchy_pkgs/pkgbuilds/omarchy-keyring"
+  pkgdir="$audit_tmp/pkg-keyring"
+  cd "$srcdir"
+  source ./PKGBUILD
+  package
+)
+
+path_map="$output_dir/donor-package-paths.tsv"
+path_map_body="$audit_tmp/donor-package-paths.body.tsv"
+: >"$path_map_body"
+
+record_tree() {
+  local package=$1
+  local tree=$2
+  local path rel kind origin
+
+  while IFS= read -r -d '' path; do
+    rel=${path#"$tree"}
+    if [[ -L $path ]]; then
+      kind=symlink
+    else
+      kind=file
+    fi
+
+    case "$package:$rel" in
+      omarchy:/usr/bin/*)
+        origin="omarchy/bin/${rel#/usr/bin/}"
+        ;;
+      omarchy:/usr/share/omarchy/bin/*)
+        origin="generated symlink to /usr/bin/${rel#/usr/share/omarchy/bin/}"
+        ;;
+      omarchy:/usr/share/omarchy/install/*)
+        origin="omarchy/install/${rel#/usr/share/omarchy/install/}"
+        ;;
+      omarchy:/usr/share/omarchy/themes/*)
+        origin="omarchy/themes/${rel#/usr/share/omarchy/themes/}"
+        ;;
+      omarchy:/usr/share/omarchy/migrations/*)
+        origin="omarchy/migrations/${rel#/usr/share/omarchy/migrations/}"
+        ;;
+      omarchy:/usr/share/omarchy/shell/*)
+        origin="omarchy/shell/${rel#/usr/share/omarchy/shell/}"
+        ;;
+      omarchy:/usr/share/libalpm/hooks/*)
+        origin="omarchy/default/libalpm/hooks/${rel#/usr/share/libalpm/hooks/}"
+        ;;
+      omarchy:/etc/skel/.local/state/omarchy/migrations/*)
+        origin="generated marker from omarchy/migrations/${rel#/etc/skel/.local/state/omarchy/migrations/}"
+        ;;
+      omarchy:/usr/share/omarchy/version)
+        origin='omarchy/version'
+        ;;
+      omarchy-settings:/etc/skel/.config/*)
+        origin="omarchy/config/${rel#/etc/skel/.config/}"
+        ;;
+      omarchy-settings:/usr/share/omarchy/config/*)
+        origin="omarchy/config/${rel#/usr/share/omarchy/config/}"
+        ;;
+      omarchy-settings:/etc/*)
+        origin="omarchy/${rel#/}"
+        ;;
+      omarchy-settings:/usr/share/omarchy/applications/*)
+        origin="omarchy/applications/${rel#/usr/share/omarchy/applications/}"
+        ;;
+      omarchy-settings:/etc/skel/.local/share/applications/*)
+        origin="omarchy/applications/${rel#/etc/skel/.local/share/applications/}"
+        ;;
+      omarchy-settings:/usr/lib/systemd/user/*)
+        origin="omarchy/default/systemd/user/${rel#/usr/lib/systemd/user/}"
+        ;;
+      omarchy-settings:/usr/share/uwsm/*)
+        origin='omarchy/default/uwsm'
+        ;;
+      omarchy-settings:/usr/lib/environment.d/*)
+        origin='omarchy/default/environment.d'
+        ;;
+      omarchy-settings:/usr/share/fontconfig/*|omarchy-settings:/etc/fonts/*)
+        origin='omarchy/default/fontconfig'
+        ;;
+      omarchy-settings:/usr/share/icons/*)
+        origin='derived from omarchy/applications/icons or omarchy/default assets'
+        ;;
+      omarchy-settings:*)
+        origin='omarchy-settings PKGBUILD package() mapping'
+        ;;
+      omarchy-keyring:*)
+        origin="omarchy-pkgs/pkgbuilds/omarchy-keyring/${rel##*/}"
+        ;;
+    esac
+
+    printf '%s\t%s\t%s\t%s\t%s\n' "$package" package-owned "$kind" "$rel" "$origin" >>"$path_map_body"
+  done < <(find "$tree" \( -type f -o -type l \) -print0 | sort -z)
+}
+
+record_tree omarchy "$audit_tmp/pkg-omarchy"
+record_tree omarchy-settings "$audit_tmp/pkg-settings"
+record_tree omarchy-keyring "$audit_tmp/pkg-keyring"
+
+while IFS=$'\t' read -r path source; do
+  printf 'omarchy-settings\t%s\tfile\t%s\t%s\n' unowned-scriptlet-write "$path" "$source" >>"$path_map_body"
+done <<'EOF'
+/etc/os-release	omarchy-settings.install:_etc_overrides_apply
+/etc/security/faillock.conf	omarchy-settings.install:_etc_overrides_apply
+/etc/nsswitch.conf	omarchy-settings.install:_etc_overrides_apply
+/etc/cups/cups-browsed.conf	omarchy-settings.install:_etc_overrides_apply (conditional)
+/etc/plymouth/plymouthd.conf	omarchy-settings.install:_etc_overrides_apply
+/etc/skel/.bashrc	omarchy-settings.install:_etc_overrides_apply
+EOF
+
+printf 'package\townership\tkind\tinstalled_path\tsource\n' >"$path_map"
+sort -t $'\t' -k1,1 -k4,4 "$path_map_body" >>"$path_map"
+
+package_sources="$audit_tmp/package-sources.tsv"
+: >"$package_sources"
+
+add_package_list() {
+  local file=$1
+  local source=$2
+  sed 's/#.*//' "$file" | awk -v source="$source" 'NF { for (i = 1; i <= NF; i++) print $i "\t" source }' >>"$package_sources"
+}
+
+add_package_list "$omarchy/install/omarchy-base.packages" omarchy-base
+add_package_list "$omarchy/install/omarchy-other.packages" omarchy-other
+add_package_list "$workspace/Definitive Frost-OS/omarchy-iso/builder/archinstall.packages" omarchy-iso-archinstall
+
+find "$omarchy_pkgs/pkgbuilds" -mindepth 2 -maxdepth 2 -name PKGBUILD -printf '%h\n' \
+  | sed 's#.*/##' \
+  | awk '{ print $0 "\tomarchy-pkgs-pkgbuild" }' >>"$package_sources"
+
+while IFS= read -r package; do
+  printf '%s\t%s\n' "$package" frost-architecture >>"$package_sources"
+done <<'EOF'
+btrfs-progs
+bluez
+brightnessctl
+cliphist
+grim
+hypridle
+hyprland
+hyprlock
+hyprpolkitagent
+jq
+limine
+mako
+networkmanager
+pipewire
+playerctl
+quickshell
+sddm
+slurp
+snapper
+tailscale
+uwsm
+wireplumber
+wl-clipboard
+xdg-desktop-portal-hyprland
+EOF
+
+if command -v pacman >/dev/null 2>&1; then
+  pacman -Qq | awk '{ print $0 "\tinstalled-2026-08-26" }' >>"$package_sources"
+fi
+
+sort -u "$package_sources" -o "$package_sources"
+jq -Rn '
+  [inputs | split("\t") | select(length == 2) | {name: .[0], source: .[1]}]
+  | sort_by(.name, .source)
+  | group_by(.name)
+  | map({
+      name: .[0].name,
+      sources: (map(.source) | unique),
+      category: "UNCLASSIFIED",
+      default: "review",
+      reason: "Preliminary Phase 0 evidence; classification is deferred to Gate 5",
+      requiredBy: [],
+      dependsOn: [],
+      conflictsWith: [],
+      hardware: [],
+      tags: []
+    })
+  | {schemaVersion: 1, inventoryVersion: "2026-08-26.phase0", packages: .}
+' "$package_sources" >"$output_dir/preliminary-package-inventory.json"
+
+external_commands="$output_dir/external-commands.tsv"
+external_commands_body="$audit_tmp/external-commands.body.tsv"
+: >"$external_commands_body"
+while IFS= read -r command; do
+  [[ -n $command ]] && printf 'staging\t%s\tREWRITE_OR_DIRECT_INTERFACE\n' "$command" >>"$external_commands_body"
+done <<'EOF'
+bash
+find
+hyprctl
+mkdir
+nmcli
+notify-send
+omarchy-agent-usage-update
+omarchy-audio-input-set-default
+omarchy-audio-output-set-default
+omarchy-audio-output-sink
+omarchy-audio-sink-availability
+omarchy-battery-status
+omarchy-bluetooth-device
+omarchy-bluetooth-power
+omarchy-brightness-display
+omarchy-brightness-keyboard
+omarchy-clipboard-open
+omarchy-clipboard-paste-file
+omarchy-clipboard-paste-text
+omarchy-display-text-size
+omarchy-dns
+omarchy-emojis
+omarchy-font-current
+omarchy-font-list
+omarchy-font-set
+omarchy-hyprland-focus-app
+omarchy-hyprland-monitor-scaling
+omarchy-hyprland-session-locked
+omarchy-image-selector
+omarchy-launch-browser
+omarchy-monitor-state
+omarchy-network-band
+omarchy-network-status
+omarchy-powerprofiles-list
+omarchy-powerprofiles-set
+omarchy-reminder
+omarchy-system-reboot
+omarchy-system-shutdown
+omarchy-system-stats
+omarchy-tailscale-send
+omarchy-update-available
+pgrep
+pkexec
+pkill
+readlink
+setpriv
+systemctl
+tailscale
+which
+wl-copy
+wl-paste
+xkbcli
+EOF
+
+while IFS= read -r command; do
+  [[ -n $command ]] && printf 'Frost-OS\t%s\tPORT_OR_REVIEW\n' "$command" >>"$external_commands_body"
+done <<'EOF'
+fc-match
+grim
+hyprctl
+loginctl
+makoctl
+notify-send
+pactl
+playerctl
+qs
+slurp
+systemctl
+wl-copy
+wl-paste
+EOF
+
+printf 'authority\tcommand\tdisposition\n' >"$external_commands"
+sort -t $'\t' -k1,1 -k2,2 -u "$external_commands_body" >>"$external_commands"
+
+printf 'Generated Phase 0 evidence in %s\n' "$output_dir"

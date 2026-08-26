@@ -1,0 +1,8 @@
+source	commit	worktree	remote
+Frost-OS	f4a8cc9cd4137469393f815ccef08a849ce9005d	clean	https://github.com/ArtFaz/Frost-OS.git
+staging	824831e75171dc4c87c8d53dfd22e3e07de7f6a6	clean	https://github.com/ArtFaz/omarchyDots.git
+Definitive Frost-OS/omarchy	0ae1694830b6bd9511042fe1b89a0062d8c083cb	clean	https://github.com/basecamp/omarchy.git
+Definitive Frost-OS/omarchy-pkgs	5a73fd8999400c59079b689ffc41ab8e93b96728	clean	https://github.com/omacom-io/omarchy-pkgs.git
+Definitive Frost-OS/omarchy-iso	268bac16d351a21d867e37565738f458b11cb06c	clean	https://github.com/omacom-io/omarchy-iso.git
+omanix	4af5e88b63468d5e89cefd09e4d72a8abc11fa4b	clean	https://github.com/T00fy/omanix.git
+nixarchy	74802f4aa707e48420c4cc37dc82b080a6387bd2	clean	https://github.com/olafkfreund/nixarchy.git
