@@ -1,0 +1,35 @@
+#!/bin/bash
+
+set -euo pipefail
+
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+
+fail() {
+  printf 'package contract: %s\n' "$1" >&2
+  exit 1
+}
+
+if rg -n -i '(omarchy|omacom|pkgs\.omarchy|github\.com/basecamp)' \
+  "$root/pkgbuilds" "$root/tools" --glob '!validate-package-config'; then
+  fail 'donor identity or endpoint found in package build source'
+fi
+
+if rg -n --glob PKGBUILD '(^|[[:space:]])source=.*(git\+|https?://)' "$root/pkgbuilds/frost"; then
+  fail 'frost runtime package must build from the explicit local archive'
+fi
+
+if [[ ! -f $root/pkgbuilds/frost/PKGBUILD ]]; then
+  fail 'frost PKGBUILD is missing'
+fi
+if [[ ! -f $root/pkgbuilds/frost-keyring/PKGBUILD ]]; then
+  fail 'frost-keyring PKGBUILD is missing'
+fi
+
+for name in frost-settings frost-meta; do
+  if [[ -f $root/pkgbuilds/$name/PKGBUILD ]]; then
+    fail "$name must not be defined before its gate"
+  fi
+done
+
+printf '%s\n' 'package contract: ok'
+

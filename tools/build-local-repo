@@ -1,0 +1,87 @@
+#!/bin/bash
+
+set -euo pipefail
+
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+source_repo=${FROST_SOURCE:-$root/../frost}
+destination=$root/repo/x86_64
+key=
+
+usage() {
+  printf '%s\n' 'usage: build-local-repo --key FINGERPRINT [--source PATH] [--destination PATH]' >&2
+  exit 2
+}
+
+while (($# > 0)); do
+  case $1 in
+    --key)
+      (($# >= 2)) || usage
+      key=$2
+      shift 2
+      ;;
+    --source)
+      (($# >= 2)) || usage
+      source_repo=$2
+      shift 2
+      ;;
+    --destination)
+      (($# >= 2)) || usage
+      destination=$2
+      shift 2
+      ;;
+    *) usage ;;
+  esac
+done
+
+if [[ -z $key ]]; then
+  usage
+fi
+if ! gpg --list-secret-keys "$key" >/dev/null 2>&1; then
+  printf 'Secret signing key is unavailable: %s\n' "$key" >&2
+  exit 1
+fi
+for file in frost.gpg frost-trusted frost-revoked; do
+  if [[ ! -f $root/pkgbuilds/frost-keyring/$file ]]; then
+    printf 'Public keyring material is missing: pkgbuilds/frost-keyring/%s\n' "$file" >&2
+    exit 1
+  fi
+done
+
+"$root/tools/validate-package-config"
+mkdir -p "$destination"
+
+FROST_SOURCE="$source_repo" PKGDEST="$destination" "$root/tools/build-frost-package" >/dev/null
+
+keyring_build=$(mktemp -d /tmp/frost-keyring-package.XXXXXX)
+case $keyring_build in
+  /tmp/frost-keyring-package.*) ;;
+  *) exit 1 ;;
+esac
+trap 'rm -rf -- "$keyring_build"' EXIT
+cp -a "$root/pkgbuilds/frost-keyring/." "$keyring_build/"
+cp "$root/LICENSE" "$keyring_build/LICENSE"
+(
+  cd "$keyring_build"
+  PKGDEST="$destination" makepkg --cleanbuild --force --noconfirm --sign --key "$key"
+)
+
+for package in "$destination"/*.pkg.tar.*; do
+  [[ $package == *.sig ]] && continue
+  gpg --batch --yes --local-user "$key" --detach-sign "$package"
+done
+
+mapfile -t packages < <(find "$destination" -maxdepth 1 -type f -name '*.pkg.tar.*' ! -name '*.sig' -print | sort)
+if ((${#packages[@]} == 0)); then
+  printf '%s\n' 'No packages were built.' >&2
+  exit 1
+fi
+
+repo-add --verify --sign --key "$key" "$destination/frost.db.tar.gz" "${packages[@]}"
+
+for package in "${packages[@]}"; do
+  gpg --verify "$package.sig" "$package" >/dev/null
+done
+gpg --verify "$destination/frost.db.tar.gz.sig" "$destination/frost.db.tar.gz" >/dev/null
+
+printf 'Signed Frost repository: file://%s\n' "$(realpath "$destination")"
+

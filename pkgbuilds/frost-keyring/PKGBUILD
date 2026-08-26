@@ -1,0 +1,18 @@
+pkgname=frost-keyring
+pkgver=20260826
+pkgrel=1
+pkgdesc='Frost local repository public keyring'
+arch=('any')
+url='https://github.com/ArtFaz/Frost-OS'
+license=('MIT')
+install=frost-keyring.install
+source=('frost.gpg' 'frost-trusted' 'frost-revoked' 'frost-keyring.install')
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP')
+
+package() {
+  install -Dm644 frost.gpg "$pkgdir/usr/share/pacman/keyrings/frost.gpg"
+  install -Dm644 frost-trusted "$pkgdir/usr/share/pacman/keyrings/frost-trusted"
+  install -Dm644 frost-revoked "$pkgdir/usr/share/pacman/keyrings/frost-revoked"
+  install -Dm644 "$srcdir/LICENSE" \
+    "$pkgdir/usr/share/licenses/frost-keyring/LICENSE"
+}

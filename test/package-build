@@ -1,0 +1,33 @@
+#!/bin/bash
+
+set -euo pipefail
+
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+output=$(mktemp -d /tmp/frost-package-test.XXXXXX)
+case $output in
+  /tmp/frost-package-test.*) ;;
+  *) exit 1 ;;
+esac
+trap 'rm -rf -- "$output"' EXIT
+
+FROST_SOURCE="$root/../frost" PKGDEST="$output" "$root/tools/build-frost-package" >/dev/null
+package=$(find "$output" -maxdepth 1 -type f -name 'frost-[0-9]*.pkg.tar.*' ! -name '*.sig' -print -quit)
+if [[ -z $package ]]; then
+  printf '%s\n' 'package build produced no package' >&2
+  exit 1
+fi
+
+mapfile -t paths < <(bsdtar -tf "$package")
+for expected in usr/bin/frost usr/share/frost/config/shell.json usr/share/frost/themes/frost/theme.toml; do
+  if ! printf '%s\n' "${paths[@]}" | grep -qx "$expected"; then
+    printf 'package is missing %s\n' "$expected" >&2
+    exit 1
+  fi
+done
+
+if printf '%s\n' "${paths[@]}" | grep -Eiq '(omarchy|omacom)'; then
+  printf '%s\n' 'package contains a donor path' >&2
+  exit 1
+fi
+
+printf '%s\n' 'package build: ok'

@@ -1,0 +1,45 @@
+#!/bin/bash
+
+set -euo pipefail
+
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+source_repo=${FROST_SOURCE:-$root/../frost}
+destination=${PKGDEST:-$root/repo/unsigned}
+
+if [[ ! -d $source_repo/.git ]]; then
+  printf 'Frost source is not an independent Git repository: %s\n' "$source_repo" >&2
+  exit 2
+fi
+if [[ -n $(git -C "$source_repo" status --porcelain --untracked-files=no) ]]; then
+  printf 'Frost source has uncommitted tracked changes; commit before packaging.\n' >&2
+  exit 1
+fi
+
+version=$(sed -n 's/^version = "\([^"]*\)"$/\1/p' "$source_repo/cli/Cargo.toml")
+if [[ -z $version ]]; then
+  printf '%s\n' 'Could not resolve Frost version.' >&2
+  exit 1
+fi
+
+build_dir=$(mktemp -d /tmp/frost-package.XXXXXX)
+case $build_dir in
+  /tmp/frost-package.*) ;;
+  *) exit 1 ;;
+esac
+trap 'rm -rf -- "$build_dir"' EXIT
+
+mkdir -p "$build_dir/pkg" "$destination"
+cp "$root/pkgbuilds/frost/PKGBUILD" "$build_dir/pkg/PKGBUILD"
+git -C "$source_repo" archive \
+  --format=tar.gz \
+  --prefix="frost-${version}/" \
+  --output="$build_dir/pkg/frost-${version}.tar.gz" \
+  HEAD
+
+(
+  cd "$build_dir/pkg"
+  PKGDEST="$destination" makepkg --cleanbuild --force --noconfirm
+)
+
+find "$destination" -maxdepth 1 -type f -name 'frost-*.pkg.tar.*' -print
+

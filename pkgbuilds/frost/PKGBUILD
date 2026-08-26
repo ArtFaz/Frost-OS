@@ -1,0 +1,55 @@
+pkgname=frost
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='Independent Frost desktop runtime and diagnostics CLI'
+arch=('x86_64')
+url='https://github.com/ArtFaz/Frost-OS'
+license=('MIT')
+depends=('glibc')
+optdepends=(
+  'hyprland: Frost compositor'
+  'uwsm: Frost session lifecycle'
+  'quickshell: Frost shell runtime'
+  'mako: notification service'
+  'hyprlock: session lock'
+  'hyprpolkitagent: Polkit authentication agent'
+)
+makedepends=('cargo')
+options=('!debug')
+source=("${pkgname}-${pkgver}.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+  cd "$srcdir/${pkgname}-${pkgver}"
+  CARGO_TARGET_DIR="$srcdir/target" cargo build \
+    --locked \
+    --offline \
+    --release \
+    --manifest-path cli/Cargo.toml
+}
+
+check() {
+  cd "$srcdir/${pkgname}-${pkgver}"
+  CARGO_TARGET_DIR="$srcdir/target" cargo test \
+    --locked \
+    --offline \
+    --manifest-path cli/Cargo.toml
+}
+
+package() {
+  cd "$srcdir/${pkgname}-${pkgver}"
+
+  install -Dm755 "$srcdir/target/release/frost" "$pkgdir/usr/bin/frost"
+  install -Dm644 config/shell.json "$pkgdir/usr/share/frost/config/shell.json"
+  install -Dm644 config/schema/shell.schema.json \
+    "$pkgdir/usr/share/frost/config/schema/shell.schema.json"
+  install -d "$pkgdir/usr/share/frost/themes"
+  cp -r themes/. "$pkgdir/usr/share/frost/themes/"
+  find "$pkgdir/usr/share/frost/themes" -type d -exec chmod 0755 {} +
+  find "$pkgdir/usr/share/frost/themes" -type f -exec chmod 0644 {} +
+  install -Dm644 docs/architecture.md \
+    "$pkgdir/usr/share/doc/frost/architecture.md"
+  install -Dm644 docs/security-boundaries.md \
+    "$pkgdir/usr/share/doc/frost/security-boundaries.md"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/frost/LICENSE"
+}

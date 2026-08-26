@@ -1,0 +1,16 @@
+name: check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      - name: Install test dependencies
+        run: pacman -Syu --noconfirm git cargo ripgrep jq libarchive
+      - uses: actions/checkout@v4
+      - name: Check package contracts
+        run: ./tools/validate-package-config
