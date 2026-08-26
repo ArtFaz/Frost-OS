@@ -64,6 +64,11 @@ fi
 
 rg -q '^exec-once = systemctl --user start --no-block frost-session\.target$' \
   "$root/default/hypr/hyprland.conf" || fail 'Hyprland does not start only the Frost target'
+if rg -n 'hyprctl dispatch dpms' "$root/default/hypr/hypridle.conf"; then
+  fail 'legacy DPMS dispatcher found in Hypridle config'
+fi
+rg -q "hl\\.dsp\\.dpms.*action = \\\"off\\\"" "$root/default/hypr/hypridle.conf" ||
+  fail 'current Hyprland DPMS-off dispatcher is missing'
 rg -q '^Exec=uwsm start -e -D Frost /usr/lib/frost/frost-hyprland$' \
   "$root/default/wayland-sessions/frost.desktop" || fail 'desktop entry does not use the Frost UWSM wrapper'
 
