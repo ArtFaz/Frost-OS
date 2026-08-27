@@ -1,6 +1,6 @@
 # Frost parallel-session preview
 
-Status: implementation plan only. None of these live-system actions is authorized by this document.
+Status: signed release and installation runbook. Live-system actions still require explicit operator authorization.
 
 ## Scope
 
@@ -17,7 +17,7 @@ First validate both local packages using the public-key-only keyring:
 ```bash
 gpg --show-keys --fingerprint /home/art/Frosted-Glass/frost-pkgs/pkgbuilds/frost-keyring/frost.gpg
 gpgv --keyring /home/art/Frosted-Glass/frost-pkgs/pkgbuilds/frost-keyring/frost.gpg /home/art/Frosted-Glass/frost-pkgs/repo/x86_64/frost-keyring-20260826-1-any.pkg.tar.zst.sig /home/art/Frosted-Glass/frost-pkgs/repo/x86_64/frost-keyring-20260826-1-any.pkg.tar.zst
-gpgv --keyring /home/art/Frosted-Glass/frost-pkgs/pkgbuilds/frost-keyring/frost.gpg /home/art/Frosted-Glass/frost-pkgs/repo/x86_64/frost-0.2.0-9-x86_64.pkg.tar.zst.sig /home/art/Frosted-Glass/frost-pkgs/repo/x86_64/frost-0.2.0-9-x86_64.pkg.tar.zst
+gpgv --keyring /home/art/Frosted-Glass/frost-pkgs/pkgbuilds/frost-keyring/frost.gpg /home/art/Frosted-Glass/frost-pkgs/repo/x86_64/frost-0.2.0-10-x86_64.pkg.tar.zst.sig /home/art/Frosted-Glass/frost-pkgs/repo/x86_64/frost-0.2.0-10-x86_64.pkg.tar.zst
 ```
 
 After the fingerprint has been checked against the execution journal, bootstrap only that key and install the official dependencies plus the two signed local packages:
@@ -25,8 +25,8 @@ After the fingerprint has been checked against the execution journal, bootstrap 
 ```bash
 sudo pacman-key --add /home/art/Frosted-Glass/frost-pkgs/pkgbuilds/frost-keyring/frost.gpg
 sudo pacman-key --lsign-key 9F8D63165ACC27A4FDCCED02FD40A38811EDD104
-sudo pacman -S --needed extra/bluez extra/cliphist extra/hypridle extra/hyprlock extra/hyprpolkitagent extra/mako extra/networkmanager extra/power-profiles-daemon extra/upower
-sudo pacman -U /home/art/Frosted-Glass/frost-pkgs/repo/x86_64/frost-keyring-20260826-1-any.pkg.tar.zst /home/art/Frosted-Glass/frost-pkgs/repo/x86_64/frost-0.2.0-9-x86_64.pkg.tar.zst
+sudo pacman -S --needed extra/bluez extra/brightnessctl extra/cliphist extra/curl extra/ghostty extra/hypridle extra/hyprland extra/hyprlock extra/hyprpolkitagent extra/jq extra/libnotify extra/mako extra/networkmanager extra/noto-fonts-emoji extra/power-profiles-daemon extra/quickshell extra/ttf-jetbrains-mono extra/ttf-nerd-fonts-symbols-mono extra/upower extra/uwsm extra/wireplumber extra/wl-clipboard
+sudo pacman -U /home/art/Frosted-Glass/frost-pkgs/repo/x86_64/frost-keyring-20260826-1-any.pkg.tar.zst /home/art/Frosted-Glass/frost-pkgs/repo/x86_64/frost-0.2.0-10-x86_64.pkg.tar.zst
 systemctl --user daemon-reload
 pacman -Qkk frost frost-keyring
 ```
