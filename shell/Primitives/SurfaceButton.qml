@@ -12,7 +12,7 @@ InteractiveSurface {
     property string trailingText: ""
     property bool compact: false
 
-    implicitHeight: compact ? 36 : Theme.rowHeight
+    implicitHeight: compact ? Style.compactHeaderHeight : Style.rowHeight
 
     Item {
         id: iconSlot
@@ -29,8 +29,8 @@ InteractiveSurface {
             visible: root.iconSource === ""
             text: root.iconText
             color: root.selected ? Theme.accent : Theme.foreground
-            font.family: "sans-serif"
-            font.pixelSize: root.compact ? 13 : 17
+            font.family: Style.iconFontFamily
+            font.pixelSize: root.compact ? Style.body : Style.iconLarge
             horizontalAlignment: Text.AlignHCenter
         }
 
@@ -54,8 +54,8 @@ InteractiveSurface {
             width: parent.width
             text: root.title
             color: Theme.foreground
-            font.family: "sans-serif"
-            font.pixelSize: root.compact ? 12 : 13
+            font.family: Style.fontFamily
+            font.pixelSize: root.compact ? Style.bodySmall : Style.body
             font.bold: !root.compact
             elide: Text.ElideRight
         }
@@ -65,8 +65,8 @@ InteractiveSurface {
             visible: !root.compact && root.subtitle !== ""
             text: root.subtitle
             color: Theme.muted
-            font.family: "sans-serif"
-            font.pixelSize: 11
+            font.family: Style.fontFamily
+            font.pixelSize: Style.bodySmall
             elide: Text.ElideRight
         }
 
@@ -81,8 +81,8 @@ InteractiveSurface {
         width: implicitWidth
         text: root.trailingText
         color: root.selected ? Theme.accent : Theme.muted
-        font.family: "sans-serif"
-        font.pixelSize: 11
+        font.family: Style.fontFamily
+        font.pixelSize: Style.bodySmall
     }
 
 }

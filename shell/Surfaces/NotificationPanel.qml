@@ -41,8 +41,8 @@ Item {
 
     Column {
         anchors.fill: parent
-        anchors.margins: Theme.panelPadding
-        spacing: 12
+        anchors.margins: Style.panelPadding
+        spacing: Style.space(2)
 
         PanelHeader {
             width: parent.width
@@ -66,7 +66,8 @@ Item {
                 visible: parent.count === 0
                 text: "No Mako notifications"
                 color: Theme.muted
-                font.pixelSize: 12
+                font.family: Style.fontFamily
+                font.pixelSize: Style.body
             }
 
             delegate: SurfaceButton {

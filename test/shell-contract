@@ -13,10 +13,13 @@ fail() {
 for relative_path in \
   shell.qml \
   Core/Config.qml \
+  Core/IndicatorState.qml \
   Core/Motion.qml \
   Core/ShellBackend.qml \
+  Core/Style.qml \
   Core/SystemState.qml \
   Core/Theme.qml \
+  Core/WeatherState.qml \
   Primitives/FocusRing.qml \
   Primitives/GlassSurface.qml \
   Primitives/InteractiveSurface.qml \
@@ -33,8 +36,10 @@ for relative_path in \
   Osd/Osd.qml \
   Osd/OsdModel.js \
   Surfaces/SurfaceHost.qml \
+  Surfaces/WeatherPanel.qml \
   Surfaces/Launcher.qml \
   Surfaces/ControlCenter.qml \
+  Surfaces/CalendarPanel.qml \
   Surfaces/MediaCard.qml \
   Surfaces/NetworkPanel.qml \
   Surfaces/BluetoothPanel.qml \
@@ -47,7 +52,8 @@ for relative_path in \
   Surfaces/InstallerModel.js \
   Surfaces/NotificationPanel.qml \
   Surfaces/NotificationModel.js \
-  Surfaces/OptionalPanel.qml; do
+  Surfaces/OptionalPanel.qml \
+  Surfaces/ReminderPanel.qml; do
   [[ -f $shell/$relative_path && ! -L $shell/$relative_path ]] ||
     fail "missing static shell file: $relative_path"
 done
@@ -85,7 +91,7 @@ rg -q 'WlrLayershell\.keyboardFocus: WlrKeyboardFocus\.Exclusive' "$shell/Surfac
   fail 'keyboard-interactive surfaces do not own an explicit focus boundary'
 rg -q 'WlrLayershell\.keyboardFocus: WlrKeyboardFocus\.None' "$shell/Bar/Bar.qml" ||
   fail 'bar must remain outside keyboard focus authority'
-for surface in launcher control-center network bluetooth audio display-power clipboard emoji images app-installer notifications; do
+for surface in launcher control-center calendar weather reminders network bluetooth audio display-power clipboard emoji images app-installer notifications; do
   rg -Fq "\"$surface\"" "$shell/shell.qml" || fail "static surface is not routed: $surface"
 done
 

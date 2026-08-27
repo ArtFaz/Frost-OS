@@ -61,7 +61,8 @@ Item {
                         width: parent.width - outputMute.width
                         text: "Output · " + Math.round(SystemState.volume * 100) + "%"
                         color: Theme.foreground
-                        font.pixelSize: 12
+                        font.family: Style.fontFamily
+                        font.pixelSize: Style.body
                         font.bold: true
                     }
 
@@ -108,7 +109,8 @@ Item {
                         width: parent.width - inputMute.width
                         text: "Microphone · " + Math.round(SystemState.microphoneVolume * 100) + "%"
                         color: Theme.foreground
-                        font.pixelSize: 12
+                        font.family: Style.fontFamily
+                        font.pixelSize: Style.body
                         font.bold: true
                     }
 
@@ -140,7 +142,8 @@ Item {
         Text {
             text: "Outputs"
             color: Theme.muted
-            font.pixelSize: 11
+            font.family: Style.fontFamily
+            font.pixelSize: Style.bodySmall
             font.bold: true
         }
 
@@ -163,7 +166,8 @@ Item {
         Text {
             text: "Inputs"
             color: Theme.muted
-            font.pixelSize: 11
+            font.family: Style.fontFamily
+            font.pixelSize: Style.bodySmall
             font.bold: true
         }
 

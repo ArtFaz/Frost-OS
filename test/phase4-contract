@@ -40,6 +40,15 @@ if rg -n '(pacman|makepkg|yay|paru|pkexec|sudo)' "$shell/Surfaces/AppInstallerPa
 fi
 rg -Fq 'ShellBackend.query("notifications")' "$shell/Surfaces/NotificationPanel.qml" ||
   fail 'notification center does not consume the typed Mako view'
+rg -Fq 'ShellBackend.query("weather")' "$shell/Core/WeatherState.qml" ||
+  fail 'weather does not consume the typed Frost data boundary'
+if rg -n -i '(ipinfo|ip-api|geolocation|geoip)' "$shell" "$root/cli/src"; then
+  fail 'weather may not infer a city from an IP address'
+fi
+rg -Fq 'ShellBackend.query("indicators")' "$shell/Core/IndicatorState.qml" ||
+  fail 'bar indicators do not consume the typed Frost state boundary'
+rg -Fq 'ShellBackend.action("stay-awake-toggle")' "$shell/Bar/Bar.qml" ||
+  fail 'stay-awake indicator is not wired to its typed action'
 rg -Fq 'Config.surfaces.tailscale' "$shell/Surfaces/ControlCenter.qml" ||
   fail 'Tailscale surface does not fail closed behind its feature selection'
 rg -Fq 'Config.surfaces.agents' "$shell/Surfaces/ControlCenter.qml" ||

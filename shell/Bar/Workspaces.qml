@@ -35,14 +35,19 @@ Row {
             height: Theme.barHeight - 8
             selected: focused
             opacity: occupied || focused ? 1 : 0.58
-            onActivated: Hyprland.dispatch("workspace " + workspaceButton.modelData)
+            onActivated: {
+                if (workspaceButton.workspace && typeof workspaceButton.workspace.activate === "function")
+                    workspaceButton.workspace.activate();
+                else
+                    Hyprland.dispatch("hl.dsp.focus({ workspace = \"" + workspaceButton.modelData + "\" })");
+            }
 
             Text {
                 anchors.centerIn: parent
                 text: String(workspaceButton.modelData)
                 color: workspaceButton.focused ? Theme.accent : Theme.foreground
-                font.family: "sans-serif"
-                font.pixelSize: 13
+                font.family: Style.fontFamily
+                font.pixelSize: Style.body
                 font.bold: workspaceButton.focused
             }
 

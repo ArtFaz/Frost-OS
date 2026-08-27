@@ -4,10 +4,10 @@ set -euo pipefail
 
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 theme=$root/shell/Core/Theme.qml
+style=$root/shell/Core/Style.qml
 motion=$root/shell/Core/Motion.qml
 interactive=$root/shell/Primitives/InteractiveSurface.qml
 hyprland=$root/default/hypr/hyprland.lua
-theme_data=$root/themes/frost/theme.toml
 
 fail() {
   printf 'material contract: %s\n' "$1" >&2
@@ -20,8 +20,14 @@ for token in \
   'readonly property int controlRadius: 6' \
   'readonly property int barHoverRadius: 4' \
   'readonly property int focusWidth: 1'; do
-  rg -Fq "$token" "$theme" || fail "missing visual token: $token"
+  rg -Fq "$token" "$style" || fail "missing fixed visual token: $token"
 done
+
+rg -Fq 'readonly property int barHeight: 30' "$style" || fail 'bar height is not frozen at 30px'
+rg -Fq 'readonly property int menuWidth: 448' "$style" || fail 'menu width is not frozen at 448px'
+rg -Fq 'readonly property int clipboardWidth: 875' "$style" || fail 'clipboard geometry drifted'
+rg -Fq 'readonly property int emojiWidth: 400' "$style" || fail 'emoji geometry drifted'
+rg -Fq 'readonly property int imageWidth: 720' "$style" || fail 'image picker geometry drifted'
 
 rg -Fq 'readonly property color controlHover: alpha(foreground, 0.08)' "$theme" ||
   fail 'hover must use a neutral foreground fill'
@@ -40,8 +46,18 @@ done
 rg -q 'size = 5,' "$hyprland" || fail 'compositor blur size is not the approved value'
 [[ $(rg -c 'ignore_alpha = 0\.12,' "$hyprland") == 3 ]] ||
   fail 'Frost layer blur rules do not share the approved alpha threshold'
-rg -Fq 'blurSize = 5' "$theme_data" || fail 'theme blur size disagrees with the compositor'
-rg -Fq 'blurPasses = 2' "$theme_data" || fail 'theme blur passes disagree with the compositor'
-rg -Fq 'ignoreAlpha = 0.12' "$theme_data" || fail 'theme alpha threshold disagrees with the compositor'
+
+for role in bar panel menu notification osd tooltip lock; do
+  rg -Fq "\"$role\":" "$theme" || fail "missing fixed material alpha for $role"
+done
+
+for theme_data in "$root"/themes/*/theme.toml; do
+  if rg -n '(alpha|opacity|radius|spacing|blur|font|motion|geometry|size)' "$theme_data"; then
+    fail "theme controls fixed material or geometry: ${theme_data#$root/}"
+  fi
+  if rg -q '^#[0-9A-Fa-f]{6}' "$theme_data"; then
+    fail "theme contains an unassigned color: ${theme_data#$root/}"
+  fi
+done
 
 printf '%s\n' 'material contract: ok'

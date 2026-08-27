@@ -1,15 +1,13 @@
 schemaVersion = 1
-name = "Frost"
+name = "Frost Dark"
+mode = "dark"
 
 [colors]
 background = "#0f1724"
 foreground = "#eef6ff"
+muted = "#93a8c0"
 accent = "#8ed8ff"
-surface = "#1a2738"
 urgent = "#ff6b7a"
-
-[glass]
-opacity = 0.78
-blurSize = 5
-blurPasses = 2
-ignoreAlpha = 0.12
+highlight = "#f2c879"
+success = "#77d6a3"
+warning = "#f2c879"

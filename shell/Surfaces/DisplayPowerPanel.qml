@@ -27,11 +27,8 @@ Item {
 
     function requestPower(action) {
         if (action === "lock" || action === "suspend") {
-            ShellBackend.action(action);
-            closeRequested();
-        } else if (confirmAction === action) {
-            ShellBackend.action(action);
-            closeRequested();
+            if (ShellBackend.action(action))
+                closeRequested();
         } else {
             confirmAction = action;
         }
@@ -98,7 +95,8 @@ Item {
                     Text {
                         text: root.brightnessAvailable ? "Brightness · " + root.brightness + "%" : "Brightness unavailable"
                         color: Theme.foreground
-                        font.pixelSize: 12
+                        font.family: Style.fontFamily
+                        font.pixelSize: Style.body
                         font.bold: true
                     }
 
@@ -120,7 +118,8 @@ Item {
             Text {
                 text: "Displays"
                 color: Theme.muted
-                font.pixelSize: 11
+                font.family: Style.fontFamily
+                font.pixelSize: Style.bodySmall
                 font.bold: true
             }
 
@@ -142,7 +141,8 @@ Item {
             Text {
                 text: "Power profile · " + root.profileName()
                 color: Theme.muted
-                font.pixelSize: 11
+                font.family: Style.fontFamily
+                font.pixelSize: Style.bodySmall
                 font.bold: true
             }
 
@@ -180,7 +180,8 @@ Item {
             Text {
                 text: "Session"
                 color: Theme.muted
-                font.pixelSize: 11
+                font.family: Style.fontFamily
+                font.pixelSize: Style.bodySmall
                 font.bold: true
             }
 
@@ -211,8 +212,8 @@ Item {
                         required property var modelData
 
                         width: (content.width - 6) / 2
-                        title: root.confirmAction === modelData.action ? "Confirm " + modelData.label : modelData.label
-                        subtitle: root.confirmAction === modelData.action ? "Activate again to continue" : ""
+                        title: modelData.label
+                        subtitle: ""
                         selected: root.confirmAction === modelData.action
                         onActivated: root.requestPower(modelData.action)
                     }
@@ -223,6 +224,72 @@ Item {
 
         }
 
+    }
+
+    Rectangle {
+        anchors.fill: parent
+        visible: root.confirmAction !== ""
+        color: Theme.alpha(Theme.background, 0.54)
+        radius: Style.radius
+
+        Rectangle {
+            anchors.centerIn: parent
+            width: Math.min(340, parent.width - Style.space(6))
+            height: 180
+            radius: Style.radius
+            color: Theme.surfaceColor("menu")
+            border.color: Theme.border
+            border.width: Style.borderWidth
+
+            Column {
+                anchors.fill: parent
+                anchors.margins: Style.panelPadding
+                spacing: Style.space(2)
+
+                Text {
+                    width: parent.width
+                    text: root.confirmAction === "poweroff" ? "Power off?" : root.confirmAction === "reboot" ? "Restart?" : "Log out?"
+                    color: Theme.foreground
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.heading
+                    font.bold: true
+                }
+
+                Text {
+                    width: parent.width
+                    text: "Open applications may contain unsaved work."
+                    color: Theme.muted
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.body
+                    wrapMode: Text.WordWrap
+                }
+
+                Row {
+                    width: parent.width
+                    spacing: Style.space(2)
+
+                    SurfaceButton {
+                        width: (parent.width - parent.spacing) / 2
+                        compact: true
+                        title: "Cancel"
+                        onActivated: root.confirmAction = ""
+                    }
+
+                    SurfaceButton {
+                        width: (parent.width - parent.spacing) / 2
+                        compact: true
+                        title: "Confirm"
+                        selected: true
+                        onActivated: {
+                            const action = root.confirmAction;
+                            root.confirmAction = "";
+                            if (ShellBackend.action(action))
+                                root.closeRequested();
+                        }
+                    }
+                }
+            }
+        }
     }
 
 }

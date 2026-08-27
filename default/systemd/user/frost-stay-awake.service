@@ -1,0 +1,9 @@
+[Unit]
+Description=Frost user-requested idle and sleep inhibitor
+PartOf=frost-session.target
+After=frost-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/systemd-inhibit --what=idle:sleep --who=Frost --why=User-requested --mode=block /usr/bin/sleep infinity
+Restart=no

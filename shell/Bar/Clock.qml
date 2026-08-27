@@ -3,8 +3,10 @@ import Quickshell
 import qs.Core
 
 Item {
+    signal activated()
+
     implicitWidth: label.implicitWidth
-    implicitHeight: label.implicitHeight
+    implicitHeight: Theme.barHeight - 8
 
     SystemClock {
         id: clock
@@ -16,11 +18,15 @@ Item {
         id: label
 
         anchors.centerIn: parent
-        text: Qt.formatDateTime(clock.date, "ddd, d MMM  HH:mm")
+        text: Qt.formatDateTime(clock.date, "ddd d MMM HH:mm")
         color: Theme.foreground
-        font.family: "sans-serif"
-        font.pixelSize: 13
+        font.family: Style.fontFamily
+        font.pixelSize: Style.bodySmall
         font.bold: true
+    }
+
+    TapHandler {
+        onTapped: parent.activated()
     }
 
 }

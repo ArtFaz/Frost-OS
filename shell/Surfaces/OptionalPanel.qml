@@ -39,7 +39,8 @@ Item {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: "Feature unavailable"
                     color: Theme.foreground
-                    font.pixelSize: 15
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.title
                     font.bold: true
                 }
 
@@ -47,7 +48,8 @@ Item {
                     width: parent.width
                     text: "This optional surface is disabled until its package is explicitly selected in Gate 5."
                     color: Theme.muted
-                    font.pixelSize: 12
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.body
                     horizontalAlignment: Text.AlignHCenter
                     wrapMode: Text.WordWrap
                 }

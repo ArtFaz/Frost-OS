@@ -1,6 +1,9 @@
 module qs.Core
 singleton Config 1.0 Config.qml
+singleton IndicatorState 1.0 IndicatorState.qml
 singleton Motion 1.0 Motion.qml
 singleton ShellBackend 1.0 ShellBackend.qml
+singleton Style 1.0 Style.qml
 singleton SystemState 1.0 SystemState.qml
 singleton Theme 1.0 Theme.qml
+singleton WeatherState 1.0 WeatherState.qml

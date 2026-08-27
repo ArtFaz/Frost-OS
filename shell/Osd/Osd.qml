@@ -117,8 +117,8 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     text: root.label
                     color: Theme.accent
-                    font.family: "sans-serif"
-                    font.pixelSize: 13
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.body
                     font.bold: true
                 }
 
@@ -137,8 +137,8 @@ Item {
                         text: root.message || root.percent + "%"
                         color: Theme.foreground
                         horizontalAlignment: Text.AlignRight
-                        font.family: "sans-serif"
-                        font.pixelSize: 13
+                        font.family: Style.fontFamily
+                        font.pixelSize: Style.body
                         font.bold: true
                     }
 

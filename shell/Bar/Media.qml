@@ -27,9 +27,10 @@ InteractiveSurface {
 
         Text {
             anchors.verticalCenter: parent.verticalCenter
-            text: root.player && root.player.isPlaying ? "Ⅱ" : "▶"
+            text: root.player && root.player.isPlaying ? "󰏤" : "󰐊"
             color: Theme.accent
-            font.pixelSize: 11
+            font.family: Style.iconFontFamily
+            font.pixelSize: Style.bodySmall
             font.bold: true
         }
 
@@ -38,8 +39,8 @@ InteractiveSurface {
             width: Math.min(180, implicitWidth)
             text: root.player ? (root.player.trackTitle || root.player.identity || "Media") : ""
             color: Theme.foreground
-            font.family: "sans-serif"
-            font.pixelSize: 12
+            font.family: Style.fontFamily
+            font.pixelSize: Style.bodySmall
             elide: Text.ElideRight
         }
 

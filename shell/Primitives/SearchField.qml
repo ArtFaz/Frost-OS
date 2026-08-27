@@ -26,7 +26,8 @@ Rectangle {
         anchors.verticalCenter: parent.verticalCenter
         text: "⌕"
         color: Theme.muted
-        font.pixelSize: 16
+        font.family: Style.iconFontFamily
+        font.pixelSize: Style.icon
     }
 
     TextInput {
@@ -40,8 +41,8 @@ Rectangle {
         color: Theme.foreground
         selectionColor: Theme.selected
         selectedTextColor: Theme.foreground
-        font.family: "sans-serif"
-        font.pixelSize: 13
+        font.family: Style.fontFamily
+        font.pixelSize: Style.body
         clip: true
         onAccepted: root.accepted()
 

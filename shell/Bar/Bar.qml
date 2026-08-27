@@ -63,8 +63,89 @@ Item {
 
                 }
 
-                Clock {
+                Row {
                     anchors.centerIn: parent
+                    spacing: 2
+
+                    InteractiveSurface {
+                        width: 28
+                        height: Theme.barHeight - 8
+                        radius: Theme.barHoverRadius
+                        selected: IndicatorState.reminder
+                        onActivated: root.surfaceRequested("reminders")
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "󰢌"
+                            color: IndicatorState.reminder ? Theme.accent : Theme.foreground
+                            font.family: Style.iconFontFamily
+                            font.pixelSize: Style.icon
+                        }
+                    }
+
+                    InteractiveSurface {
+                        width: 28
+                        height: Theme.barHeight - 8
+                        radius: Theme.barHoverRadius
+                        selected: IndicatorState.stayAwake
+                        onActivated: ShellBackend.action("stay-awake-toggle")
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "󰅶"
+                            color: IndicatorState.stayAwake ? Theme.accent : Theme.foreground
+                            font.family: Style.iconFontFamily
+                            font.pixelSize: Style.icon
+                        }
+                    }
+
+                    Clock {
+                        anchors.verticalCenter: parent.verticalCenter
+                        onActivated: root.surfaceRequested("calendar")
+                    }
+
+                    InteractiveSurface {
+                        width: 28
+                        height: Theme.barHeight - 8
+                        radius: Theme.barHoverRadius
+                        onActivated: root.surfaceRequested("notifications")
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "󰂚"
+                            color: Theme.foreground
+                            font.family: Style.iconFontFamily
+                            font.pixelSize: Style.icon
+                        }
+                    }
+
+                    InteractiveSurface {
+                        visible: WeatherState.configured
+                        width: visible ? weatherRow.implicitWidth + 12 : 0
+                        height: Theme.barHeight - 8
+                        radius: Theme.barHoverRadius
+                        onActivated: root.surfaceRequested("weather")
+
+                        Row {
+                            id: weatherRow
+                            anchors.centerIn: parent
+                            spacing: 4
+
+                            Text {
+                                text: "󰖕"
+                                color: Theme.highlight
+                                font.family: Style.iconFontFamily
+                                font.pixelSize: Style.icon
+                            }
+
+                            Text {
+                                text: WeatherState.current && Number.isFinite(Number(WeatherState.current.temperature)) ? Math.round(Number(WeatherState.current.temperature)) + "°" : "--°"
+                                color: Theme.foreground
+                                font.family: Style.fontFamily
+                                font.pixelSize: Style.caption
+                            }
+                        }
+                    }
                 }
 
                 Row {

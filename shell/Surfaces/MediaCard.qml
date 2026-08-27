@@ -39,7 +39,8 @@ Rectangle {
             width: parent.width
             text: root.player ? (root.player.trackTitle || root.player.identity || "Media") : "Nothing playing"
             color: Theme.foreground
-            font.pixelSize: 13
+            font.family: Style.fontFamily
+            font.pixelSize: Style.body
             font.bold: true
             elide: Text.ElideRight
         }
@@ -49,7 +50,8 @@ Rectangle {
             visible: root.player !== null
             text: root.player ? (root.player.trackArtist || root.player.trackAlbum || root.player.identity) : ""
             color: Theme.muted
-            font.pixelSize: 11
+            font.family: Style.fontFamily
+            font.pixelSize: Style.bodySmall
             elide: Text.ElideRight
         }
 
@@ -65,9 +67,10 @@ Rectangle {
 
                 Text {
                     anchors.centerIn: parent
-                    text: "‹‹"
+                    text: "󰒮"
                     color: Theme.foreground
-                    font.pixelSize: 12
+                    font.family: Style.iconFontFamily
+                    font.pixelSize: Style.icon
                 }
 
             }
@@ -81,9 +84,10 @@ Rectangle {
 
                 Text {
                     anchors.centerIn: parent
-                    text: root.player && root.player.isPlaying ? "Pause" : "Play"
+                    text: root.player && root.player.isPlaying ? "󰏤" : "󰐊"
                     color: Theme.foreground
-                    font.pixelSize: 10
+                    font.family: Style.iconFontFamily
+                    font.pixelSize: Style.icon
                     font.bold: true
                 }
 
@@ -97,9 +101,10 @@ Rectangle {
 
                 Text {
                     anchors.centerIn: parent
-                    text: "››"
+                    text: "󰒭"
                     color: Theme.foreground
-                    font.pixelSize: 12
+                    font.family: Style.iconFontFamily
+                    font.pixelSize: Style.icon
                 }
 
             }

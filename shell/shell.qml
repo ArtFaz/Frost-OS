@@ -1,3 +1,4 @@
+//@ pragma UseQApplication
 import "Bar" as BarComponents
 import "Osd" as OsdComponents
 import QtQuick
@@ -27,7 +28,7 @@ ShellRoot {
         if (direct[surface] !== undefined)
             return direct[surface];
 
-        return ["audio", "bluetooth", "display-power", "network"].indexOf(surface) >= 0 && Config.surfaces.commandCenter;
+        return ["audio", "bluetooth", "calendar", "display-power", "network", "reminders", "weather"].indexOf(surface) >= 0 && Config.surfaces.commandCenter;
     }
 
     function openSurface(surface) {

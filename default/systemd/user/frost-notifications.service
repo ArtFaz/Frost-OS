@@ -1,11 +1,12 @@
 [Unit]
 Description=Frost notification authority
 PartOf=frost-session.target
-After=graphical-session.target
+Wants=frost-theme.service
+After=graphical-session.target frost-theme.service
 Conflicts=mako.service
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/mako --config /usr/share/frost/default/mako/config
+ExecStart=/usr/bin/frost session-notifications
 Restart=on-failure
 RestartSec=1

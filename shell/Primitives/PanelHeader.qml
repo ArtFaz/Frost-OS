@@ -28,7 +28,8 @@ Item {
             anchors.centerIn: parent
             text: "‹"
             color: Theme.foreground
-            font.pixelSize: 24
+            font.family: Style.iconFontFamily
+            font.pixelSize: Style.display
         }
 
     }
@@ -45,8 +46,8 @@ Item {
             width: parent.width
             text: root.title
             color: Theme.foreground
-            font.family: "sans-serif"
-            font.pixelSize: 18
+            font.family: Style.fontFamily
+            font.pixelSize: Style.heading
             font.bold: true
             elide: Text.ElideRight
         }
@@ -56,8 +57,8 @@ Item {
             visible: root.subtitle !== ""
             text: root.subtitle
             color: Theme.muted
-            font.family: "sans-serif"
-            font.pixelSize: 11
+            font.family: Style.fontFamily
+            font.pixelSize: Style.bodySmall
             elide: Text.ElideRight
         }
 
@@ -79,7 +80,8 @@ Item {
             anchors.centerIn: parent
             text: root.actionText
             color: Theme.accent
-            font.pixelSize: 12
+            font.family: Style.fontFamily
+            font.pixelSize: Style.bodySmall
             font.bold: true
         }
 

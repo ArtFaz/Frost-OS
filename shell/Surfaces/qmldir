@@ -1,4 +1,5 @@
 module qs.Surfaces
+CalendarPanel 1.0 CalendarPanel.qml
 AppInstallerPanel 1.0 AppInstallerPanel.qml
 AudioPanel 1.0 AudioPanel.qml
 BluetoothPanel 1.0 BluetoothPanel.qml
@@ -12,4 +13,6 @@ MediaCard 1.0 MediaCard.qml
 NetworkPanel 1.0 NetworkPanel.qml
 NotificationPanel 1.0 NotificationPanel.qml
 OptionalPanel 1.0 OptionalPanel.qml
+ReminderPanel 1.0 ReminderPanel.qml
 SurfaceHost 1.0 SurfaceHost.qml
+WeatherPanel 1.0 WeatherPanel.qml

@@ -22,7 +22,9 @@ required_files=(
   default/ghostty/config
   default/bash/bashrc
   default/systemd/user/frost-session.target
+  default/systemd/user/frost-theme.service
   default/systemd/user/frost-shell.service
+  default/systemd/user/frost-stay-awake.service
   default/systemd/user/frost-notifications.service
   default/systemd/user/frost-polkit.service
   default/systemd/user/frost-idle.service
@@ -45,6 +47,7 @@ done < <(find "$units" -maxdepth 1 -type f -print)
 
 target=$units/frost-session.target
 for wanted in \
+  frost-theme.service \
   frost-shell.service \
   frost-notifications.service \
   frost-polkit.service \
@@ -99,6 +102,17 @@ rg -q '^ExecStart=/usr/bin/quickshell --path /usr/share/frost/shell/shell\.qml$'
   "$units/frost-shell.service" || fail 'Frost shell service does not use the package-owned tree'
 rg -q '^Restart=on-failure$' "$units/frost-shell.service" ||
   fail 'Frost shell service is not restartable'
+rg -q '^ExecStart=/usr/bin/frost theme sync$' "$units/frost-theme.service" ||
+  fail 'Frost theme materialization is not typed'
+rg -q '^ExecStart=/usr/bin/frost session-notifications$' "$units/frost-notifications.service" ||
+  fail 'Mako does not consume the effective Frost theme'
+rg -q '^ExecStart=/usr/bin/frost session-lock$' "$units/frost-lock.service" ||
+  fail 'Hyprlock does not consume the effective Frost theme'
+rg -q '^ExecStart=/usr/bin/systemd-inhibit --what=idle:sleep --who=Frost --why=User-requested --mode=block /usr/bin/sleep infinity$' \
+  "$units/frost-stay-awake.service" || fail 'stay-awake does not use the fixed systemd inhibitor'
+if rg -q 'frost-stay-awake\.service' "$target"; then
+  fail 'stay-awake must be explicitly requested, never started by the session target'
+fi
 
 lock_config=$root/default/hypr/hyprlock.conf
 rg -q '^\s*module = hyprlock$' "$lock_config" || fail 'Hyprlock PAM module is not explicit'

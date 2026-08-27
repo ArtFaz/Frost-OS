@@ -1,0 +1,13 @@
+schemaVersion = 1
+name = "Frost Light"
+mode = "light"
+
+[colors]
+background = "#f4f0e8"
+foreground = "#24211e"
+muted = "#716b64"
+accent = "#326d83"
+urgent = "#b42318"
+highlight = "#8a5a16"
+success = "#2f6f44"
+warning = "#8a5a16"

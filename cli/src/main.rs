@@ -1,9 +1,13 @@
 use std::env;
 use std::fs;
 use std::io::Write;
-use std::os::unix::fs::MetadataExt;
+use std::os::unix::fs::{MetadataExt, PermissionsExt};
+use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode, Stdio};
+use std::time::{Duration, SystemTime};
+
+mod theme;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const SHARE_DIR: &str = "/usr/share/frost";
@@ -11,7 +15,7 @@ const ADMIN_CONFIG_DIR: &str = "/etc/frost";
 const HYPRLAND_CONFIG: &str = "/usr/share/frost/default/hypr/hyprland.lua";
 
 #[derive(Debug)]
-enum CliError {
+pub(crate) enum CliError {
     Operational(String),
     Usage(String),
 }
@@ -62,6 +66,8 @@ struct RuntimeStatus {
     polkit: ServiceState,
     idle: ServiceState,
     lock: ServiceState,
+    theme_name: String,
+    theme_mode: String,
 }
 
 #[derive(Debug)]
@@ -100,6 +106,10 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
         "status" => status_command(rest)?,
         "doctor" => doctor_command(rest, false)?,
         "verify" => doctor_command(rest, true)?,
+        "theme" => theme::theme_command(rest)?,
+        "weather" => weather_command(rest)?,
+        "session-lock" => session_program(rest, "hyprlock")?,
+        "session-notifications" => session_program(rest, "mako")?,
         "shell-data" => shell_data_command(rest)?,
         "shell-action" => shell_action_command(rest)?,
         other => return Err(CliError::Usage(format!("unknown command: {other}"))),
@@ -107,12 +117,39 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
     Ok(())
 }
 
+fn session_program(args: &[String], program: &str) -> Result<(), CliError> {
+    require_no_args(args, &format!("frost session-{program}"))?;
+    let runtime_config = env::var_os("XDG_RUNTIME_DIR")
+        .map(PathBuf::from)
+        .map(|root| root.join(format!("frost/theme/{program}.conf")));
+    let fallback = PathBuf::from(format!("/usr/share/frost/default/{program}/config"));
+    let fallback = if program == "hyprlock" {
+        PathBuf::from("/usr/share/frost/default/hypr/hyprlock.conf")
+    } else {
+        fallback
+    };
+    let config = runtime_config
+        .filter(|path| {
+            fs::symlink_metadata(path).is_ok_and(|metadata| {
+                metadata.file_type().is_file()
+                    && metadata.mode() & 0o111 == 0
+                    && metadata.len() <= 256 * 1024
+            })
+        })
+        .unwrap_or(fallback);
+    let executable = format!("/usr/bin/{program}");
+    let error = Command::new(&executable).arg("--config").arg(config).exec();
+    Err(CliError::Operational(format!(
+        "could not start {program}: {error}"
+    )))
+}
+
 fn print_help() {
     println!(
         "Frost control and diagnostics\n\n\
 Usage:\n  frost status [--json]\n  frost doctor [--json]\n  \
-frost verify [--json]\n  frost version\n\nInternal typed shell interface:\n  \
-frost shell-data <brightness|clipboard|images|notifications>\n  \
+frost verify [--json]\n  frost theme <list|current|validate|set|sync>\n  frost weather <current|set CITY|clear>\n  frost version\n\nInternal typed shell interface:\n  \
+frost shell-data <brightness|clipboard|images|indicators|notifications|weather>\n  \
 frost shell-action ACTION [VALUE]"
     );
 }
@@ -167,6 +204,7 @@ fn service_state(unit: &str) -> ServiceState {
 
 fn collect_status() -> RuntimeStatus {
     let frost_session = frost_session_environment();
+    let active_theme = theme::current_theme();
     RuntimeStatus {
         frost_session,
         hyprland_config: frost_session
@@ -181,6 +219,12 @@ fn collect_status() -> RuntimeStatus {
         polkit: service_state("frost-polkit.service"),
         idle: service_state("frost-idle.service"),
         lock: service_state("frost-lock.service"),
+        theme_name: active_theme
+            .as_ref()
+            .map_or_else(|| "unavailable".to_owned(), |value| value.name.clone()),
+        theme_mode: active_theme
+            .as_ref()
+            .map_or_else(|| "unknown".to_owned(), |value| value.mode.clone()),
     }
 }
 
@@ -224,6 +268,7 @@ fn status_command(args: &[String]) -> Result<(), CliError> {
         println!("polkit: {}", status.polkit.as_str());
         println!("idle: {}", status.idle.as_str());
         println!("lock: {}", status.lock.as_str());
+        println!("theme: {} ({})", status.theme_name, status.theme_mode);
         println!("share: {}", present(status.share_dir));
         println!("admin config: {}", present(status.admin_config_dir));
         println!("user config: {}", present(status.user_config_dir));
@@ -234,7 +279,7 @@ fn status_command(args: &[String]) -> Result<(), CliError> {
 
 fn status_json(status: &RuntimeStatus) -> String {
     format!(
-        "{{\"schemaVersion\":1,\"version\":\"{}\",\"frostSession\":{},\"hyprlandConfig\":{},\"paths\":{{\"share\":{},\"adminConfig\":{},\"userConfig\":{},\"userState\":{}}},\"services\":{{\"sessionTarget\":\"{}\",\"shell\":\"{}\",\"notifications\":\"{}\",\"polkit\":\"{}\",\"idle\":\"{}\",\"lock\":\"{}\"}}}}",
+        "{{\"schemaVersion\":1,\"version\":\"{}\",\"frostSession\":{},\"hyprlandConfig\":{},\"theme\":{{\"name\":\"{}\",\"mode\":\"{}\"}},\"paths\":{{\"share\":{},\"adminConfig\":{},\"userConfig\":{},\"userState\":{}}},\"services\":{{\"sessionTarget\":\"{}\",\"shell\":\"{}\",\"notifications\":\"{}\",\"polkit\":\"{}\",\"idle\":\"{}\",\"lock\":\"{}\"}}}}",
         json_escape(VERSION),
         status.frost_session,
         status
@@ -242,6 +287,8 @@ fn status_json(status: &RuntimeStatus) -> String {
             .as_ref()
             .map(|path| format!("\"{}\"", json_escape(path)))
             .unwrap_or_else(|| "null".to_owned()),
+        json_escape(&status.theme_name),
+        json_escape(&status.theme_mode),
         status.share_dir,
         status.admin_config_dir,
         status.user_config_dir,
@@ -271,9 +318,13 @@ fn collect_checks(strict: bool) -> Vec<Check> {
         "quickshell",
         "wpctl",
         "brightnessctl",
+        "curl",
+        "jq",
+        "notify-send",
         "wl-paste",
         "cliphist",
         "systemctl",
+        "systemd-inhibit",
     ] {
         checks.push(Check {
             name: format!("command:{command}"),
@@ -414,14 +465,17 @@ fn json_escape(value: &str) -> String {
 fn shell_data_command(args: &[String]) -> Result<(), CliError> {
     let [kind] = args else {
         return Err(CliError::Usage(
-            "usage: frost shell-data <brightness|clipboard|images|notifications>".to_owned(),
+            "usage: frost shell-data <brightness|clipboard|images|indicators|notifications|weather>"
+                .to_owned(),
         ));
     };
     let json = match kind.as_str() {
         "brightness" => brightness_json()?,
         "clipboard" => clipboard_json()?,
         "images" => images_json()?,
+        "indicators" => indicators_json(),
         "notifications" => notifications_json()?,
+        "weather" => weather_json()?,
         _ => {
             return Err(CliError::Usage(format!(
                 "unsupported shell data source: {kind}"
@@ -583,6 +637,341 @@ fn notifications_json() -> Result<String, CliError> {
     ))
 }
 
+fn user_unit_active(unit: &str) -> bool {
+    Command::new("/usr/bin/systemctl")
+        .args(["--user", "is-active", "--quiet", unit])
+        .status()
+        .is_ok_and(|status| status.success())
+}
+
+fn indicators_json() -> String {
+    format!(
+        "{{\"schemaVersion\":1,\"reminder\":{},\"stayAwake\":{}}}",
+        user_unit_active("frost-reminder.timer"),
+        user_unit_active("frost-stay-awake.service")
+    )
+}
+
+fn reminder_set(value: &str) -> Result<(), CliError> {
+    let minutes = value
+        .parse::<u16>()
+        .ok()
+        .filter(|minutes| (1..=1440).contains(minutes))
+        .ok_or_else(|| CliError::Usage("reminder must be between 1 and 1440 minutes".to_owned()))?;
+    if user_unit_active("frost-reminder.timer") {
+        run_fixed(
+            "/usr/bin/systemctl",
+            &["--user", "stop", "frost-reminder.timer"],
+        )?;
+    }
+    let delay = format!("{minutes}m");
+    run_fixed(
+        "/usr/bin/systemd-run",
+        &[
+            "--user",
+            "--quiet",
+            "--unit=frost-reminder",
+            "--on-active",
+            &delay,
+            "--timer-property=AccuracySec=1s",
+            "/usr/bin/notify-send",
+            "--app-name=Frost",
+            "--icon=alarm-symbolic",
+            "Frost reminder",
+            "Your reminder is due.",
+        ],
+    )
+}
+
+fn stay_awake_toggle() -> Result<(), CliError> {
+    run_fixed(
+        "/usr/bin/systemctl",
+        &[
+            "--user",
+            if user_unit_active("frost-stay-awake.service") {
+                "stop"
+            } else {
+                "start"
+            },
+            "frost-stay-awake.service",
+        ],
+    )
+}
+
+fn valid_weather_city(value: &str) -> bool {
+    let trimmed = value.trim();
+    (2..=80).contains(&trimmed.chars().count())
+        && trimmed.chars().all(|character| {
+            character.is_alphanumeric()
+                || character.is_whitespace()
+                || [',', '.', '-', '\'', '(', ')'].contains(&character)
+        })
+        && !trimmed.chars().any(char::is_control)
+}
+
+fn weather_config_path() -> Option<PathBuf> {
+    config_home().map(|root| root.join("frost/weather.json"))
+}
+
+fn selected_weather_city() -> Result<Option<String>, CliError> {
+    let Some(path) = weather_config_path() else {
+        return Ok(None);
+    };
+    if fs::symlink_metadata(&path).is_ok_and(|metadata| {
+        !metadata.file_type().is_file() || metadata.mode() & 0o111 != 0 || metadata.len() > 4096
+    }) {
+        return Err(CliError::Usage(
+            "weather configuration is not a safe regular data file".to_owned(),
+        ));
+    }
+    let Ok(raw) = fs::read_to_string(path) else {
+        return Ok(None);
+    };
+    let raw = raw.trim();
+    let prefix = "{\"schemaVersion\":1,\"city\":\"";
+    let suffix = "\"}";
+    if !raw.starts_with(prefix) || !raw.ends_with(suffix) {
+        return Err(CliError::Usage(
+            "invalid Frost weather configuration".to_owned(),
+        ));
+    }
+    let city = &raw[prefix.len()..raw.len() - suffix.len()];
+    if !valid_weather_city(city) {
+        return Err(CliError::Usage(
+            "invalid configured weather city".to_owned(),
+        ));
+    }
+    Ok(Some(city.to_owned()))
+}
+
+fn weather_cache_path() -> Option<PathBuf> {
+    env::var_os("XDG_CACHE_HOME")
+        .map(PathBuf::from)
+        .or_else(|| home_dir().map(|home| home.join(".cache")))
+        .map(|root| root.join("frost/weather.json"))
+}
+
+fn atomic_user_write(path: &Path, contents: &[u8]) -> Result<(), CliError> {
+    let parent = path
+        .parent()
+        .ok_or_else(|| CliError::Operational("state path has no parent".to_owned()))?;
+    fs::create_dir_all(parent)
+        .map_err(|error| CliError::Operational(format!("could not create state path: {error}")))?;
+    fs::set_permissions(parent, fs::Permissions::from_mode(0o700))
+        .map_err(|error| CliError::Operational(format!("could not secure state path: {error}")))?;
+    let temporary = path.with_extension("tmp");
+    fs::write(&temporary, contents)
+        .map_err(|error| CliError::Operational(format!("could not write state: {error}")))?;
+    fs::set_permissions(&temporary, fs::Permissions::from_mode(0o600))
+        .map_err(|error| CliError::Operational(format!("could not secure state: {error}")))?;
+    fs::rename(&temporary, path)
+        .map_err(|error| CliError::Operational(format!("could not publish state: {error}")))
+}
+
+fn percent_encode(value: &str) -> String {
+    let mut encoded = String::new();
+    for byte in value.as_bytes() {
+        if byte.is_ascii_alphanumeric() || [b'-', b'_', b'.', b'~'].contains(byte) {
+            encoded.push(char::from(*byte));
+        } else {
+            encoded.push_str(&format!("%{byte:02X}"));
+        }
+    }
+    encoded
+}
+
+fn capture_with_input(program: &str, args: &[&str], input: &[u8]) -> Result<Vec<u8>, CliError> {
+    let mut child = Command::new(program)
+        .args(args)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .spawn()
+        .map_err(|error| CliError::Operational(format!("could not run {program}: {error}")))?;
+    child
+        .stdin
+        .take()
+        .ok_or_else(|| CliError::Operational("could not open process input".to_owned()))?
+        .write_all(input)
+        .map_err(|error| {
+            CliError::Operational(format!("could not write process input: {error}"))
+        })?;
+    let output = child
+        .wait_with_output()
+        .map_err(|error| CliError::Operational(format!("could not wait for {program}: {error}")))?;
+    if !output.status.success() || output.stdout.len() > 256 * 1024 {
+        return Err(CliError::Operational(format!(
+            "{program} returned invalid output"
+        )));
+    }
+    Ok(output.stdout)
+}
+
+fn weather_fetch(city: &str) -> Result<String, CliError> {
+    let geocoding_url = format!(
+        "https://geocoding-api.open-meteo.com/v1/search?name={}&count=1&language=en&format=json",
+        percent_encode(city)
+    );
+    let geocoding = capture(
+        "/usr/bin/curl",
+        &[
+            "--fail",
+            "--silent",
+            "--show-error",
+            "--location",
+            "--proto",
+            "=https",
+            "--proto-redir",
+            "=https",
+            "--max-time",
+            "6",
+            "--max-filesize",
+            "131072",
+            &geocoding_url,
+        ],
+    )?;
+    let coordinates = capture_with_input(
+        "/usr/bin/jq",
+        &["-r", ".results[0] | \"\\(.latitude) \\(.longitude)\""],
+        &geocoding,
+    )?;
+    let coordinates = String::from_utf8_lossy(&coordinates);
+    let mut coordinates = coordinates.split_whitespace();
+    let latitude = coordinates
+        .next()
+        .and_then(|value| value.parse::<f64>().ok())
+        .filter(|value| (-90.0..=90.0).contains(value))
+        .ok_or_else(|| CliError::Operational("weather city was not found".to_owned()))?;
+    let longitude = coordinates
+        .next()
+        .and_then(|value| value.parse::<f64>().ok())
+        .filter(|value| (-180.0..=180.0).contains(value))
+        .ok_or_else(|| CliError::Operational("weather city was not found".to_owned()))?;
+    if coordinates.next().is_some() {
+        return Err(CliError::Operational(
+            "invalid weather coordinate response".to_owned(),
+        ));
+    }
+    let forecast_url = format!(
+        "https://api.open-meteo.com/v1/forecast?latitude={latitude}&longitude={longitude}&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=5&timezone=auto"
+    );
+    let forecast = capture(
+        "/usr/bin/curl",
+        &[
+            "--fail",
+            "--silent",
+            "--show-error",
+            "--location",
+            "--proto",
+            "=https",
+            "--proto-redir",
+            "=https",
+            "--max-time",
+            "6",
+            "--max-filesize",
+            "131072",
+            &forecast_url,
+        ],
+    )?;
+    let filter = r#"{schemaVersion:1,configured:true,city:$city,current:{temperature:(.current.temperature_2m // null),apparent:(.current.apparent_temperature // null),humidity:(.current.relative_humidity_2m // null),code:(.current.weather_code // null),isDay:(.current.is_day // null)},daily:[range(0;([((.daily.time // [])|length),5]|min)) as $i|{date:.daily.time[$i],code:.daily.weather_code[$i],minimum:.daily.temperature_2m_min[$i],maximum:.daily.temperature_2m_max[$i],precipitation:.daily.precipitation_probability_max[$i]}]}"#;
+    let normalized = capture_with_input(
+        "/usr/bin/jq",
+        &["-c", "--arg", "city", city, filter],
+        &forecast,
+    )?;
+    let normalized = String::from_utf8(normalized)
+        .map_err(|_| CliError::Operational("weather output is not UTF-8".to_owned()))?;
+    let normalized = normalized.trim();
+    if normalized.len() > 64 * 1024 || !normalized.starts_with('{') || !normalized.ends_with('}') {
+        return Err(CliError::Operational(
+            "weather output is not bounded JSON".to_owned(),
+        ));
+    }
+    Ok(normalized.to_owned())
+}
+
+fn weather_json() -> Result<String, CliError> {
+    let Some(city) = selected_weather_city()? else {
+        return Ok("{\"schemaVersion\":1,\"configured\":false}".to_owned());
+    };
+    if let Some(cache) = weather_cache_path() {
+        if let Ok(metadata) = fs::symlink_metadata(&cache) {
+            let fresh = metadata.file_type().is_file()
+                && metadata.mode() & 0o111 == 0
+                && metadata.len() <= 64 * 1024
+                && metadata.modified().is_ok_and(|modified| {
+                    SystemTime::now()
+                        .duration_since(modified)
+                        .unwrap_or(Duration::MAX)
+                        < Duration::from_secs(15 * 60)
+                });
+            if fresh {
+                if let Ok(value) = fs::read_to_string(&cache) {
+                    let value = value.trim();
+                    let expected_city = format!("\"city\":\"{}\"", city);
+                    if value.starts_with('{')
+                        && value.ends_with('}')
+                        && value.contains(&expected_city)
+                    {
+                        return Ok(value.to_owned());
+                    }
+                }
+            }
+        }
+        let value = weather_fetch(&city)?;
+        atomic_user_write(&cache, value.as_bytes())?;
+        return Ok(value);
+    }
+    weather_fetch(&city)
+}
+
+fn weather_command(args: &[String]) -> Result<(), CliError> {
+    match args {
+        [command] if command == "current" => {
+            println!(
+                "{}",
+                selected_weather_city()?.as_deref().unwrap_or("disabled")
+            );
+            Ok(())
+        }
+        [command, city] if command == "set" && valid_weather_city(city) => {
+            let path = weather_config_path().ok_or_else(|| {
+                CliError::Operational("weather config home is unavailable".to_owned())
+            })?;
+            atomic_user_write(
+                &path,
+                format!("{{\"schemaVersion\":1,\"city\":\"{}\"}}\n", city.trim()).as_bytes(),
+            )?;
+            if let Some(cache) = weather_cache_path() {
+                let _ = fs::remove_file(cache);
+            }
+            println!("weather city: {}", city.trim());
+            Ok(())
+        }
+        [command] if command == "clear" => {
+            if let Some(path) = weather_config_path() {
+                match fs::remove_file(path) {
+                    Ok(()) => {}
+                    Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+                    Err(error) => {
+                        return Err(CliError::Operational(format!(
+                            "could not clear weather city: {error}"
+                        )));
+                    }
+                }
+            }
+            if let Some(cache) = weather_cache_path() {
+                let _ = fs::remove_file(cache);
+            }
+            println!("weather city: disabled");
+            Ok(())
+        }
+        _ => Err(CliError::Usage(
+            "usage: frost weather <current|set CITY|clear>".to_owned(),
+        )),
+    }
+}
+
 fn shell_action_command(args: &[String]) -> Result<(), CliError> {
     let Some(action) = args.first().map(String::as_str) else {
         return Err(CliError::Usage(
@@ -610,6 +999,13 @@ fn shell_action_command(args: &[String]) -> Result<(), CliError> {
         ("notification-invoke", Some(id)) if valid_numeric(id, u32::MAX) => {
             run_fixed("/usr/bin/makoctl", &["invoke", "-n", id])
         }
+        ("theme-set", Some(name)) => theme::activate_theme(name),
+        ("reminder-set", Some(value)) => reminder_set(value),
+        ("reminder-clear", None) => run_fixed(
+            "/usr/bin/systemctl",
+            &["--user", "stop", "frost-reminder.timer"],
+        ),
+        ("stay-awake-toggle", None) => stay_awake_toggle(),
         ("poweroff", None) => run_fixed("/usr/bin/systemctl", &["poweroff"]),
         ("reboot", None) => run_fixed("/usr/bin/systemctl", &["reboot"]),
         ("suspend", None) => run_fixed("/usr/bin/systemctl", &["suspend"]),
@@ -747,6 +1143,8 @@ mod tests {
             polkit: ServiceState::Unavailable,
             idle: ServiceState::Active,
             lock: ServiceState::Inactive,
+            theme_name: "Gruvbox".to_owned(),
+            theme_mode: "dark".to_owned(),
         };
         let json = status_json(&status);
         assert!(json.starts_with("{\"schemaVersion\":1,"));
@@ -785,6 +1183,23 @@ mod tests {
         assert_eq!(
             json_value_or_empty(b"[{\"id\":1}]".to_vec()),
             "[{\"id\":1}]"
+        );
+    }
+
+    #[test]
+    fn validates_weather_city_as_data() {
+        assert!(valid_weather_city("São Paulo, Brazil"));
+        assert!(valid_weather_city("St. John's"));
+        assert!(!valid_weather_city("x"));
+        assert!(!valid_weather_city("City\n--config"));
+        assert!(!valid_weather_city("City\" --data"));
+    }
+
+    #[test]
+    fn percent_encodes_weather_queries() {
+        assert_eq!(
+            percent_encode("São Paulo, Brazil"),
+            "S%C3%A3o%20Paulo%2C%20Brazil"
         );
     }
 }

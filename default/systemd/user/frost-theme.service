@@ -1,0 +1,9 @@
+[Unit]
+Description=Frost semantic theme materializer
+PartOf=frost-session.target
+Before=frost-shell.service frost-notifications.service frost-lock.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/frost theme sync
+RemainAfterExit=yes

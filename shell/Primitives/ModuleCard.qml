@@ -26,7 +26,8 @@ InteractiveSurface {
         anchors.verticalCenter: parent.verticalCenter
         text: root.iconText
         color: root.available ? Theme.foreground : Theme.muted
-        font.pixelSize: 20
+        font.family: Style.iconFontFamily
+        font.pixelSize: Style.iconLarge
     }
 
     Column {
@@ -41,7 +42,8 @@ InteractiveSurface {
             width: parent.width
             text: root.title
             color: Theme.foreground
-            font.pixelSize: 13
+            font.family: Style.fontFamily
+            font.pixelSize: Style.body
             font.bold: true
             elide: Text.ElideRight
         }
@@ -50,7 +52,8 @@ InteractiveSurface {
             width: parent.width
             text: root.status
             color: Theme.muted
-            font.pixelSize: 11
+            font.family: Style.fontFamily
+            font.pixelSize: Style.bodySmall
             elide: Text.ElideRight
         }
 

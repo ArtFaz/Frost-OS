@@ -11,152 +11,155 @@ Item {
 
     Flickable {
         anchors.fill: parent
-        contentHeight: content.implicitHeight + Theme.panelPadding * 2
+        contentHeight: content.implicitHeight + Style.panelPadding * 2
         clip: true
 
         Column {
             id: content
 
-            x: Theme.panelPadding
-            y: Theme.panelPadding
-            width: parent.width - Theme.panelPadding * 2
-            spacing: 12
+            x: Style.panelPadding
+            y: Style.panelPadding
+            width: parent.width - Style.panelPadding * 2
+            spacing: Style.space(2)
 
-            PanelHeader {
+            Item {
                 width: parent.width
-                title: "Control Center"
-                subtitle: "Frost system controls"
-                actionText: "Close"
-                onAction: root.closeRequested()
+                height: Style.compactHeaderHeight
+
+                Text {
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "Control Center"
+                    color: Theme.foreground
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.title
+                    font.bold: true
+                }
+
+                Text {
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "SYSTEM"
+                    color: Theme.muted
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.caption
+                    font.bold: true
+                }
             }
 
-            Grid {
+            Rectangle {
                 width: parent.width
-                columns: 2
-                spacing: 8
+                height: connectivity.implicitHeight + 8
+                radius: Style.controlRadius
+                color: Theme.controlNormal
 
-                ModuleCard {
-                    width: (content.width - 8) / 2
-                    iconText: "Wi-Fi"
-                    title: "Network"
-                    status: SystemState.networkAvailable ? SystemState.networkName : "Unavailable"
-                    available: SystemState.networkAvailable
-                    toggleVisible: SystemState.networkAvailable
-                    toggleChecked: Networking.wifiEnabled
-                    onToggleRequested: SystemState.toggleWifi()
-                    onActivated: root.surfaceRequested("network")
+                Column {
+                    id: connectivity
+
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.margins: 4
+
+                    ModuleCard {
+                        width: parent.width
+                        implicitHeight: Style.rowHeight
+                        iconText: SystemState.connectedWifi ? "󰤨" : "󰤭"
+                        title: "Network"
+                        status: SystemState.networkAvailable ? SystemState.networkName : "Unavailable"
+                        available: SystemState.networkAvailable
+                        toggleVisible: SystemState.networkAvailable
+                        toggleChecked: Networking.wifiEnabled
+                        color: hovered ? Theme.controlHover : "transparent"
+                        onToggleRequested: SystemState.toggleWifi()
+                        onActivated: root.surfaceRequested("network")
+                    }
+
+                    ModuleCard {
+                        width: parent.width
+                        implicitHeight: Style.rowHeight
+                        iconText: SystemState.bluetoothAdapter && SystemState.bluetoothAdapter.enabled ? "󰂯" : "󰂲"
+                        title: "Bluetooth"
+                        status: !SystemState.bluetoothAvailable ? "Unavailable" : SystemState.bluetoothConnectedCount > 0 ? SystemState.bluetoothConnectedCount + " connected" : SystemState.bluetoothAdapter.enabled ? "On" : "Off"
+                        available: SystemState.bluetoothAvailable
+                        toggleVisible: SystemState.bluetoothAvailable
+                        toggleChecked: SystemState.bluetoothAdapter ? SystemState.bluetoothAdapter.enabled : false
+                        color: hovered ? Theme.controlHover : "transparent"
+                        onToggleRequested: SystemState.toggleBluetooth()
+                        onActivated: root.surfaceRequested("bluetooth")
+                    }
+
+                    ModuleCard {
+                        visible: Config.surfaces.tailscale
+                        width: parent.width
+                        implicitHeight: visible ? Style.rowHeight : 0
+                        iconText: "󰲛"
+                        title: "Tailscale"
+                        status: "Optional feature"
+                        color: hovered ? Theme.controlHover : "transparent"
+                        onActivated: root.surfaceRequested("tailscale")
+                    }
                 }
+            }
 
-                ModuleCard {
-                    width: (content.width - 8) / 2
-                    iconText: "BT"
-                    title: "Bluetooth"
-                    status: !SystemState.bluetoothAvailable ? "Unavailable" : SystemState.bluetoothConnectedCount > 0 ? SystemState.bluetoothConnectedCount + " connected" : SystemState.bluetoothAdapter.enabled ? "On" : "Off"
-                    available: SystemState.bluetoothAvailable
-                    toggleVisible: SystemState.bluetoothAvailable
-                    toggleChecked: SystemState.bluetoothAdapter ? SystemState.bluetoothAdapter.enabled : false
-                    onToggleRequested: SystemState.toggleBluetooth()
-                    onActivated: root.surfaceRequested("bluetooth")
-                }
+            ModuleCard {
+                width: parent.width
+                implicitHeight: Style.detailRowHeight
+                iconText: SystemState.muted ? "󰝟" : "󰕾"
+                title: "Audio"
+                status: SystemState.audioAvailable ? (SystemState.muted ? "Muted" : Math.round(SystemState.volume * 100) + "%") : "Unavailable"
+                available: SystemState.audioAvailable
+                progress: SystemState.audioAvailable ? Math.min(1, SystemState.volume) : -1
+                onActivated: root.surfaceRequested("audio")
+            }
 
-                ModuleCard {
-                    width: (content.width - 8) / 2
-                    iconText: "Audio"
-                    title: "Sound"
-                    status: SystemState.audioAvailable ? (SystemState.muted ? "Muted" : Math.round(SystemState.volume * 100) + "%") : "Unavailable"
-                    available: SystemState.audioAvailable
-                    progress: SystemState.audioAvailable ? Math.min(1, SystemState.volume) : -1
-                    onActivated: root.surfaceRequested("audio")
-                }
-
-                ModuleCard {
-                    width: (content.width - 8) / 2
-                    iconText: "Power"
-                    title: "Display & power"
-                    status: SystemState.batteryAvailable ? SystemState.batteryPercent + "% battery" : "Displays and session"
-                    progress: SystemState.batteryAvailable ? SystemState.batteryPercent / 100 : -1
-                    onActivated: root.surfaceRequested("display-power")
-                }
-
+            ModuleCard {
+                width: parent.width
+                implicitHeight: Style.detailRowHeight
+                iconText: "󰍹"
+                title: "Display"
+                status: SystemState.batteryAvailable ? SystemState.batteryPercent + "% battery" : "Brightness and monitors"
+                progress: SystemState.batteryAvailable ? SystemState.batteryPercent / 100 : -1
+                onActivated: root.surfaceRequested("display-power")
             }
 
             MediaCard {
                 width: parent.width
             }
 
-            Text {
-                text: "Tools"
-                color: Theme.muted
-                font.pixelSize: 11
-                font.bold: true
-            }
-
-            Grid {
+            Row {
                 width: parent.width
-                columns: 2
-                spacing: 6
+                spacing: Style.space(2)
 
-                Repeater {
-                    model: [{
-                        "label": "Clipboard",
-                        "detail": "Text history",
-                        "surface": "clipboard",
-                        "enabled": Config.surfaces.clipboard
-                    }, {
-                        "label": "Emoji",
-                        "detail": "Search and copy",
-                        "surface": "emoji",
-                        "enabled": Config.surfaces.emojiPicker
-                    }, {
-                        "label": "Images",
-                        "detail": "Recent pictures",
-                        "surface": "images",
-                        "enabled": Config.surfaces.imagePicker
-                    }, {
-                        "label": "Applications",
-                        "detail": "Build an install plan",
-                        "surface": "app-installer",
-                        "enabled": Config.surfaces.appInstaller
-                    }, {
-                        "label": "Notifications",
-                        "detail": "Mako history",
-                        "surface": "notifications",
-                        "enabled": Config.surfaces.notificationCenter
-                    }]
-
-                    SurfaceButton {
-                        required property var modelData
-
-                        visible: modelData.enabled
-                        width: visible ? (content.width - 6) / 2 : 0
-                        title: modelData.label
-                        subtitle: modelData.detail
-                        trailingText: "›"
-                        onActivated: root.surfaceRequested(modelData.surface)
-                    }
-
+                ModuleCard {
+                    width: (parent.width - parent.spacing) / 2
+                    implicitHeight: Style.detailRowHeight
+                    iconText: "󰐥"
+                    title: "Power"
+                    status: "Session"
+                    onActivated: root.surfaceRequested("display-power")
                 }
 
-                SurfaceButton {
-                    visible: Config.surfaces.tailscale
-                    width: visible ? (content.width - 6) / 2 : 0
-                    title: "Tailscale"
-                    subtitle: "Optional feature"
-                    onActivated: root.surfaceRequested("tailscale")
-                }
-
-                SurfaceButton {
+                ModuleCard {
                     visible: Config.surfaces.agents
-                    width: visible ? (content.width - 6) / 2 : 0
+                    width: visible ? (parent.width - parent.spacing) / 2 : 0
+                    implicitHeight: Style.detailRowHeight
+                    iconText: "󱚣"
                     title: "Agents"
-                    subtitle: "Optional feature"
+                    status: "Optional feature"
                     onActivated: root.surfaceRequested("agents")
                 }
 
+                ModuleCard {
+                    visible: !Config.surfaces.agents
+                    width: visible ? (parent.width - parent.spacing) / 2 : 0
+                    implicitHeight: Style.detailRowHeight
+                    iconText: "󰂚"
+                    title: "Notifications"
+                    status: "Mako history"
+                    onActivated: root.surfaceRequested("notifications")
+                }
             }
-
         }
-
     }
-
 }

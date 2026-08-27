@@ -1,0 +1,501 @@
+use crate::CliError;
+use std::collections::{BTreeMap, BTreeSet};
+use std::env;
+use std::fs;
+use std::os::unix::fs::{MetadataExt, PermissionsExt};
+use std::path::{Path, PathBuf};
+
+const DEFAULT_THEME: &str = "gruvbox";
+const MAX_THEME_BYTES: u64 = 64 * 1024;
+const COLOR_KEYS: [&str; 8] = [
+    "background",
+    "foreground",
+    "muted",
+    "accent",
+    "urgent",
+    "highlight",
+    "success",
+    "warning",
+];
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) struct Theme {
+    pub name: String,
+    pub mode: String,
+    pub colors: BTreeMap<String, String>,
+}
+
+fn home_dir() -> Result<PathBuf, CliError> {
+    env::var_os("HOME")
+        .map(PathBuf::from)
+        .ok_or_else(|| CliError::Operational("HOME is unavailable".to_owned()))
+}
+
+fn config_home() -> Result<PathBuf, CliError> {
+    Ok(env::var_os("XDG_CONFIG_HOME")
+        .map(PathBuf::from)
+        .unwrap_or(home_dir()?.join(".config")))
+}
+
+fn runtime_dir() -> Result<PathBuf, CliError> {
+    env::var_os("XDG_RUNTIME_DIR")
+        .map(PathBuf::from)
+        .ok_or_else(|| CliError::Operational("XDG_RUNTIME_DIR is unavailable".to_owned()))
+}
+
+fn selection_path() -> Result<PathBuf, CliError> {
+    Ok(config_home()?.join("frost/theme.json"))
+}
+
+fn effective_dir() -> Result<PathBuf, CliError> {
+    Ok(runtime_dir()?.join("frost/theme"))
+}
+
+fn theme_roots() -> Result<[PathBuf; 3], CliError> {
+    Ok([
+        config_home()?.join("frost/themes"),
+        PathBuf::from("/etc/frost/themes"),
+        PathBuf::from("/usr/share/frost/themes"),
+    ])
+}
+
+fn valid_name(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 64
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-' || byte == b'_')
+}
+
+fn json_escape(value: &str) -> String {
+    value
+        .chars()
+        .flat_map(|character| match character {
+            '"' => "\\\"".chars().collect::<Vec<_>>(),
+            '\\' => "\\\\".chars().collect::<Vec<_>>(),
+            '\n' => "\\n".chars().collect::<Vec<_>>(),
+            '\r' => "\\r".chars().collect::<Vec<_>>(),
+            '\t' => "\\t".chars().collect::<Vec<_>>(),
+            other if other.is_control() => format!("\\u{:04x}", other as u32).chars().collect(),
+            other => vec![other],
+        })
+        .collect()
+}
+
+fn unquote(value: &str) -> Option<String> {
+    let trimmed = value.trim();
+    if trimmed.len() < 2 || !trimmed.starts_with('"') || !trimmed.ends_with('"') {
+        return None;
+    }
+    let inner = &trimmed[1..trimmed.len() - 1];
+    if inner.contains(['"', '\n', '\r', '\0']) {
+        return None;
+    }
+    Some(inner.to_owned())
+}
+
+fn parse_hex(value: &str) -> Option<(u8, u8, u8)> {
+    if value.len() != 7 || !value.starts_with('#') {
+        return None;
+    }
+    Some((
+        u8::from_str_radix(&value[1..3], 16).ok()?,
+        u8::from_str_radix(&value[3..5], 16).ok()?,
+        u8::from_str_radix(&value[5..7], 16).ok()?,
+    ))
+}
+
+fn channel(value: u8) -> f64 {
+    let normalized = f64::from(value) / 255.0;
+    if normalized <= 0.04045 {
+        normalized / 12.92
+    } else {
+        ((normalized + 0.055) / 1.055).powf(2.4)
+    }
+}
+
+fn luminance(value: &str) -> f64 {
+    let (red, green, blue) = parse_hex(value).expect("validated theme color");
+    0.2126 * channel(red) + 0.7152 * channel(green) + 0.0722 * channel(blue)
+}
+
+fn contrast(left: &str, right: &str) -> f64 {
+    let left = luminance(left);
+    let right = luminance(right);
+    (left.max(right) + 0.05) / (left.min(right) + 0.05)
+}
+
+pub(crate) fn parse_theme(raw: &str) -> Result<Theme, CliError> {
+    let mut section = String::new();
+    let mut root = BTreeMap::new();
+    let mut colors = BTreeMap::new();
+    for raw_line in raw.lines() {
+        let line = raw_line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        if line.starts_with('[') && line.ends_with(']') {
+            section = line[1..line.len() - 1].to_owned();
+            if section != "colors" {
+                return Err(CliError::Usage(format!(
+                    "unsupported theme section: {section}"
+                )));
+            }
+            continue;
+        }
+        let (key, value) = line
+            .split_once('=')
+            .ok_or_else(|| CliError::Usage("invalid theme assignment".to_owned()))?;
+        let key = key.trim();
+        if key.is_empty() {
+            return Err(CliError::Usage("empty theme key".to_owned()));
+        }
+        let target = if section == "colors" {
+            &mut colors
+        } else {
+            &mut root
+        };
+        if target.contains_key(key) {
+            return Err(CliError::Usage(format!("duplicate theme key: {key}")));
+        }
+        target.insert(key.to_owned(), value.trim().to_owned());
+    }
+
+    let expected_root = BTreeSet::from(["schemaVersion", "name", "mode"]);
+    let actual_root = root.keys().map(String::as_str).collect::<BTreeSet<_>>();
+    if actual_root != expected_root {
+        return Err(CliError::Usage(
+            "theme root must contain exactly schemaVersion, name and mode".to_owned(),
+        ));
+    }
+    if root.get("schemaVersion").map(String::as_str) != Some("1") {
+        return Err(CliError::Usage("theme schemaVersion must be 1".to_owned()));
+    }
+    let name = unquote(root.get("name").expect("checked key"))
+        .filter(|value| !value.trim().is_empty() && value.len() <= 80)
+        .ok_or_else(|| CliError::Usage("invalid theme name".to_owned()))?;
+    let mode = unquote(root.get("mode").expect("checked key"))
+        .filter(|value| value == "dark" || value == "light")
+        .ok_or_else(|| CliError::Usage("theme mode must be dark or light".to_owned()))?;
+
+    let actual_colors = colors.keys().map(String::as_str).collect::<BTreeSet<_>>();
+    let expected_colors = COLOR_KEYS.into_iter().collect::<BTreeSet<_>>();
+    if actual_colors != expected_colors {
+        return Err(CliError::Usage(format!(
+            "theme colors must contain exactly {}",
+            COLOR_KEYS.join(", ")
+        )));
+    }
+    let mut normalized = BTreeMap::new();
+    for key in COLOR_KEYS {
+        let value = unquote(colors.get(key).expect("checked color"))
+            .filter(|value| parse_hex(value).is_some())
+            .ok_or_else(|| CliError::Usage(format!("invalid color: {key}")))?;
+        normalized.insert(key.to_owned(), value.to_ascii_lowercase());
+    }
+    let background = normalized.get("background").expect("required color");
+    let foreground = normalized.get("foreground").expect("required color");
+    if contrast(background, foreground) < 4.5 {
+        return Err(CliError::Usage(
+            "foreground/background contrast must be at least 4.5:1".to_owned(),
+        ));
+    }
+    for role in ["accent", "urgent", "success", "warning"] {
+        if contrast(background, normalized.get(role).expect("required color")) < 2.0 {
+            return Err(CliError::Usage(format!(
+                "{role}/background contrast must be at least 2:1"
+            )));
+        }
+    }
+    Ok(Theme {
+        name,
+        mode,
+        colors: normalized,
+    })
+}
+
+fn theme_file_is_safe(path: &Path) -> bool {
+    fs::symlink_metadata(path).is_ok_and(|metadata| {
+        metadata.file_type().is_file()
+            && metadata.mode() & 0o111 == 0
+            && metadata.len() <= MAX_THEME_BYTES
+    })
+}
+
+fn read_theme(path: &Path) -> Result<Theme, CliError> {
+    if !theme_file_is_safe(path) {
+        return Err(CliError::Usage(format!(
+            "theme is not a safe regular data file: {}",
+            path.display()
+        )));
+    }
+    let raw = fs::read_to_string(path)
+        .map_err(|error| CliError::Operational(format!("could not read theme: {error}")))?;
+    parse_theme(&raw)
+}
+
+fn resolve_theme(name: &str) -> Result<(Theme, PathBuf), CliError> {
+    if !valid_name(name) {
+        return Err(CliError::Usage("invalid theme name".to_owned()));
+    }
+    for root in theme_roots()? {
+        let directory = root.join(name);
+        if fs::symlink_metadata(&directory).is_ok_and(|metadata| metadata.file_type().is_dir()) {
+            let path = directory.join("theme.toml");
+            if theme_file_is_safe(&path) {
+                return Ok((read_theme(&path)?, path));
+            }
+        }
+    }
+    Err(CliError::Usage(format!("unknown theme: {name}")))
+}
+
+fn selected_name() -> Result<String, CliError> {
+    let path = selection_path()?;
+    if fs::symlink_metadata(&path).is_ok_and(|metadata| {
+        !metadata.file_type().is_file()
+            || metadata.mode() & 0o111 != 0
+            || metadata.len() > MAX_THEME_BYTES
+    }) {
+        return Err(CliError::Usage(
+            "theme selection is not a safe regular data file".to_owned(),
+        ));
+    }
+    let Ok(raw) = fs::read_to_string(path) else {
+        return Ok(DEFAULT_THEME.to_owned());
+    };
+    let compact = raw
+        .chars()
+        .filter(|value| !value.is_whitespace())
+        .collect::<String>();
+    let prefix = "{\"schemaVersion\":1,\"name\":\"";
+    let suffix = "\"}";
+    if !compact.starts_with(prefix) || !compact.ends_with(suffix) {
+        return Err(CliError::Usage("invalid Frost theme selection".to_owned()));
+    }
+    let name = &compact[prefix.len()..compact.len() - suffix.len()];
+    if !valid_name(name) {
+        return Err(CliError::Usage("invalid selected theme name".to_owned()));
+    }
+    Ok(name.to_owned())
+}
+
+fn normalized_theme(theme: &Theme) -> String {
+    let mut output = format!(
+        "schemaVersion = 1\nname = \"{}\"\nmode = \"{}\"\n\n[colors]\n",
+        theme.name, theme.mode
+    );
+    for key in COLOR_KEYS {
+        output.push_str(&format!(
+            "{key} = \"{}\"\n",
+            theme.colors.get(key).expect("required color")
+        ));
+    }
+    output
+}
+
+fn atomic_write(path: &Path, contents: &str, mode: u32) -> Result<(), CliError> {
+    let parent = path
+        .parent()
+        .ok_or_else(|| CliError::Operational("output path has no parent".to_owned()))?;
+    fs::create_dir_all(parent).map_err(|error| {
+        CliError::Operational(format!("could not create theme directory: {error}"))
+    })?;
+    fs::set_permissions(parent, fs::Permissions::from_mode(0o700)).map_err(|error| {
+        CliError::Operational(format!("could not secure theme directory: {error}"))
+    })?;
+    let temporary = path.with_extension("tmp");
+    fs::write(&temporary, contents)
+        .map_err(|error| CliError::Operational(format!("could not write theme state: {error}")))?;
+    fs::set_permissions(&temporary, fs::Permissions::from_mode(mode))
+        .map_err(|error| CliError::Operational(format!("could not secure theme state: {error}")))?;
+    fs::rename(&temporary, path)
+        .map_err(|error| CliError::Operational(format!("could not publish theme state: {error}")))
+}
+
+fn rgba(theme: &Theme, role: &str, alpha: &str) -> String {
+    format!(
+        "{}{}",
+        theme
+            .colors
+            .get(role)
+            .expect("required color")
+            .trim_start_matches('#'),
+        alpha
+    )
+}
+
+fn mako_config(theme: &Theme) -> String {
+    let light = theme.mode == "light";
+    format!(
+        "font=JetBrains Mono 11\nbackground-color=#{}\ntext-color=#{}ff\nborder-color=#{}\nborder-size=1\nborder-radius=14\ndefault-timeout=5000\nignore-timeout=0\nanchor=top-right\nlayer=overlay\nmargin=12\npadding=14\nwidth=390\nheight=140\nmax-visible=5\nicons=1\nmax-icon-size=48\n",
+        rgba(theme, "background", if light { "e0" } else { "cc" }),
+        theme.colors["foreground"].trim_start_matches('#'),
+        rgba(theme, "foreground", if light { "24" } else { "33" }),
+    )
+}
+
+fn hyprlock_config(theme: &Theme) -> String {
+    format!(
+        "general {{\n    hide_cursor = true\n    ignore_empty_input = false\n}}\n\nauth {{\n    pam {{\n        enabled = true\n        module = hyprlock\n    }}\n    fingerprint {{ enabled = false }}\n}}\n\nbackground {{\n    monitor =\n    path = screenshot\n    blur_passes = 3\n    blur_size = 8\n    brightness = 0.90\n    contrast = 0.97\n}}\n\nlabel {{\n    monitor =\n    text = $TIME\n    color = rgba({})\n    font_family = JetBrains Mono\n    font_size = 72\n    position = 0, 90\n    halign = center\n    valign = center\n}}\n\ninput-field {{\n    monitor =\n    size = 381, 56\n    outline_thickness = 1\n    rounding = 14\n    dots_size = 0.22\n    dots_spacing = 0.28\n    outer_color = rgba({})\n    inner_color = rgba({})\n    font_color = rgba({})\n    fade_on_empty = false\n    placeholder_text = <span foreground=\"##{}\">Password</span>\n    fail_text = <span foreground=\"##{}\">Failed ($ATTEMPTS)</span>\n    position = 0, -100\n    halign = center\n    valign = center\n}}\n",
+        rgba(theme, "foreground", "ff"),
+        rgba(theme, "accent", "ff"),
+        rgba(
+            theme,
+            "background",
+            if theme.mode == "light" { "e6" } else { "d6" }
+        ),
+        rgba(theme, "foreground", "ff"),
+        theme.colors["muted"].trim_start_matches('#'),
+        theme.colors["urgent"].trim_start_matches('#'),
+    )
+}
+
+fn sync_theme() -> Result<(Theme, PathBuf), CliError> {
+    let selected = selected_name()?;
+    let (theme, source) = resolve_theme(&selected).or_else(|_| resolve_theme(DEFAULT_THEME))?;
+    let output = effective_dir()?;
+    atomic_write(&output.join("theme.toml"), &normalized_theme(&theme), 0o600)?;
+    atomic_write(&output.join("mako.conf"), &mako_config(&theme), 0o600)?;
+    atomic_write(
+        &output.join("hyprlock.conf"),
+        &hyprlock_config(&theme),
+        0o600,
+    )?;
+    atomic_write(
+        &output.join("origin.json"),
+        &format!(
+            "{{\"schemaVersion\":1,\"name\":\"{}\",\"mode\":\"{}\",\"source\":\"{}\"}}\n",
+            json_escape(&theme.name),
+            theme.mode,
+            json_escape(&source.display().to_string())
+        ),
+        0o600,
+    )?;
+    Ok((theme, source))
+}
+
+pub(crate) fn current_theme() -> Option<Theme> {
+    effective_dir()
+        .ok()
+        .and_then(|path| read_theme(&path.join("theme.toml")).ok())
+        .or_else(|| {
+            selected_name()
+                .ok()
+                .and_then(|name| resolve_theme(&name).ok().map(|value| value.0))
+        })
+}
+
+fn list_themes() -> Result<(), CliError> {
+    let current = selected_name().unwrap_or_else(|_| DEFAULT_THEME.to_owned());
+    let mut names = BTreeSet::new();
+    for root in theme_roots()? {
+        let Ok(entries) = fs::read_dir(root) else {
+            continue;
+        };
+        for entry in entries.flatten() {
+            let name = entry.file_name().to_string_lossy().to_string();
+            if valid_name(&name) && theme_file_is_safe(&entry.path().join("theme.toml")) {
+                names.insert(name);
+            }
+        }
+    }
+    for name in names {
+        println!("{}{}", if name == current { "* " } else { "  " }, name);
+    }
+    Ok(())
+}
+
+fn validate_target(target: &str) -> Result<(), CliError> {
+    let (theme, source) = if valid_name(target) {
+        resolve_theme(target)?
+    } else {
+        let path = PathBuf::from(target);
+        (read_theme(&path)?, path)
+    };
+    println!("ok: {} ({}, {})", theme.name, theme.mode, source.display());
+    Ok(())
+}
+
+fn set_theme(name: &str) -> Result<(), CliError> {
+    let (theme, _) = resolve_theme(name)?;
+    let selection = selection_path()?;
+    atomic_write(
+        &selection,
+        &format!("{{\"schemaVersion\":1,\"name\":\"{}\"}}\n", name),
+        0o600,
+    )?;
+    sync_theme()?;
+    println!("theme: {}", theme.name);
+    Ok(())
+}
+
+pub(crate) fn activate_theme(name: &str) -> Result<(), CliError> {
+    set_theme(name)
+}
+
+pub(crate) fn theme_command(args: &[String]) -> Result<(), CliError> {
+    match args {
+        [command] if command == "list" => list_themes(),
+        [command] if command == "current" => {
+            let (theme, source) = sync_theme()?;
+            println!("{}\t{}\t{}", theme.name, theme.mode, source.display());
+            Ok(())
+        }
+        [command] if command == "sync" => {
+            sync_theme()?;
+            Ok(())
+        }
+        [command, target] if command == "validate" => validate_target(target),
+        [command, name] if command == "set" => set_theme(name),
+        _ => Err(CliError::Usage(
+            "usage: frost theme <list|current|validate TARGET|set NAME|sync>".to_owned(),
+        )),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const VALID: &str = r##"schemaVersion = 1
+name = "Test"
+mode = "dark"
+
+[colors]
+background = "#101214"
+foreground = "#f0ede8"
+muted = "#928f89"
+accent = "#7daea3"
+urgent = "#ea6962"
+highlight = "#d8a657"
+success = "#a9b665"
+warning = "#d8a657"
+"##;
+
+    #[test]
+    fn parses_strict_theme() {
+        let theme = parse_theme(VALID).unwrap();
+        assert_eq!(theme.name, "Test");
+        assert_eq!(theme.mode, "dark");
+        assert_eq!(theme.colors["accent"], "#7daea3");
+    }
+
+    #[test]
+    fn rejects_theme_code_and_unknown_fields() {
+        assert!(parse_theme(&format!("{VALID}\nscript = \"bad\"\n")).is_err());
+        assert!(parse_theme(&VALID.replace("mode = \"dark\"", "mode = \"auto\"")).is_err());
+    }
+
+    #[test]
+    fn rejects_low_contrast_theme() {
+        assert!(parse_theme(&VALID.replace("#f0ede8", "#181818")).is_err());
+    }
+
+    #[test]
+    fn validates_theme_names() {
+        assert!(valid_name("tokyo-night"));
+        assert!(!valid_name("../escape"));
+        assert!(!valid_name("bad/name"));
+    }
+}

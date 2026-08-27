@@ -65,14 +65,16 @@ Item {
                 Text {
                     text: "Wi-Fi"
                     color: Theme.foreground
-                    font.pixelSize: 13
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.body
                     font.bold: true
                 }
 
                 Text {
                     text: Networking.wifiHardwareEnabled ? (Networking.wifiEnabled ? "Enabled" : "Disabled") : "Hardware blocked"
                     color: Theme.muted
-                    font.pixelSize: 11
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.bodySmall
                 }
 
             }
@@ -105,7 +107,8 @@ Item {
                 Text {
                     text: "Password for " + (root.pendingNetwork ? root.pendingNetwork.name : "network")
                     color: Theme.foreground
-                    font.pixelSize: 12
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.body
                     font.bold: true
                 }
 
@@ -155,7 +158,8 @@ Item {
         Text {
             text: "Available networks"
             color: Theme.muted
-            font.pixelSize: 11
+            font.family: Style.fontFamily
+            font.pixelSize: Style.bodySmall
             font.bold: true
         }
 
@@ -171,7 +175,8 @@ Item {
                 visible: parent.count === 0
                 text: Networking.wifiEnabled ? "No Wi-Fi networks found" : "Wi-Fi is disabled"
                 color: Theme.muted
-                font.pixelSize: 12
+                font.family: Style.fontFamily
+                font.pixelSize: Style.body
             }
 
             delegate: SurfaceButton {

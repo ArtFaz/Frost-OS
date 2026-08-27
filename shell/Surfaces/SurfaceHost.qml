@@ -18,8 +18,36 @@ Item {
         return focused === null || !focused.name || screen.name === focused.name;
     }
 
-    function wideSurface(surface) {
-        return ["app-installer", "emoji", "images", "launcher"].indexOf(surface) >= 0;
+    function centeredSurface(surface) {
+        return ["app-installer", "clipboard", "emoji", "images", "launcher"].indexOf(surface) >= 0;
+    }
+
+    function surfaceWidth(surface) {
+        const widths = {
+            "launcher": Style.menuWidth,
+            "control-center": Style.panelWidth,
+            "notifications": Style.notificationWidth,
+            "clipboard": Style.clipboardWidth,
+            "emoji": Style.emojiWidth,
+            "images": Style.imageWidth,
+            "app-installer": Style.installerWidth
+        };
+        return widths[surface] || Style.panelWidth;
+    }
+
+    function surfaceHeight(surface) {
+        const heights = {
+            "launcher": Style.menuMaxHeight,
+            "control-center": 590,
+            "calendar": 400,
+            "notifications": Style.notificationHeight,
+            "reminders": 390,
+            "clipboard": Style.clipboardHeight,
+            "emoji": Style.emojiHeight,
+            "images": Style.imageHeight,
+            "app-installer": Style.installerHeight
+        };
+        return heights[surface] || 560;
     }
 
     Variants {
@@ -75,13 +103,13 @@ Item {
                 GlassSurface {
                     id: card
 
-                    width: Math.min(root.wideSurface(root.activeSurface) ? Theme.widePanelWidth : Theme.panelWidth, panel.width - 28)
-                    height: Math.min(Theme.panelMaxHeight, panel.height - Theme.barHeight - 28)
+                    width: Math.min(root.surfaceWidth(root.activeSurface), panel.width - 28)
+                    height: Math.min(root.surfaceHeight(root.activeSurface), panel.height - Theme.barHeight - 28)
                     anchors.top: parent.top
                     anchors.topMargin: Theme.barHeight + 12
-                    anchors.right: root.activeSurface === "launcher" ? undefined : parent.right
-                    anchors.rightMargin: root.activeSurface === "launcher" ? 0 : 14
-                    anchors.horizontalCenter: root.activeSurface === "launcher" ? parent.horizontalCenter : undefined
+                    anchors.right: root.centeredSurface(root.activeSurface) ? undefined : parent.right
+                    anchors.rightMargin: root.centeredSurface(root.activeSurface) ? 0 : 14
+                    anchors.horizontalCenter: root.centeredSurface(root.activeSurface) ? parent.horizontalCenter : undefined
                     surfaceRole: root.activeSurface === "launcher" ? "menu" : "panel"
                     opacity: panel.visible ? 1 : 0
                     scale: panel.visible ? 1 : 0.975
@@ -107,6 +135,24 @@ Item {
                         onSurfaceRequested: (surface) => {
                             return root.surfaceRequested(surface);
                         }
+                    }
+
+                    CalendarPanel {
+                        anchors.fill: parent
+                        visible: root.activeSurface === "calendar"
+                        onBackRequested: root.closeRequested()
+                    }
+
+                    WeatherPanel {
+                        anchors.fill: parent
+                        visible: root.activeSurface === "weather"
+                        onBackRequested: root.closeRequested()
+                    }
+
+                    ReminderPanel {
+                        anchors.fill: parent
+                        visible: root.activeSurface === "reminders"
+                        onBackRequested: root.closeRequested()
                     }
 
                     NetworkPanel {

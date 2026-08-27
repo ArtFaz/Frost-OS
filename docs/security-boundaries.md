@@ -14,7 +14,7 @@ Status: initial Phase 0 threat model and implementation contract.
 | Privileged helpers | Exact versioned request schema and canonicalized paths | One documented machine action per helper | Generic command execution, broad path writes, caller-supplied shell or executable paths |
 | Package transaction | Arch and Frost signed repositories | Modify package-owned paths and create `.pacnew` where applicable | Fetch donor code, overwrite foreign package files, execute user migrations as root |
 | Update orchestrator | Package plan, Snapper health, migration manifests | Snapshot, pacman transaction, idempotent migration, verify | Starting a transaction without a valid snapshot or continuing after incompatible failure |
-| Theme/config loader | Regular files below permitted roots | Parse data matching a versioned schema | Symlinks, executable bits, QML/JS/hooks, path escape, unknown executable fields |
+| Theme/config loader | Regular files below permitted roots | Parse data matching a versioned schema; materialize private runtime configs for the external UI authorities | Symlinks, executable bits, QML/JS/hooks, path escape, unknown fields, theme-controlled geometry or commands |
 | ISO installer | Local signed media/repositories and validated installer model | Partition/mount/install only the explicitly selected target | Network donor fallback, ambiguous disk target, silent destructive default |
 
 ## Security authorities
@@ -88,7 +88,7 @@ PAM changes must use a dedicated Hyprlock service with no `nullok`, empty-passwo
 - Machine state: `/var/lib/frost`.
 - Logs: journal or `/var/log/frost`, never persistent state in `/tmp`.
 
-Every config includes `schemaVersion`. Themes may contain only regular, non-executable files of explicitly allowed media/data types. Symlinks, FIFOs, device nodes, sockets, QML, JavaScript, shell, binaries and hooks are rejected.
+Every config includes `schemaVersion`. A theme contains exactly a name, dark/light mode and eight semantic colors. It cannot control geometry, opacity, blur, fonts, motion or commands. User, administrator and package themes are validated by the Rust boundary and normalized to mode-0600 runtime files. Mako and Hyprlock launch through fixed Frost subcommands that consume those files when safe and fall back to immutable package configs otherwise. Themes may contain only regular, non-executable files of explicitly allowed media/data types. Symlinks, FIFOs, device nodes, sockets, QML, JavaScript, shell, binaries and hooks are rejected.
 
 ## Update and rollback invariants
 

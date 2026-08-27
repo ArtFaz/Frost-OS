@@ -20,10 +20,28 @@
       "notice": "docs/provenance.md"
     },
     {
+      "destination": "shell/Core/IndicatorState.qml",
+      "originRepository": "staging",
+      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
+      "originPath": "config/omarchy/plugins/art.bar/indicators/StayAwake.qml",
+      "transformation": "rewritten-from-concept",
+      "license": "pending-confirmation",
+      "notice": "docs/provenance.md"
+    },
+    {
       "destination": "shell/Core/Theme.qml",
       "originRepository": "Frost-OS",
       "originCommit": "f4a8cc9cd4137469393f815ccef08a849ce9005d",
       "originPath": "shell/components/frost/Glass.qml",
+      "transformation": "rewritten-from-concept",
+      "license": "pending-confirmation",
+      "notice": "docs/provenance.md"
+    },
+    {
+      "destination": "shell/Core/Style.qml",
+      "originRepository": "staging",
+      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
+      "originPath": "config/omarchy/plugins/art.frosted-glass/glass.conf",
       "transformation": "rewritten-from-concept",
       "license": "pending-confirmation",
       "notice": "docs/provenance.md"
@@ -164,6 +182,15 @@
       "notice": "docs/provenance.md"
     },
     {
+      "destination": "shell/Core/WeatherState.qml",
+      "originRepository": "staging",
+      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
+      "originPath": "config/omarchy/shell.json",
+      "transformation": "rewritten-from-concept",
+      "license": "pending-confirmation",
+      "notice": "docs/provenance.md"
+    },
+    {
       "destination": "shell/Primitives/ModuleCard.qml",
       "originRepository": "staging",
       "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
@@ -240,6 +267,33 @@
       "originRepository": "staging",
       "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
       "originPath": "config/omarchy/plugins/art.command-center/Panel.qml",
+      "transformation": "rewritten-from-concept",
+      "license": "pending-confirmation",
+      "notice": "docs/provenance.md"
+    },
+    {
+      "destination": "shell/Surfaces/CalendarPanel.qml",
+      "originRepository": "staging",
+      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
+      "originPath": "config/omarchy/shell.json",
+      "transformation": "rewritten-from-concept",
+      "license": "pending-confirmation",
+      "notice": "docs/provenance.md"
+    },
+    {
+      "destination": "shell/Surfaces/WeatherPanel.qml",
+      "originRepository": "staging",
+      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
+      "originPath": "config/omarchy/shell.json",
+      "transformation": "rewritten-from-concept",
+      "license": "pending-confirmation",
+      "notice": "docs/provenance.md"
+    },
+    {
+      "destination": "shell/Surfaces/ReminderPanel.qml",
+      "originRepository": "staging",
+      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
+      "originPath": "config/omarchy/plugins/art.bar/indicators/Reminder.qml",
       "transformation": "rewritten-from-concept",
       "license": "pending-confirmation",
       "notice": "docs/provenance.md"

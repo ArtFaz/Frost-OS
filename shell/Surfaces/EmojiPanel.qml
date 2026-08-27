@@ -38,8 +38,8 @@ Item {
 
     Column {
         anchors.fill: parent
-        anchors.margins: Theme.panelPadding
-        spacing: 12
+        anchors.margins: Style.panelPadding
+        spacing: Style.space(2)
 
         PanelHeader {
             width: parent.width
@@ -59,8 +59,8 @@ Item {
             width: parent.width
             height: parent.height - y
             clip: true
-            cellWidth: 64
-            cellHeight: 64
+            cellWidth: 44
+            cellHeight: 44
             model: root.filteredItems
 
             Text {
@@ -68,14 +68,15 @@ Item {
                 visible: parent.count === 0
                 text: "No emoji found"
                 color: Theme.muted
-                font.pixelSize: 12
+                font.family: Style.fontFamily
+                font.pixelSize: Style.body
             }
 
             delegate: InteractiveSurface {
                 required property var modelData
 
-                width: 56
-                height: 56
+                width: 40
+                height: 40
                 radius: Theme.rowRadius
                 onActivated: {
                     Quickshell.clipboardText = modelData.emoji;
@@ -85,7 +86,8 @@ Item {
                 Text {
                     anchors.centerIn: parent
                     text: modelData.emoji
-                    font.pixelSize: 28
+                    font.family: Style.emojiFontFamily
+                    font.pixelSize: Style.display
                 }
 
             }

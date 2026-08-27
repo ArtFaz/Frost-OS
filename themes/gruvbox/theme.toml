@@ -1,0 +1,13 @@
+schemaVersion = 1
+name = "Gruvbox"
+mode = "dark"
+
+[colors]
+background = "#282828"
+foreground = "#d4be98"
+muted = "#928374"
+accent = "#7daea3"
+urgent = "#ea6962"
+highlight = "#d8a657"
+success = "#a9b665"
+warning = "#d8a657"

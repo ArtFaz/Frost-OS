@@ -14,10 +14,10 @@ InteractiveSurface {
 
     Text {
         anchors.centerIn: parent
-        text: "✦"
+        text: "󰍜"
         color: Theme.accent
-        font.family: "sans-serif"
-        font.pixelSize: 15
+        font.family: Style.iconFontFamily
+        font.pixelSize: Style.iconLarge
         font.bold: true
     }
 

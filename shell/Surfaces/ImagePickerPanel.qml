@@ -7,9 +7,9 @@ Item {
 
     property var items: []
     property string filterText: ""
-    readonly property var filteredItems: items.filter((item) => {
-        return !filterText || String(item.name || "").toLowerCase().indexOf(filterText.toLowerCase()) >= 0;
-    })
+    property int selectedIndex: 0
+    readonly property var filteredItems: items.filter((item) => !filterText || String(item.name || "").toLowerCase().indexOf(filterText.toLowerCase()) >= 0)
+    readonly property var selectedItem: filteredItems.length > 0 ? filteredItems[Math.max(0, Math.min(selectedIndex, filteredItems.length - 1))] : null
 
     signal backRequested()
     signal closeRequested()
@@ -17,95 +17,137 @@ Item {
     onVisibleChanged: {
         if (visible) {
             filterText = "";
+            selectedIndex = 0;
             ShellBackend.query("images");
         }
     }
 
     Connections {
         function onDataReady(kind, payload) {
-            if (kind === "images")
+            if (kind === "images") {
                 root.items = payload && payload.schemaVersion === 1 && Array.isArray(payload.items) ? payload.items : [];
-
+                root.selectedIndex = 0;
+            }
         }
-
         target: ShellBackend
     }
 
     Column {
         anchors.fill: parent
-        anchors.margins: Theme.panelPadding
-        spacing: 12
+        anchors.margins: Style.panelPadding
+        spacing: Style.space(2)
 
-        PanelHeader {
+        Row {
             width: parent.width
-            title: "Image picker"
-            subtitle: "Recent files from Pictures"
-            showBack: true
-            actionText: "Refresh"
-            onBack: root.backRequested()
-            onAction: ShellBackend.query("images")
+            height: Style.headerHeight
+            spacing: Style.space(2)
+
+            PanelHeader {
+                width: 245
+                height: parent.height
+                title: "Image picker"
+                subtitle: root.filteredItems.length + " recent pictures"
+                showBack: true
+                onBack: root.backRequested()
+            }
+
+            SearchField {
+                width: parent.width - 245 - 102 - parent.spacing * 2
+                anchors.verticalCenter: parent.verticalCenter
+                placeholderText: "Filter images"
+                onTextChanged: {
+                    root.filterText = text;
+                    root.selectedIndex = 0;
+                }
+            }
+
+            SurfaceButton {
+                width: 102
+                height: Style.compactHeaderHeight
+                anchors.verticalCenter: parent.verticalCenter
+                compact: true
+                title: "Copy image"
+                enabled: root.selectedItem !== null
+                onActivated: {
+                    if (root.selectedItem && ShellBackend.action("image-copy", root.selectedItem.path))
+                        root.closeRequested();
+                }
+            }
         }
 
-        SearchField {
+        Rectangle {
             width: parent.width
-            placeholderText: "Filter images"
-            onTextChanged: root.filterText = text
-        }
+            height: parent.height - y - 96
+            radius: Style.rowRadius
+            color: Theme.controlNormal
 
-        GridView {
-            width: parent.width
-            height: parent.height - y
-            clip: true
-            cellWidth: 156
-            cellHeight: 142
-            model: root.filteredItems
+            Image {
+                anchors.fill: parent
+                anchors.margins: Style.space(2)
+                visible: root.selectedItem !== null
+                source: root.selectedItem ? "file://" + encodeURI(root.selectedItem.path) : ""
+                fillMode: Image.PreserveAspectFit
+                asynchronous: true
+                cache: false
+            }
 
             Text {
                 anchors.centerIn: parent
-                visible: parent.count === 0
+                visible: root.selectedItem === null
                 text: "No supported images found"
                 color: Theme.muted
-                font.pixelSize: 12
+                font.family: Style.fontFamily
+                font.pixelSize: Style.body
             }
+
+            Rectangle {
+                visible: root.selectedItem !== null
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                height: 32
+                color: Theme.alpha(Theme.background, 0.72)
+
+                Text {
+                    anchors.centerIn: parent
+                    width: parent.width - Style.space(4)
+                    text: root.selectedItem ? root.selectedItem.name : ""
+                    color: Theme.foreground
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.bodySmall
+                    horizontalAlignment: Text.AlignHCenter
+                    elide: Text.ElideMiddle
+                }
+            }
+        }
+
+        ListView {
+            id: thumbnailList
+            width: parent.width
+            height: 84
+            orientation: ListView.Horizontal
+            spacing: Style.space(1)
+            clip: true
+            model: root.filteredItems
+            currentIndex: root.selectedIndex
 
             delegate: InteractiveSurface {
                 required property var modelData
-
-                width: 146
-                height: 132
-                radius: Theme.rowRadius
-                onActivated: {
-                    ShellBackend.action("image-copy", modelData.path);
-                    root.closeRequested();
-                }
+                required property int index
+                width: 112
+                height: 78
+                selected: index === root.selectedIndex
+                onActivated: root.selectedIndex = index
 
                 Image {
-                    anchors.top: parent.top
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.margins: 6
-                    height: 96
+                    anchors.fill: parent
+                    anchors.margins: 5
                     source: "file://" + encodeURI(modelData.path)
                     fillMode: Image.PreserveAspectCrop
                     asynchronous: true
                     cache: false
                 }
-
-                Text {
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.bottom: parent.bottom
-                    anchors.margins: 7
-                    text: modelData.name
-                    color: Theme.foreground
-                    font.pixelSize: 10
-                    elide: Text.ElideMiddle
-                }
-
             }
-
         }
-
     }
-
 }

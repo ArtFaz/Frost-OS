@@ -41,8 +41,8 @@ Item {
 
     Column {
         anchors.fill: parent
-        anchors.margins: Theme.panelPadding
-        spacing: 12
+        anchors.margins: Style.panelPadding
+        spacing: Style.space(2)
 
         PanelHeader {
             width: parent.width
@@ -93,7 +93,8 @@ Item {
                             anchors.horizontalCenter: parent.horizontalCenter
                             text: modelData.count
                             color: Theme.accent
-                            font.pixelSize: 20
+                            font.family: Style.fontFamily
+                            font.pixelSize: Style.display
                             font.bold: true
                         }
 
@@ -101,7 +102,8 @@ Item {
                             anchors.horizontalCenter: parent.horizontalCenter
                             text: modelData.label
                             color: Theme.muted
-                            font.pixelSize: 11
+                            font.family: Style.fontFamily
+                            font.pixelSize: Style.bodySmall
                         }
 
                     }
@@ -124,7 +126,8 @@ Item {
                 visible: parent.count === 0
                 text: root.reviewing ? "No applications selected" : "No catalog entries found"
                 color: Theme.muted
-                font.pixelSize: 12
+                font.family: Style.fontFamily
+                font.pixelSize: Style.body
             }
 
             delegate: SurfaceButton {
@@ -156,7 +159,8 @@ Item {
                 anchors.centerIn: parent
                 text: root.reviewing ? "Application is disabled until the Phase 6 backend" : root.plan.packages.length + " applications selected"
                 color: root.reviewing ? Theme.foreground : Theme.muted
-                font.pixelSize: 11
+                font.family: Style.fontFamily
+                font.pixelSize: Style.bodySmall
                 font.bold: root.reviewing
             }
 

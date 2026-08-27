@@ -60,7 +60,8 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 text: "Bluetooth"
                 color: Theme.foreground
-                font.pixelSize: 13
+                font.family: Style.fontFamily
+                font.pixelSize: Style.body
                 font.bold: true
             }
 
@@ -78,7 +79,8 @@ Item {
         Text {
             text: "Devices"
             color: Theme.muted
-            font.pixelSize: 11
+            font.family: Style.fontFamily
+            font.pixelSize: Style.bodySmall
             font.bold: true
         }
 
@@ -94,7 +96,8 @@ Item {
                 visible: parent.count === 0
                 text: SystemState.bluetoothAvailable ? "No devices to show" : "Bluetooth is unavailable"
                 color: Theme.muted
-                font.pixelSize: 12
+                font.family: Style.fontFamily
+                font.pixelSize: Style.body
             }
 
             delegate: SurfaceButton {
