@@ -36,19 +36,51 @@ for expected in \
   usr/share/frost/default/mako/config \
   usr/share/frost/default/ghostty/config \
   usr/share/frost/default/bash/bashrc \
+  usr/share/frost/config/data/app-inventory.json \
+  usr/share/frost/config/data/emojis.json \
   usr/share/frost/config/shell.json \
   usr/share/frost/shell/shell.qml \
+  usr/share/frost/shell/Core/Config.qml \
   usr/share/frost/shell/Core/Motion.qml \
+  usr/share/frost/shell/Core/ShellBackend.qml \
+  usr/share/frost/shell/Core/SystemState.qml \
+  usr/share/frost/shell/Core/Theme.qml \
   usr/share/frost/shell/Primitives/FocusRing.qml \
   usr/share/frost/shell/Primitives/GlassSurface.qml \
   usr/share/frost/shell/Primitives/InteractiveSurface.qml \
+  usr/share/frost/shell/Primitives/ModuleCard.qml \
+  usr/share/frost/shell/Primitives/PanelHeader.qml \
+  usr/share/frost/shell/Primitives/SearchField.qml \
+  usr/share/frost/shell/Primitives/SurfaceButton.qml \
+  usr/share/frost/shell/Primitives/ToggleSwitch.qml \
+  usr/share/frost/shell/Primitives/ValueSlider.qml \
   usr/share/frost/shell/Bar/Bar.qml \
+  usr/share/frost/shell/Bar/Media.qml \
+  usr/share/frost/shell/Bar/MenuButton.qml \
+  usr/share/frost/shell/Bar/Status.qml \
   usr/share/frost/shell/Bar/Workspaces.qml \
   usr/share/frost/shell/Bar/Tray.qml \
   usr/share/frost/shell/Bar/Clock.qml \
   usr/share/frost/shell/Osd/Osd.qml \
   usr/share/frost/shell/Osd/OsdModel.js \
+  usr/share/frost/shell/Surfaces/AppInstallerPanel.qml \
+  usr/share/frost/shell/Surfaces/AudioPanel.qml \
+  usr/share/frost/shell/Surfaces/BluetoothPanel.qml \
+  usr/share/frost/shell/Surfaces/ClipboardPanel.qml \
+  usr/share/frost/shell/Surfaces/ControlCenter.qml \
+  usr/share/frost/shell/Surfaces/DisplayPowerPanel.qml \
+  usr/share/frost/shell/Surfaces/EmojiPanel.qml \
+  usr/share/frost/shell/Surfaces/ImagePickerPanel.qml \
+  usr/share/frost/shell/Surfaces/InstallerModel.js \
+  usr/share/frost/shell/Surfaces/Launcher.qml \
+  usr/share/frost/shell/Surfaces/MediaCard.qml \
+  usr/share/frost/shell/Surfaces/NetworkPanel.qml \
+  usr/share/frost/shell/Surfaces/NotificationModel.js \
+  usr/share/frost/shell/Surfaces/NotificationPanel.qml \
+  usr/share/frost/shell/Surfaces/OptionalPanel.qml \
+  usr/share/frost/shell/Surfaces/SurfaceHost.qml \
   usr/share/doc/frost/phase4-surface-inventory.md \
+  usr/share/doc/frost/provenance/data.json \
   usr/share/doc/frost/provenance/ports.json \
   usr/share/frost/themes/frost/theme.toml; do
   if ! printf '%s\n' "${paths[@]}" | grep -qx "$expected"; then
@@ -60,6 +92,7 @@ done
 package_info=$(bsdtar -xOf "$package" .PKGINFO)
 for dependency in \
   bash \
+  bluez \
   brightnessctl \
   cliphist \
   ghostty \
@@ -68,9 +101,12 @@ for dependency in \
   hyprlock \
   hyprpolkitagent \
   mako \
+  networkmanager \
+  power-profiles-daemon \
   quickshell \
   systemd \
   uwsm \
+  upower \
   wireplumber \
   wl-clipboard; do
   if ! grep -Eq "^depend = ${dependency}([<=>].*)?$" <<<"$package_info"; then

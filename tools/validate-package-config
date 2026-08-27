@@ -26,9 +26,10 @@ if [[ ! -f $root/pkgbuilds/frost-keyring/PKGBUILD ]]; then
 fi
 
 for required_dependency in \
-  hyprland uwsm mako hyprlock hypridle hyprpolkitagent ghostty wl-clipboard cliphist; do
+  hyprland uwsm mako hyprlock hypridle hyprpolkitagent ghostty wl-clipboard cliphist \
+  networkmanager bluez upower power-profiles-daemon wireplumber brightnessctl quickshell; do
   if ! rg -q "^[[:space:]]*'${required_dependency}'$" "$root/pkgbuilds/frost/PKGBUILD"; then
-    fail "missing fixed Phase 2 dependency: $required_dependency"
+    fail "missing fixed Frost runtime dependency: $required_dependency"
   fi
 done
 

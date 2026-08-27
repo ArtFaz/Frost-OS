@@ -1,12 +1,13 @@
 pkgname=frost
 pkgver=0.2.0
-pkgrel=8
+pkgrel=9
 pkgdesc='Independent Frost desktop runtime and diagnostics CLI'
 arch=('x86_64')
 url='https://github.com/ArtFaz/Frost-OS'
 license=('MIT')
 depends=(
   'bash'
+  'bluez'
   'brightnessctl'
   'cliphist'
   'ghostty'
@@ -16,9 +17,12 @@ depends=(
   'hyprlock'
   'hyprpolkitagent'
   'mako'
+  'networkmanager'
+  'power-profiles-daemon'
   'quickshell'
   'systemd'
   'uwsm'
+  'upower'
   'wireplumber'
   'wl-clipboard'
 )
@@ -53,6 +57,9 @@ package() {
   install -Dm644 config/shell.json "$pkgdir/usr/share/frost/config/shell.json"
   install -Dm644 config/schema/shell.schema.json \
     "$pkgdir/usr/share/frost/config/schema/shell.schema.json"
+  install -d "$pkgdir/usr/share/frost/config/data"
+  cp -r config/data/. "$pkgdir/usr/share/frost/config/data/"
+  find "$pkgdir/usr/share/frost/config/data" -type f -exec chmod 0644 {} +
   install -d "$pkgdir/usr/share/frost/themes"
   cp -r themes/. "$pkgdir/usr/share/frost/themes/"
   find "$pkgdir/usr/share/frost/themes" -type d -exec chmod 0755 {} +
@@ -93,6 +100,8 @@ package() {
     "$pkgdir/usr/share/doc/frost/security-boundaries.md"
   install -Dm644 docs/provenance/ports.json \
     "$pkgdir/usr/share/doc/frost/provenance/ports.json"
+  install -Dm644 docs/provenance/data.json \
+    "$pkgdir/usr/share/doc/frost/provenance/data.json"
   install -Dm644 THIRD_PARTY.md \
     "$pkgdir/usr/share/doc/frost/THIRD_PARTY.md"
   install -Dm644 LICENSE "$pkgdir/usr/share/licenses/frost/LICENSE"
