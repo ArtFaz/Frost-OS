@@ -7,6 +7,7 @@ QtObject {
     property bool reminder: false
     property bool stayAwake: false
     property bool loading: false
+    property Connections backendConnections
     property Timer refreshTimer
     property Timer retryTimer
 
@@ -22,7 +23,7 @@ QtObject {
 
     Component.onCompleted: refresh()
 
-    Connections {
+    backendConnections: Connections {
         function onDataReady(kind, payload) {
             if (kind !== "indicators")
                 return;

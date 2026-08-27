@@ -14,6 +14,7 @@ QtObject {
     property bool failed: false
     readonly property bool configured: city !== ""
     property FileView configFile
+    property Connections backendConnections
     property Timer refreshTimer
     property Timer retryTimer
 
@@ -43,7 +44,7 @@ QtObject {
 
     Component.onCompleted: refresh()
 
-    Connections {
+    backendConnections: Connections {
         function onDataReady(kind, payload) {
             if (kind !== "weather")
                 return;

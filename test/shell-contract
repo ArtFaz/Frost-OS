@@ -100,6 +100,31 @@ if command -v qmllint >/dev/null; then
   qmllint -I "$shell" "${qml_files[@]}"
 fi
 
+if command -v quickshell >/dev/null; then
+  smoke_runtime=$(mktemp -d /tmp/frost-core-runtime.XXXXXX)
+  case $smoke_runtime in
+    /tmp/frost-core-runtime.*) ;;
+    *) fail 'invalid Core runtime smoke directory' ;;
+  esac
+  chmod 0700 "$smoke_runtime"
+  if smoke_output=$(env -u QT_QPA_PLATFORMTHEME -u GTK_THEME \
+    XDG_RUNTIME_DIR="$smoke_runtime" QT_QPA_PLATFORM=offscreen \
+    timeout --signal=TERM --kill-after=1 3 \
+    quickshell --no-color --path "$root/test/core-runtime-smoke.qml" 2>&1); then
+    smoke_status=0
+  else
+    smoke_status=$?
+  fi
+  if ((smoke_status != 0 && smoke_status != 124)) || \
+    ! grep -Fq 'Configuration Loaded' <<<"$smoke_output" || \
+    grep -Fq 'Failed to load configuration' <<<"$smoke_output"; then
+    printf '%s\n' "$smoke_output" >&2
+    rm -rf -- "$smoke_runtime"
+    fail 'QuickShell cannot instantiate the Frost Core singletons'
+  fi
+  rm -rf -- "$smoke_runtime"
+fi
+
 node --check "$shell/Osd/OsdModel.js"
 node --check "$shell/Surfaces/InstallerModel.js"
 node --check "$shell/Surfaces/NotificationModel.js"
