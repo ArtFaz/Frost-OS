@@ -263,6 +263,9 @@ fn collect_checks(strict: bool) -> Vec<Check> {
         "mako",
         "hyprlock",
         "hypridle",
+        "quickshell",
+        "wpctl",
+        "brightnessctl",
         "wl-paste",
         "cliphist",
         "systemctl",
@@ -295,6 +298,7 @@ fn collect_checks(strict: bool) -> Vec<Check> {
     if strict {
         for (name, relative_path) in [
             ("file:shell-defaults", "config/shell.json"),
+            ("file:shell-root", "shell/shell.qml"),
             ("file:hyprland-config", "default/hypr/hyprland.lua"),
             ("file:hypridle-config", "default/hypr/hypridle.conf"),
             ("file:hyprlock-config", "default/hypr/hyprlock.conf"),

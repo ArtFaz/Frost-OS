@@ -59,6 +59,20 @@ hl.animation({
     bezier = "default",
 })
 
+hl.layer_rule({
+    name = "frost-bar-blur",
+    match = { namespace = "^frost-bar$" },
+    blur = true,
+    ignore_alpha = 0.08,
+})
+
+hl.layer_rule({
+    name = "frost-osd-blur",
+    match = { namespace = "^frost-osd$" },
+    blur = true,
+    ignore_alpha = 0.08,
+})
+
 hl.on("hyprland.start", function()
     hl.exec_cmd("systemctl --user start --no-block frost-session.target")
 end)
@@ -84,3 +98,9 @@ end
 
 hl.bind(main_mod .. " + mouse:272", hl.dsp.window.drag(), { mouse = true })
 hl.bind(main_mod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
+
+hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("/usr/lib/frost/frost-osd volume-up"), { locked = true, repeating = true })
+hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("/usr/lib/frost/frost-osd volume-down"), { locked = true, repeating = true })
+hl.bind("XF86AudioMute", hl.dsp.exec_cmd("/usr/lib/frost/frost-osd volume-mute"), { locked = true })
+hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("/usr/lib/frost/frost-osd brightness-up"), { locked = true, repeating = true })
+hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("/usr/lib/frost/frost-osd brightness-down"), { locked = true, repeating = true })

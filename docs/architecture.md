@@ -10,4 +10,8 @@ The Phase 2 session is entered only through `/usr/share/wayland-sessions/frost.d
 
 `frost-session.target` is bound to `graphical-session.target` and owns only `frost-*` user units. The notification, Polkit and idle services conflict with their upstream generic unit names so a pre-enabled upstream unit cannot become a second authority inside Frost. Hyprlock is an on-demand `frost-lock.service`; it is never treated as a shell component.
 
-Phase 2 intentionally contains no global settings package, final package selection, updater, migration runner, privileged helper, or static shell. Those enter only in their gated phases.
+Beginning in Phase 3, `frost-shell.service` is supervised by the Frost target and starts exactly `/usr/bin/quickshell --path /usr/share/frost/shell/shell.qml`. The package-owned tree contains a statically composed bar per monitor and an OSD. It exposes only the `frost` IPC target and does not load manifests, external QML or a user shell tree. User settings are read only as schema-versioned data from `~/.config/frost`.
+
+The bar owns workspace presentation, the system tray and the clock. The OSD accepts only bounded JSON fields and is triggered by `/usr/lib/frost/frost-osd`, whose fixed action allowlist controls volume or brightness before sending display state to the shell. Mako, Hyprlock and hyprpolkitagent remain separate authorities.
+
+Phase 3 still contains no global settings package, final package selection, updater, migration runner or privileged helper. Those enter only in their gated phases.

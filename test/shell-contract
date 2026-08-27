@@ -1,0 +1,48 @@
+#!/bin/bash
+
+set -euo pipefail
+
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+shell=$root/shell
+
+fail() {
+  printf 'shell contract: %s\n' "$1" >&2
+  exit 1
+}
+
+for relative_path in \
+  shell.qml \
+  Core/Config.qml \
+  Core/Theme.qml \
+  Bar/Bar.qml \
+  Bar/Workspaces.qml \
+  Bar/Tray.qml \
+  Bar/Clock.qml \
+  Osd/Osd.qml \
+  Osd/OsdModel.js; do
+  [[ -f $shell/$relative_path && ! -L $shell/$relative_path ]] ||
+    fail "missing static shell file: $relative_path"
+done
+
+mapfile -t ipc_targets < <(rg --no-filename -o 'target:\s*"[^"]+"' "$shell" --glob '*.qml')
+[[ ${#ipc_targets[@]} == 1 && ${ipc_targets[0]} == 'target: "frost"' ]] ||
+  fail 'shell must expose exactly one Frost IPC target'
+
+rg -q 'model: root\.enabled \? Quickshell\.screens : \[\]' "$shell/Bar/Bar.qml" ||
+  fail 'bar is not composed per screen'
+rg -q 'exclusiveZone: Theme\.barHeight' "$shell/Bar/Bar.qml" ||
+  fail 'bar does not reserve its exact height'
+rg -q 'model: SystemTray\.items' "$shell/Bar/Tray.qml" ||
+  fail 'static system tray model is missing'
+rg -q 'model: \[1, 2, 3, 4, 5\]' "$shell/Bar/Workspaces.qml" ||
+  fail 'fixed workspace composition is missing'
+
+if command -v qmllint >/dev/null; then
+  mapfile -t qml_files < <(find "$shell" -type f -name '*.qml' -print | sort)
+  qmllint -I "$shell" "${qml_files[@]}"
+fi
+
+node --check "$shell/Osd/OsdModel.js"
+node "$root/test/osd-model.js"
+
+printf '%s\n' 'shell contract: ok'

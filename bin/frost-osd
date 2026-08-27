@@ -1,0 +1,65 @@
+#!/bin/bash
+
+set -euo pipefail
+
+export LC_ALL=C
+
+if (($# != 1)); then
+  printf '%s\n' 'usage: frost-osd volume-up|volume-down|volume-mute|brightness-up|brightness-down' >&2
+  exit 2
+fi
+
+case $1 in
+  volume-up)
+    /usr/bin/wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+
+    kind=volume
+    ;;
+  volume-down)
+    /usr/bin/wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
+    kind=volume
+    ;;
+  volume-mute)
+    /usr/bin/wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
+    kind=volume
+    ;;
+  brightness-up)
+    /usr/bin/brightnessctl --class=backlight set +5% >/dev/null
+    kind=brightness
+    ;;
+  brightness-down)
+    /usr/bin/brightnessctl --class=backlight set 5%- >/dev/null
+    kind=brightness
+    ;;
+  *)
+    printf 'unsupported Frost OSD action: %s\n' "$1" >&2
+    exit 2
+    ;;
+esac
+
+if [[ $kind == volume ]]; then
+  volume_line=$(/usr/bin/wpctl get-volume @DEFAULT_AUDIO_SINK@)
+  value=$(/usr/bin/awk '{ printf "%d", ($2 * 100) + 0.5 }' <<<"$volume_line")
+  if [[ $volume_line == *'[MUTED]'* ]]; then
+    icon=volume-muted
+  else
+    icon=volume
+  fi
+else
+  current=$(/usr/bin/brightnessctl --class=backlight get)
+  maximum=$(/usr/bin/brightnessctl --class=backlight max)
+  if [[ ! $current =~ ^[0-9]+$ || ! $maximum =~ ^[1-9][0-9]*$ ]]; then
+    printf '%s\n' 'brightness device returned invalid values' >&2
+    exit 1
+  fi
+  value=$((current * 100 / maximum))
+  icon=brightness
+fi
+
+if [[ ! $value =~ ^[0-9]+$ ]]; then
+  printf '%s\n' 'OSD value is not numeric' >&2
+  exit 1
+fi
+
+payload=$(printf '{"icon":"%s","value":%d,"max":100,"duration":1200}' "$icon" "$value")
+/usr/bin/quickshell --path /usr/share/frost/shell ipc call frost show osd "$payload" \
+  >/dev/null 2>&1 || true

@@ -2,6 +2,6 @@
 Description=Frost desktop session services
 Documentation=file:///usr/share/doc/frost/architecture.md
 Requires=graphical-session.target
-Wants=frost-notifications.service frost-polkit.service frost-idle.service frost-clipboard-text.service frost-clipboard-image.service
+Wants=frost-shell.service frost-notifications.service frost-polkit.service frost-idle.service frost-clipboard-text.service frost-clipboard-image.service
 After=graphical-session.target
 BindsTo=graphical-session.target

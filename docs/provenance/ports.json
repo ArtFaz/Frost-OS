@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "entries": [
+    {
+      "destination": "shell/shell.qml",
+      "originRepository": "Frost-OS",
+      "originCommit": "f4a8cc9cd4137469393f815ccef08a849ce9005d",
+      "originPath": "shell/shell.qml",
+      "transformation": "rewritten-from-concept",
+      "license": "pending-confirmation",
+      "notice": "docs/provenance.md"
+    },
+    {
+      "destination": "shell/Core/Config.qml",
+      "originRepository": "Frost-OS",
+      "originCommit": "f4a8cc9cd4137469393f815ccef08a849ce9005d",
+      "originPath": "shell/shell.qml",
+      "transformation": "rewritten-from-concept",
+      "license": "pending-confirmation",
+      "notice": "docs/provenance.md"
+    },
+    {
+      "destination": "shell/Core/Theme.qml",
+      "originRepository": "Frost-OS",
+      "originCommit": "f4a8cc9cd4137469393f815ccef08a849ce9005d",
+      "originPath": "shell/components/frost/Glass.qml",
+      "transformation": "rewritten-from-concept",
+      "license": "pending-confirmation",
+      "notice": "docs/provenance.md"
+    },
+    {
+      "destination": "shell/Bar/Bar.qml",
+      "originRepository": "Frost-OS",
+      "originCommit": "f4a8cc9cd4137469393f815ccef08a849ce9005d",
+      "originPath": "shell/components/bar/Bar.qml",
+      "transformation": "rewritten-from-concept",
+      "license": "pending-confirmation",
+      "notice": "docs/provenance.md"
+    },
+    {
+      "destination": "shell/Bar/Workspaces.qml",
+      "originRepository": "staging",
+      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
+      "originPath": "config/omarchy/plugins/art.workspaces/Workspaces.qml",
+      "transformation": "rewritten-from-concept",
+      "license": "pending-confirmation",
+      "notice": "docs/provenance.md"
+    },
+    {
+      "destination": "shell/Bar/Tray.qml",
+      "originRepository": "staging",
+      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
+      "originPath": "config/omarchy/plugins/art.bar/widgets/Tray.qml",
+      "transformation": "rewritten-from-concept",
+      "license": "pending-confirmation",
+      "notice": "docs/provenance.md"
+    },
+    {
+      "destination": "shell/Bar/Clock.qml",
+      "originRepository": "Frost-OS",
+      "originCommit": "f4a8cc9cd4137469393f815ccef08a849ce9005d",
+      "originPath": "shell/components/bar/Bar.qml",
+      "transformation": "rewritten-from-concept",
+      "license": "pending-confirmation",
+      "notice": "docs/provenance.md"
+    },
+    {
+      "destination": "shell/Osd/Osd.qml",
+      "originRepository": "Frost-OS",
+      "originCommit": "f4a8cc9cd4137469393f815ccef08a849ce9005d",
+      "originPath": "shell/components/osd/Osd.qml",
+      "transformation": "rewritten-from-concept",
+      "license": "pending-confirmation",
+      "notice": "docs/provenance.md"
+    },
+    {
+      "destination": "shell/Osd/OsdModel.js",
+      "originRepository": "Frost-OS",
+      "originCommit": "f4a8cc9cd4137469393f815ccef08a849ce9005d",
+      "originPath": "shell/components/osd/OsdModel.js",
+      "transformation": "rewritten-from-concept",
+      "license": "pending-confirmation",
+      "notice": "docs/provenance.md"
+    }
+  ]
+}
