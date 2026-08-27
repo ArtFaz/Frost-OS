@@ -14,7 +14,7 @@ required_files=(
   bin/frost-hyprland
   bin/frost-terminal
   default/wayland-sessions/frost.desktop
-  default/hypr/hyprland.conf
+  default/hypr/hyprland.lua
   default/hypr/hypridle.conf
   default/hypr/hyprlock.conf
   default/mako/config
@@ -61,19 +61,22 @@ fi
 if rg -n -i '(omarchy|omacom|pkgs\.omarchy)' "$root/bin" "$root/default"; then
   fail 'donor guard, identity, or endpoint found in Frost session assets'
 fi
-if rg -n '^\s*source\s*=' "$root/default/hypr/hyprland.conf"; then
-  fail 'Hyprland config may not source an external runtime tree'
+hyprland_config=$root/default/hypr/hyprland.lua
+if rg -n '\b(require|dofile|loadfile)\s*\(|os\.execute\s*\(|io\.popen\s*\(' "$hyprland_config"; then
+  fail 'Hyprland Lua may not load or execute an external runtime tree'
 fi
 
-rg -q '^exec-once = systemctl --user start --no-block frost-session\.target$' \
-  "$root/default/hypr/hyprland.conf" || fail 'Hyprland does not start only the Frost target'
+rg -q '^\s*hl\.exec_cmd\("systemctl --user start --no-block frost-session\.target"\)$' \
+  "$hyprland_config" || fail 'Hyprland does not start only the Frost target'
 if rg -n 'hyprctl dispatch dpms' "$root/default/hypr/hypridle.conf"; then
   fail 'legacy DPMS dispatcher found in Hypridle config'
 fi
 rg -q "hl\\.dsp\\.dpms.*action = \\\"off\\\"" "$root/default/hypr/hypridle.conf" ||
   fail 'current Hyprland DPMS-off dispatcher is missing'
-rg -q '^Exec=uwsm start -e -D Frost /usr/lib/frost/frost-hyprland$' \
+rg -q '^Exec=uwsm start -e -D Frost:Hyprland /usr/lib/frost/frost-hyprland$' \
   "$root/default/wayland-sessions/frost.desktop" || fail 'desktop entry does not use the Frost UWSM wrapper'
+rg -q '^exec /usr/bin/start-hyprland -- --config "\$frost_hyprland_config" "\$@"$' \
+  "$root/bin/frost-hyprland" || fail 'Frost wrapper does not use start-hyprland'
 
 lock_config=$root/default/hypr/hyprlock.conf
 rg -q '^\s*module = hyprlock$' "$lock_config" || fail 'Hyprlock PAM module is not explicit'
@@ -89,7 +92,7 @@ bash -n "$root/bin/frost-hyprland" "$root/bin/frost-terminal" "$root/default/bas
 desktop-file-validate "$root/default/wayland-sessions/frost.desktop"
 
 if command -v Hyprland >/dev/null; then
-  Hyprland --verify-config --config "$root/default/hypr/hyprland.conf" >/dev/null
+  Hyprland --verify-config --config "$hyprland_config" >/dev/null
 fi
 
 if command -v ghostty >/dev/null; then

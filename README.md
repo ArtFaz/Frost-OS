@@ -4,7 +4,7 @@ Frost is an independent Arch Linux desktop built around UWSM, Hyprland, a static
 
 This repository is the Frost runtime and user-facing CLI. It has a new history and no operational dependency on any donor distribution or repository.
 
-Current status: private implementation, Phase 2 parallel session. The session assets are isolated and statically testable; installation and graphical testing remain behind an explicit approval gate. Publication is blocked until every reused source and asset has complete provenance and redistribution terms.
+Current status: private implementation, Phase 2 parallel-session preview. The isolated preview is installed locally; the Phase 2 compatibility fix is implemented in source and awaits its final graphical acceptance test. Publication is blocked until every reused source and asset has complete provenance and redistribution terms.
 
 ## Repository boundaries
 
@@ -16,3 +16,15 @@ Current status: private implementation, Phase 2 parallel session. The session as
 - Machine state belongs below `/var/lib/frost`.
 
 Donor checkouts are audit references only. They are never build inputs, submodules, remotes, update channels, or runtime fallbacks.
+
+## Phase 2 — Fix
+
+Before Phase 3 begins, the parallel-session preview must complete these compatibility fixes:
+
+- [x] Replace the transitional `hyprland.conf` with an original Frost Lua configuration at `/usr/share/frost/default/hypr/hyprland.lua`, using the current upstream Hyprland API.
+- [x] Change `/usr/lib/frost/frost-hyprland` to launch `start-hyprland -- --config /usr/share/frost/default/hypr/hyprland.lua` instead of executing the raw `Hyprland` binary.
+- [x] Set the UWSM desktop identity to `Frost:Hyprland`, preserving Frost session detection while advertising Hyprland compatibility to the desktop ecosystem.
+- [x] Keep the configuration package-owned and independent: it must not load donor files or anything below `~/.config/hypr`; future personal overrides remain below `~/.config/frost`.
+- [ ] Confirm the three startup warnings are absent in a fresh graphical Frost login.
+
+Acceptance requires a clean graphical startup without the deprecated `.conf`, direct-`Hyprland`, or unintended `XDG_CURRENT_DESKTOP` warnings, while `frost-session.target` and all `frost-*` ownership boundaries remain unchanged.

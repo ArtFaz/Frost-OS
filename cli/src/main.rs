@@ -7,7 +7,7 @@ use std::process::{Command, ExitCode, Stdio};
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const SHARE_DIR: &str = "/usr/share/frost";
 const ADMIN_CONFIG_DIR: &str = "/etc/frost";
-const HYPRLAND_CONFIG: &str = "/usr/share/frost/default/hypr/hyprland.conf";
+const HYPRLAND_CONFIG: &str = "/usr/share/frost/default/hypr/hyprland.lua";
 
 #[derive(Debug)]
 enum CliError {
@@ -295,7 +295,7 @@ fn collect_checks(strict: bool) -> Vec<Check> {
     if strict {
         for (name, relative_path) in [
             ("file:shell-defaults", "config/shell.json"),
-            ("file:hyprland-config", "default/hypr/hyprland.conf"),
+            ("file:hyprland-config", "default/hypr/hyprland.lua"),
             ("file:hypridle-config", "default/hypr/hypridle.conf"),
             ("file:hyprlock-config", "default/hypr/hyprlock.conf"),
             ("file:mako-config", "default/mako/config"),
@@ -441,9 +441,7 @@ mod tests {
         let json = status_json(&status);
         assert!(json.starts_with("{\"schemaVersion\":1,"));
         assert!(json.contains("\"frostSession\":true"));
-        assert!(
-            json.contains("\"hyprlandConfig\":\"/usr/share/frost/default/hypr/hyprland.conf\"")
-        );
+        assert!(json.contains("\"hyprlandConfig\":\"/usr/share/frost/default/hypr/hyprland.lua\""));
         assert!(json.contains("\"sessionTarget\":\"active\""));
         assert!(json.contains("\"shell\":\"active\""));
     }

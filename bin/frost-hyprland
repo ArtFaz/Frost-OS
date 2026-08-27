@@ -2,9 +2,9 @@
 
 set -euo pipefail
 
-readonly frost_hyprland_config=/usr/share/frost/default/hypr/hyprland.conf
+readonly frost_hyprland_config=/usr/share/frost/default/hypr/hyprland.lua
 
 export FROST_SESSION=1
 export FROST_HYPRLAND_CONFIG=$frost_hyprland_config
 
-exec /usr/bin/Hyprland --config "$frost_hyprland_config" "$@"
+exec /usr/bin/start-hyprland -- --config "$frost_hyprland_config" "$@"
