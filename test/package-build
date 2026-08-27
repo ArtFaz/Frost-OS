@@ -25,6 +25,8 @@ for expected in \
   usr/lib/frost/frost-terminal \
   usr/lib/systemd/user/frost-session.target \
   usr/lib/systemd/user/frost-shell.service \
+  usr/lib/systemd/user/frost-stay-awake.service \
+  usr/lib/systemd/user/frost-theme.service \
   usr/lib/systemd/user/frost-notifications.service \
   usr/lib/systemd/user/frost-polkit.service \
   usr/lib/systemd/user/frost-idle.service \
@@ -41,10 +43,13 @@ for expected in \
   usr/share/frost/config/shell.json \
   usr/share/frost/shell/shell.qml \
   usr/share/frost/shell/Core/Config.qml \
+  usr/share/frost/shell/Core/IndicatorState.qml \
   usr/share/frost/shell/Core/Motion.qml \
   usr/share/frost/shell/Core/ShellBackend.qml \
+  usr/share/frost/shell/Core/Style.qml \
   usr/share/frost/shell/Core/SystemState.qml \
   usr/share/frost/shell/Core/Theme.qml \
+  usr/share/frost/shell/Core/WeatherState.qml \
   usr/share/frost/shell/Primitives/FocusRing.qml \
   usr/share/frost/shell/Primitives/GlassSurface.qml \
   usr/share/frost/shell/Primitives/InteractiveSurface.qml \
@@ -68,6 +73,7 @@ for expected in \
   usr/share/frost/shell/Surfaces/BluetoothPanel.qml \
   usr/share/frost/shell/Surfaces/ClipboardPanel.qml \
   usr/share/frost/shell/Surfaces/ControlCenter.qml \
+  usr/share/frost/shell/Surfaces/CalendarPanel.qml \
   usr/share/frost/shell/Surfaces/DisplayPowerPanel.qml \
   usr/share/frost/shell/Surfaces/EmojiPanel.qml \
   usr/share/frost/shell/Surfaces/ImagePickerPanel.qml \
@@ -78,11 +84,16 @@ for expected in \
   usr/share/frost/shell/Surfaces/NotificationModel.js \
   usr/share/frost/shell/Surfaces/NotificationPanel.qml \
   usr/share/frost/shell/Surfaces/OptionalPanel.qml \
+  usr/share/frost/shell/Surfaces/ReminderPanel.qml \
   usr/share/frost/shell/Surfaces/SurfaceHost.qml \
+  usr/share/frost/shell/Surfaces/WeatherPanel.qml \
   usr/share/doc/frost/phase4-surface-inventory.md \
+  usr/share/doc/frost/phase4-parity-contract.md \
   usr/share/doc/frost/provenance/data.json \
   usr/share/doc/frost/provenance/ports.json \
-  usr/share/frost/themes/frost/theme.toml; do
+  usr/share/frost/themes/frost/theme.toml \
+  usr/share/frost/themes/frost-light/theme.toml \
+  usr/share/frost/themes/gruvbox/theme.toml; do
   if ! printf '%s\n' "${paths[@]}" | grep -qx "$expected"; then
     printf 'package is missing %s\n' "$expected" >&2
     exit 1
@@ -95,16 +106,22 @@ for dependency in \
   bluez \
   brightnessctl \
   cliphist \
+  curl \
   ghostty \
   hypridle \
   hyprland \
   hyprlock \
   hyprpolkitagent \
+  jq \
+  libnotify \
   mako \
   networkmanager \
+  noto-fonts-emoji \
   power-profiles-daemon \
   quickshell \
   systemd \
+  ttf-jetbrains-mono \
+  ttf-nerd-fonts-symbols-mono \
   uwsm \
   upower \
   wireplumber \

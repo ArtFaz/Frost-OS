@@ -1,6 +1,6 @@
 pkgname=frost
 pkgver=0.2.0
-pkgrel=9
+pkgrel=10
 pkgdesc='Independent Frost desktop runtime and diagnostics CLI'
 arch=('x86_64')
 url='https://github.com/ArtFaz/Frost-OS'
@@ -10,17 +10,23 @@ depends=(
   'bluez'
   'brightnessctl'
   'cliphist'
+  'curl'
   'ghostty'
   'glibc'
   'hypridle'
   'hyprland'
   'hyprlock'
   'hyprpolkitagent'
+  'jq'
+  'libnotify'
   'mako'
   'networkmanager'
+  'noto-fonts-emoji'
   'power-profiles-daemon'
   'quickshell'
   'systemd'
+  'ttf-jetbrains-mono'
+  'ttf-nerd-fonts-symbols-mono'
   'uwsm'
   'upower'
   'wireplumber'
@@ -94,6 +100,8 @@ package() {
     "$pkgdir/usr/share/doc/frost/architecture.md"
   install -Dm644 docs/phase4-surface-inventory.md \
     "$pkgdir/usr/share/doc/frost/phase4-surface-inventory.md"
+  install -Dm644 docs/phase4-parity-contract.md \
+    "$pkgdir/usr/share/doc/frost/phase4-parity-contract.md"
   install -Dm644 docs/preview-session.md \
     "$pkgdir/usr/share/doc/frost/preview-session.md"
   install -Dm644 docs/security-boundaries.md \
