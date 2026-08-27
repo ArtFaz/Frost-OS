@@ -33,6 +33,33 @@ if ((${#qml_roots[@]} > 0)); then
   fi
 fi
 
+shell_root=$root/shell
+if [[ -d $shell_root ]]; then
+  if find "$shell_root" -type l -print -quit | grep -q .; then
+    fail 'shell symlink found'
+  fi
+  if find "$shell_root" -type f -name manifest.json -print -quit | grep -q .; then
+    fail 'runtime plugin manifest found in static shell'
+  fi
+  if rg -n --glob '*.qml' --glob '*.js' \
+    '(FolderListModel|Qt\.createComponent|Qt\.createQmlObject|Component\.createObject|QQmlComponent)' \
+    "$shell_root"; then
+    fail 'runtime QML discovery or construction found in static shell'
+  fi
+
+  while IFS= read -r -d '' qml_file; do
+    while IFS= read -r import_line; do
+      import_path=${import_line#*\"}
+      import_path=${import_path%%\"*}
+      resolved_import=$(realpath -m -- "$(dirname -- "$qml_file")/$import_path")
+      case $resolved_import in
+        "$shell_root"|"$shell_root"/*) ;;
+        *) fail "quoted QML import escapes static shell: ${qml_file#$root/}" ;;
+      esac
+    done < <(rg --no-filename -o '^\s*import\s+"[^"]+"' "$qml_file" || true)
+  done < <(find "$shell_root" -type f -name '*.qml' -print0)
+fi
+
 if [[ -d $root/themes ]]; then
   if find "$root/themes" -type l -print -quit | grep -q .; then
     fail 'theme symlink found'
@@ -49,4 +76,3 @@ if [[ -d $root/themes ]]; then
 fi
 
 printf '%s\n' 'source contract: ok'
-

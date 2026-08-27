@@ -29,6 +29,34 @@ if FROST_SOURCE_ROOT="$fixture" "$root/test/source-contract" >/dev/null 2>&1; th
 fi
 rm "$fixture/shell/Bad.qml"
 
+printf '%s\n' '{}' >"$fixture/shell/manifest.json"
+if FROST_SOURCE_ROOT="$fixture" "$root/test/source-contract" >/dev/null 2>&1; then
+  printf '%s\n' 'expected runtime plugin manifest fixture to fail' >&2
+  exit 1
+fi
+rm "$fixture/shell/manifest.json"
+
+printf '%s\n' 'FolderListModel {}' >"$fixture/shell/Bad.qml"
+if FROST_SOURCE_ROOT="$fixture" "$root/test/source-contract" >/dev/null 2>&1; then
+  printf '%s\n' 'expected dynamic QML discovery fixture to fail' >&2
+  exit 1
+fi
+rm "$fixture/shell/Bad.qml"
+
+printf '%s\n' 'import "../../outside"' >"$fixture/shell/Bad.qml"
+if FROST_SOURCE_ROOT="$fixture" "$root/test/source-contract" >/dev/null 2>&1; then
+  printf '%s\n' 'expected external QML import fixture to fail' >&2
+  exit 1
+fi
+rm "$fixture/shell/Bad.qml"
+
+ln -s /tmp "$fixture/shell/outside"
+if FROST_SOURCE_ROOT="$fixture" "$root/test/source-contract" >/dev/null 2>&1; then
+  printf '%s\n' 'expected shell symlink fixture to fail' >&2
+  exit 1
+fi
+rm "$fixture/shell/outside"
+
 printf '%s\n' '#!/bin/bash' >"$fixture/themes/frost/install.sh"
 if FROST_SOURCE_ROOT="$fixture" "$root/test/source-contract" >/dev/null 2>&1; then
   printf '%s\n' 'expected executable theme fixture to fail' >&2
