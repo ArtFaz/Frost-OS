@@ -46,6 +46,14 @@ if FROST_SOURCE_ROOT="$fixture" "$root/test/source-contract" >/dev/null 2>&1; th
 fi
 rm "$fixture/shell/Bad.qml"
 
+mkdir -p "$fixture/shell/Core"
+printf '%s\n' 'Process {' >"$fixture/shell/Core/ShellBackend.qml"
+if FROST_SOURCE_ROOT="$fixture" "$root/test/source-contract" >/dev/null 2>&1; then
+  printf '%s\n' 'expected incomplete typed backend fixture to fail' >&2
+  exit 1
+fi
+rm "$fixture/shell/Core/ShellBackend.qml"
+
 printf '%s\n' '{}' >"$fixture/shell/manifest.json"
 if FROST_SOURCE_ROOT="$fixture" "$root/test/source-contract" >/dev/null 2>&1; then
   printf '%s\n' 'expected runtime plugin manifest fixture to fail' >&2

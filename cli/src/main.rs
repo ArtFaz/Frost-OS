@@ -1,5 +1,6 @@
 use std::env;
 use std::fs;
+use std::io::Write;
 use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode, Stdio};
@@ -99,6 +100,8 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
         "status" => status_command(rest)?,
         "doctor" => doctor_command(rest, false)?,
         "verify" => doctor_command(rest, true)?,
+        "shell-data" => shell_data_command(rest)?,
+        "shell-action" => shell_action_command(rest)?,
         other => return Err(CliError::Usage(format!("unknown command: {other}"))),
     }
     Ok(())
@@ -108,7 +111,9 @@ fn print_help() {
     println!(
         "Frost control and diagnostics\n\n\
 Usage:\n  frost status [--json]\n  frost doctor [--json]\n  \
-frost verify [--json]\n  frost version"
+frost verify [--json]\n  frost version\n\nInternal typed shell interface:\n  \
+frost shell-data <brightness|clipboard|images|notifications>\n  \
+frost shell-action ACTION [VALUE]"
     );
 }
 
@@ -406,6 +411,307 @@ fn json_escape(value: &str) -> String {
     escaped
 }
 
+fn shell_data_command(args: &[String]) -> Result<(), CliError> {
+    let [kind] = args else {
+        return Err(CliError::Usage(
+            "usage: frost shell-data <brightness|clipboard|images|notifications>".to_owned(),
+        ));
+    };
+    let json = match kind.as_str() {
+        "brightness" => brightness_json()?,
+        "clipboard" => clipboard_json()?,
+        "images" => images_json()?,
+        "notifications" => notifications_json()?,
+        _ => {
+            return Err(CliError::Usage(format!(
+                "unsupported shell data source: {kind}"
+            )));
+        }
+    };
+    println!("{json}");
+    Ok(())
+}
+
+fn capture(program: &str, args: &[&str]) -> Result<Vec<u8>, CliError> {
+    let output = Command::new(program)
+        .args(args)
+        .output()
+        .map_err(|error| CliError::Operational(format!("could not run {program}: {error}")))?;
+    if !output.status.success() {
+        return Err(CliError::Operational(format!(
+            "{program} returned an error"
+        )));
+    }
+    if output.stdout.len() > 4 * 1024 * 1024 {
+        return Err(CliError::Operational(format!(
+            "{program} output is too large"
+        )));
+    }
+    Ok(output.stdout)
+}
+
+fn brightness_json() -> Result<String, CliError> {
+    let raw = capture("/usr/bin/brightnessctl", &["-m"])?;
+    let text = String::from_utf8_lossy(&raw);
+    let percent = text
+        .trim()
+        .split(',')
+        .nth(3)
+        .and_then(|value| value.trim_end_matches('%').parse::<u8>().ok())
+        .filter(|value| *value <= 100)
+        .ok_or_else(|| CliError::Operational("invalid brightness response".to_owned()))?;
+    Ok(format!(
+        "{{\"schemaVersion\":1,\"available\":true,\"percent\":{percent}}}"
+    ))
+}
+
+fn clipboard_json() -> Result<String, CliError> {
+    let raw = capture("/usr/bin/cliphist", &["list"])?;
+    let text = String::from_utf8_lossy(&raw);
+    let entries = text
+        .lines()
+        .take(100)
+        .filter_map(|line| {
+            let (id, preview) = line.split_once('\t')?;
+            if id.is_empty() || !id.bytes().all(|byte| byte.is_ascii_digit()) {
+                return None;
+            }
+            if preview.trim_start().starts_with("[[ binary data") {
+                return None;
+            }
+            Some(format!(
+                "{{\"id\":{},\"preview\":\"{}\"}}",
+                id,
+                json_escape(preview)
+            ))
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    Ok(format!("{{\"schemaVersion\":1,\"items\":[{entries}]}}"))
+}
+
+fn picture_roots() -> Vec<PathBuf> {
+    let Some(home) = home_dir() else {
+        return Vec::new();
+    };
+    [home.join("Pictures"), home.join("Imagens")]
+        .into_iter()
+        .filter_map(|path| path.canonicalize().ok())
+        .filter(|path| path.is_dir())
+        .collect()
+}
+
+fn image_extension(path: &Path) -> Option<&'static str> {
+    match path.extension()?.to_str()?.to_ascii_lowercase().as_str() {
+        "png" => Some("image/png"),
+        "jpg" | "jpeg" => Some("image/jpeg"),
+        "webp" => Some("image/webp"),
+        _ => None,
+    }
+}
+
+fn collect_images(directory: &Path, depth: u8, output: &mut Vec<(u64, PathBuf)>) {
+    if depth > 2 || output.len() >= 200 {
+        return;
+    }
+    let Ok(entries) = fs::read_dir(directory) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let Ok(metadata) = fs::symlink_metadata(&path) else {
+            continue;
+        };
+        if metadata.file_type().is_symlink() {
+            continue;
+        }
+        if metadata.is_dir() {
+            collect_images(&path, depth + 1, output);
+        } else if metadata.is_file() && image_extension(&path).is_some() {
+            let modified = metadata
+                .modified()
+                .ok()
+                .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
+                .map_or(0, |duration| duration.as_secs());
+            output.push((modified, path));
+        }
+        if output.len() >= 200 {
+            break;
+        }
+    }
+}
+
+fn images_json() -> Result<String, CliError> {
+    let mut images = Vec::new();
+    for root in picture_roots() {
+        collect_images(&root, 0, &mut images);
+    }
+    images.sort_by(|left, right| right.0.cmp(&left.0));
+    let entries = images
+        .into_iter()
+        .take(100)
+        .map(|(_, path)| {
+            let name = path
+                .file_name()
+                .and_then(|value| value.to_str())
+                .unwrap_or("Image");
+            format!(
+                "{{\"path\":\"{}\",\"name\":\"{}\"}}",
+                json_escape(&path.display().to_string()),
+                json_escape(name)
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    Ok(format!("{{\"schemaVersion\":1,\"items\":[{entries}]}}"))
+}
+
+fn json_value_or_empty(raw: Vec<u8>) -> String {
+    let value = String::from_utf8_lossy(&raw).trim().to_owned();
+    if value.starts_with('[') || value.starts_with('{') {
+        value
+    } else {
+        "[]".to_owned()
+    }
+}
+
+fn notifications_json() -> Result<String, CliError> {
+    let active = json_value_or_empty(capture("/usr/bin/makoctl", &["list", "-j"])?);
+    let history = json_value_or_empty(capture("/usr/bin/makoctl", &["history", "-j"])?);
+    Ok(format!(
+        "{{\"schemaVersion\":1,\"active\":{active},\"history\":{history}}}"
+    ))
+}
+
+fn shell_action_command(args: &[String]) -> Result<(), CliError> {
+    let Some(action) = args.first().map(String::as_str) else {
+        return Err(CliError::Usage(
+            "usage: frost shell-action ACTION [VALUE]".to_owned(),
+        ));
+    };
+    let argument = args.get(1).map(String::as_str);
+    if args.len() > 2 {
+        return Err(CliError::Usage(
+            "usage: frost shell-action ACTION [VALUE]".to_owned(),
+        ));
+    }
+    match (action, argument) {
+        ("brightness-down", None) => run_fixed("/usr/lib/frost/frost-osd", &["brightness-down"]),
+        ("brightness-up", None) => run_fixed("/usr/lib/frost/frost-osd", &["brightness-up"]),
+        ("brightness-set", Some(value)) => set_brightness(value),
+        ("clipboard-copy", Some(id)) => copy_clipboard_entry(id),
+        ("image-copy", Some(path)) => copy_image(Path::new(path)),
+        ("lock", None) => run_fixed(
+            "/usr/bin/systemctl",
+            &["--user", "start", "frost-lock.service"],
+        ),
+        ("logout", None) => run_fixed("/usr/bin/uwsm", &["stop"]),
+        ("notification-clear", None) => run_fixed("/usr/bin/makoctl", &["dismiss", "--all"]),
+        ("notification-invoke", Some(id)) if valid_numeric(id, u32::MAX) => {
+            run_fixed("/usr/bin/makoctl", &["invoke", "-n", id])
+        }
+        ("poweroff", None) => run_fixed("/usr/bin/systemctl", &["poweroff"]),
+        ("reboot", None) => run_fixed("/usr/bin/systemctl", &["reboot"]),
+        ("suspend", None) => run_fixed("/usr/bin/systemctl", &["suspend"]),
+        _ => Err(CliError::Usage(format!(
+            "unsupported or invalid shell action: {action}"
+        ))),
+    }
+}
+
+fn valid_numeric(value: &str, maximum: u32) -> bool {
+    !value.is_empty()
+        && value.bytes().all(|byte| byte.is_ascii_digit())
+        && value.parse::<u32>().is_ok_and(|number| number <= maximum)
+}
+
+fn run_fixed(program: &str, args: &[&str]) -> Result<(), CliError> {
+    let status = Command::new(program)
+        .args(args)
+        .status()
+        .map_err(|error| CliError::Operational(format!("could not run {program}: {error}")))?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(CliError::Operational(format!(
+            "{program} returned an error"
+        )))
+    }
+}
+
+fn set_brightness(value: &str) -> Result<(), CliError> {
+    if !valid_numeric(value, 100) {
+        return Err(CliError::Usage(
+            "brightness must be between 0 and 100".to_owned(),
+        ));
+    }
+    let percent = format!("{value}%");
+    run_fixed("/usr/bin/brightnessctl", &["set", &percent])
+}
+
+fn copy_clipboard_entry(id: &str) -> Result<(), CliError> {
+    if !valid_numeric(id, u32::MAX) {
+        return Err(CliError::Usage("invalid clipboard entry id".to_owned()));
+    }
+    let decoded = capture("/usr/bin/cliphist", &["decode", id])?;
+    write_to_clipboard(&decoded, None)
+}
+
+fn copy_image(path: &Path) -> Result<(), CliError> {
+    let canonical = path
+        .canonicalize()
+        .map_err(|_| CliError::Usage("image path does not exist".to_owned()))?;
+    if !picture_roots()
+        .iter()
+        .any(|root| canonical.starts_with(root))
+    {
+        return Err(CliError::Usage(
+            "image path is outside the Pictures directories".to_owned(),
+        ));
+    }
+    let mime = image_extension(&canonical)
+        .ok_or_else(|| CliError::Usage("unsupported image type".to_owned()))?;
+    let metadata = fs::metadata(&canonical)
+        .map_err(|_| CliError::Usage("image path is not readable".to_owned()))?;
+    if !metadata.is_file() || metadata.len() > 32 * 1024 * 1024 {
+        return Err(CliError::Usage(
+            "image is not a safe regular file".to_owned(),
+        ));
+    }
+    let data = fs::read(canonical)
+        .map_err(|error| CliError::Operational(format!("could not read image: {error}")))?;
+    write_to_clipboard(&data, Some(mime))
+}
+
+fn write_to_clipboard(data: &[u8], mime: Option<&str>) -> Result<(), CliError> {
+    let mut command = Command::new("/usr/bin/wl-copy");
+    if let Some(mime) = mime {
+        command.args(["--type", mime]);
+    }
+    let mut child = command
+        .stdin(Stdio::piped())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .map_err(|error| CliError::Operational(format!("could not start wl-copy: {error}")))?;
+    child
+        .stdin
+        .take()
+        .ok_or_else(|| CliError::Operational("wl-copy stdin is unavailable".to_owned()))?
+        .write_all(data)
+        .map_err(|error| CliError::Operational(format!("could not write clipboard: {error}")))?;
+    let status = child
+        .wait()
+        .map_err(|error| CliError::Operational(format!("could not wait for wl-copy: {error}")))?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(CliError::Operational(
+            "wl-copy returned an error".to_owned(),
+        ))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -454,5 +760,31 @@ mod tests {
     fn usage_errors_exit_with_two() {
         let error = CliError::Usage("bad input".to_owned());
         assert_eq!(error.exit_code(), 2);
+    }
+
+    #[test]
+    fn validates_typed_numeric_arguments() {
+        assert!(valid_numeric("0", 100));
+        assert!(valid_numeric("100", 100));
+        assert!(!valid_numeric("101", 100));
+        assert!(!valid_numeric("1;reboot", 100));
+        assert!(!valid_numeric("", 100));
+    }
+
+    #[test]
+    fn accepts_only_supported_image_types() {
+        assert_eq!(image_extension(Path::new("image.png")), Some("image/png"));
+        assert_eq!(image_extension(Path::new("photo.JPEG")), Some("image/jpeg"));
+        assert_eq!(image_extension(Path::new("vector.svg")), None);
+        assert_eq!(image_extension(Path::new("script.sh")), None);
+    }
+
+    #[test]
+    fn rejects_non_json_process_output() {
+        assert_eq!(json_value_or_empty(b"warning".to_vec()), "[]");
+        assert_eq!(
+            json_value_or_empty(b"[{\"id\":1}]".to_vec()),
+            "[{\"id\":1}]"
+        );
     }
 }

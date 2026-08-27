@@ -9,6 +9,8 @@ Item {
 
     property string position: "top"
 
+    signal surfaceRequested(string surface)
+
     Variants {
         model: root.enabled ? Quickshell.screens : []
 
@@ -37,21 +39,49 @@ Item {
                 anchors.fill: parent
                 surfaceRole: "bar"
 
-                Workspaces {
+                Row {
                     anchors.left: parent.left
                     anchors.leftMargin: Theme.horizontalPadding
                     anchors.verticalCenter: parent.verticalCenter
-                    screen: panel.screen
+                    spacing: 6
+
+                    MenuButton {
+                        onSurfaceRequested: (surface) => {
+                            return root.surfaceRequested(surface);
+                        }
+                    }
+
+                    Workspaces {
+                        screen: panel.screen
+                    }
+
+                    Media {
+                        onSurfaceRequested: (surface) => {
+                            return root.surfaceRequested(surface);
+                        }
+                    }
+
                 }
 
                 Clock {
                     anchors.centerIn: parent
                 }
 
-                Tray {
+                Row {
                     anchors.right: parent.right
                     anchors.rightMargin: Theme.horizontalPadding
                     anchors.verticalCenter: parent.verticalCenter
+                    spacing: 4
+
+                    Tray {
+                    }
+
+                    Status {
+                        onSurfaceRequested: (surface) => {
+                            return root.surfaceRequested(surface);
+                        }
+                    }
+
                 }
 
             }

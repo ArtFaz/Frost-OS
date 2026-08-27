@@ -1,0 +1,52 @@
+#!/bin/bash
+
+set -euo pipefail
+
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+shell=$root/shell
+config=$root/config/shell.json
+
+fail() {
+  printf 'phase4 contract: %s\n' "$1" >&2
+  exit 1
+}
+
+jq -e '
+  .schemaVersion == 2 and
+  (.surfaces | keys | sort) == (["agents", "appInstaller", "clipboard", "commandCenter", "emojiPicker", "imagePicker", "launcher", "notificationCenter", "tailscale"] | sort) and
+  .surfaces.tailscale == false and
+  .surfaces.agents == false
+' "$config" >/dev/null || fail 'surface configuration or optional fail-closed defaults are invalid'
+
+jq -e '.schemaVersion == 1 and (.items | length >= 10) and all(.items[]; (.source == "arch" or .source == "frost" or .source == "aur"))' \
+  "$root/config/data/app-inventory.json" >/dev/null || fail 'typed application inventory is invalid'
+jq -e '.schemaVersion == 1 and (.items | length >= 80)' "$root/config/data/emojis.json" >/dev/null ||
+  fail 'emoji catalog is invalid'
+
+for direct_module in \
+  Quickshell.Networking \
+  Quickshell.Bluetooth \
+  Quickshell.Services.Mpris \
+  Quickshell.Services.Pipewire \
+  Quickshell.Services.UPower; do
+  rg -Fq "import $direct_module" "$shell/Core/SystemState.qml" "$shell/Surfaces" ||
+    fail "stable direct interface is not used: $direct_module"
+done
+
+rg -Fq 'path: "/usr/share/frost/config/data/app-inventory.json"' "$shell/Surfaces/AppInstallerPanel.qml" ||
+  fail 'application installer does not use package-owned typed data'
+if rg -n '(pacman|makepkg|yay|paru|pkexec|sudo)' "$shell/Surfaces/AppInstallerPanel.qml" "$shell/Surfaces/InstallerModel.js"; then
+  fail 'application installer frontend crosses the Phase 4 privilege boundary'
+fi
+rg -Fq 'ShellBackend.query("notifications")' "$shell/Surfaces/NotificationPanel.qml" ||
+  fail 'notification center does not consume the typed Mako view'
+rg -Fq 'Config.surfaces.tailscale' "$shell/Surfaces/ControlCenter.qml" ||
+  fail 'Tailscale surface does not fail closed behind its feature selection'
+rg -Fq 'Config.surfaces.agents' "$shell/Surfaces/ControlCenter.qml" ||
+  fail 'agents surface does not fail closed behind its feature selection'
+
+for binding in ' + SPACE"' ' + A"' ' + N"' ' + V"' ' + period"' ' + I"'; do
+  rg -Fq "$binding" "$root/default/hypr/hyprland.lua" || fail "missing Frost surface binding: $binding"
+done
+
+printf '%s\n' 'phase4 contract: ok'

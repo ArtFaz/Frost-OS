@@ -1,4 +1,6 @@
 module qs.Core
 singleton Config 1.0 Config.qml
 singleton Motion 1.0 Motion.qml
+singleton ShellBackend 1.0 ShellBackend.qml
+singleton SystemState 1.0 SystemState.qml
 singleton Theme 1.0 Theme.qml

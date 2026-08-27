@@ -47,13 +47,30 @@ if ((${#qml_roots[@]} > 0)); then
   if rg -n --glob '*.qml' --glob '*.js' '(PluginRegistry|plugin-index|rescanPlugins|setPluginEnabled|listPlugins|NotificationServer|PamContext|PolkitAgent)' "${qml_roots[@]}"; then
     fail 'forbidden dynamic or security-sensitive QML primitive found'
   fi
-  if rg -n --glob '*.qml' --glob '*.js' '(Quickshell\.execDetached|\bProcess\s*\{|bash[[:space:]]+-c|sh[[:space:]]+-c)' "${qml_roots[@]}"; then
+  if rg -n --glob '*.qml' --glob '*.js' '(Quickshell\.execDetached|bash[[:space:]]+-c|sh[[:space:]]+-c)' "${qml_roots[@]}"; then
     fail 'generic process execution found in QML/JavaScript'
   fi
 fi
 
 shell_root=$root/shell
 if [[ -d $shell_root ]]; then
+  backend=$shell_root/Core/ShellBackend.qml
+  mapfile -t process_files < <(rg -l --glob '*.qml' '\bProcess\s*\{' "$shell_root" || true)
+  for process_file in "${process_files[@]}"; do
+    [[ $process_file == "$backend" ]] || fail "QML process exists outside the typed Frost backend: ${process_file#$root/}"
+  done
+  if [[ -f $backend ]]; then
+    [[ $(rg -c '\bProcess\s*\{' "$backend") == 2 ]] || fail 'typed Frost backend must own exactly two serialized processes'
+    rg -Fq 'dataProcess.command = ["/usr/bin/frost", "shell-data", kind];' "$backend" ||
+      fail 'typed Frost data process does not use the fixed CLI boundary'
+    rg -Fq 'actionProcess.command = command;' "$backend" ||
+      fail 'typed Frost action process boundary is missing'
+    [[ $(rg -c 'command = \["/usr/bin/frost", "shell-action", name' "$backend") == 3 ]] ||
+      fail 'typed Frost action argv may only use the fixed CLI entrypoint'
+    if rg -n '(workingDirectory|environment|stdinEnabled|\.exec\s*\()' "$backend"; then
+      fail 'typed Frost backend exposes unsupported process controls'
+    fi
+  fi
   if find "$shell_root" -type l -print -quit | grep -q .; then
     fail 'shell symlink found'
   fi

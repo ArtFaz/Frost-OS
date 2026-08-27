@@ -73,6 +73,13 @@ hl.layer_rule({
     ignore_alpha = 0.12,
 })
 
+hl.layer_rule({
+    name = "frost-surfaces-blur",
+    match = { namespace = "^frost-surfaces$" },
+    blur = true,
+    ignore_alpha = 0.12,
+})
+
 hl.on("hyprland.start", function()
     hl.exec_cmd("systemctl --user start --no-block frost-session.target")
 end)
@@ -84,7 +91,14 @@ hl.bind(main_mod .. " + Q", hl.dsp.window.close())
 hl.bind(main_mod .. " + L", hl.dsp.exec_cmd("systemctl --user start frost-lock.service"))
 hl.bind(main_mod .. " + SHIFT + E", hl.dsp.exec_cmd("uwsm stop"))
 hl.bind(main_mod .. " + F", hl.dsp.window.fullscreen())
-hl.bind(main_mod .. " + V", hl.dsp.window.float({ action = "toggle" }))
+hl.bind(main_mod .. " + SHIFT + V", hl.dsp.window.float({ action = "toggle" }))
+hl.bind(main_mod .. " + SPACE", hl.dsp.exec_cmd("quickshell --path /usr/share/frost/shell ipc call frost toggle launcher"))
+hl.bind(main_mod .. " + A", hl.dsp.exec_cmd("quickshell --path /usr/share/frost/shell ipc call frost toggle control-center"))
+hl.bind(main_mod .. " + N", hl.dsp.exec_cmd("quickshell --path /usr/share/frost/shell ipc call frost toggle notifications"))
+hl.bind(main_mod .. " + V", hl.dsp.exec_cmd("quickshell --path /usr/share/frost/shell ipc call frost toggle clipboard"))
+hl.bind(main_mod .. " + period", hl.dsp.exec_cmd("quickshell --path /usr/share/frost/shell ipc call frost toggle emoji"))
+hl.bind(main_mod .. " + I", hl.dsp.exec_cmd("quickshell --path /usr/share/frost/shell ipc call frost toggle images"))
+hl.bind(main_mod .. " + SHIFT + I", hl.dsp.exec_cmd("quickshell --path /usr/share/frost/shell ipc call frost toggle app-installer"))
 
 hl.bind(main_mod .. " + left", hl.dsp.focus({ direction = "left" }))
 hl.bind(main_mod .. " + right", hl.dsp.focus({ direction = "right" }))

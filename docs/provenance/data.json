@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "entries": [
+    {
+      "destination": "config/data/app-inventory.json",
+      "authority": "Frost-authored",
+      "derivation": "Curated application identifiers and generic descriptions for the private typed frontend fixture",
+      "license": "Frost project license",
+      "executable": false
+    },
+    {
+      "destination": "config/data/emojis.json",
+      "authority": "Frost-authored",
+      "derivation": "Hand-curated Unicode characters with original generic search keywords; no donor dataset copied",
+      "license": "Frost project license",
+      "executable": false
+    }
+  ]
+}

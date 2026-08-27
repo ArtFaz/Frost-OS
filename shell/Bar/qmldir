@@ -1,5 +1,8 @@
 module qs.Bar
 Bar 1.0 Bar.qml
 Clock 1.0 Clock.qml
+Media 1.0 Media.qml
+MenuButton 1.0 MenuButton.qml
+Status 1.0 Status.qml
 Tray 1.0 Tray.qml
 Workspaces 1.0 Workspaces.qml

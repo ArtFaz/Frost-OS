@@ -18,6 +18,11 @@ QtObject {
     readonly property int barHoverRadius: 4
     readonly property int spacing: 6
     readonly property int horizontalPadding: 10
+    readonly property int panelPadding: 18
+    readonly property int panelWidth: 430
+    readonly property int widePanelWidth: 680
+    readonly property int panelMaxHeight: 680
+    readonly property int rowHeight: 52
     readonly property int borderWidth: 1
     readonly property int focusWidth: 1
     readonly property bool light: luminance(background) >= 0.56
@@ -30,6 +35,9 @@ QtObject {
     readonly property color controlHover: alpha(foreground, 0.08)
     readonly property color controlPressed: alpha(foreground, 0.18)
     readonly property color selected: alpha(accent, 0.14)
+    readonly property color scrim: alpha(background, light ? 0.12 : 0.34)
+    readonly property color success: "#77d6a3"
+    readonly property color warning: "#f2c879"
     property FileView themeFile
 
     function alpha(colorValue, opacity) {

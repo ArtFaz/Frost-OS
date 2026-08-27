@@ -14,16 +14,40 @@ for relative_path in \
   shell.qml \
   Core/Config.qml \
   Core/Motion.qml \
+  Core/ShellBackend.qml \
+  Core/SystemState.qml \
   Core/Theme.qml \
   Primitives/FocusRing.qml \
   Primitives/GlassSurface.qml \
   Primitives/InteractiveSurface.qml \
+  Primitives/ModuleCard.qml \
+  Primitives/PanelHeader.qml \
+  Primitives/SearchField.qml \
+  Primitives/SurfaceButton.qml \
+  Primitives/ToggleSwitch.qml \
+  Primitives/ValueSlider.qml \
   Bar/Bar.qml \
   Bar/Workspaces.qml \
   Bar/Tray.qml \
   Bar/Clock.qml \
   Osd/Osd.qml \
-  Osd/OsdModel.js; do
+  Osd/OsdModel.js \
+  Surfaces/SurfaceHost.qml \
+  Surfaces/Launcher.qml \
+  Surfaces/ControlCenter.qml \
+  Surfaces/MediaCard.qml \
+  Surfaces/NetworkPanel.qml \
+  Surfaces/BluetoothPanel.qml \
+  Surfaces/AudioPanel.qml \
+  Surfaces/DisplayPowerPanel.qml \
+  Surfaces/ClipboardPanel.qml \
+  Surfaces/EmojiPanel.qml \
+  Surfaces/ImagePickerPanel.qml \
+  Surfaces/AppInstallerPanel.qml \
+  Surfaces/InstallerModel.js \
+  Surfaces/NotificationPanel.qml \
+  Surfaces/NotificationModel.js \
+  Surfaces/OptionalPanel.qml; do
   [[ -f $shell/$relative_path && ! -L $shell/$relative_path ]] ||
     fail "missing static shell file: $relative_path"
 done
@@ -55,6 +79,15 @@ rg -q 'surfaceRole: "osd"' "$shell/Osd/Osd.qml" ||
   fail 'OSD does not declare its Frosted Glass role'
 rg -q 'InteractiveSurface' "$shell/Bar/Workspaces.qml" ||
   fail 'workspace controls do not use the focusable Frost primitive'
+rg -q 'WlrLayershell\.namespace: "frost-surfaces"' "$shell/Surfaces/SurfaceHost.qml" ||
+  fail 'complete shell surfaces do not share the Frost namespace'
+rg -q 'WlrLayershell\.keyboardFocus: WlrKeyboardFocus\.Exclusive' "$shell/Surfaces/SurfaceHost.qml" ||
+  fail 'keyboard-interactive surfaces do not own an explicit focus boundary'
+rg -q 'WlrLayershell\.keyboardFocus: WlrKeyboardFocus\.None' "$shell/Bar/Bar.qml" ||
+  fail 'bar must remain outside keyboard focus authority'
+for surface in launcher control-center network bluetooth audio display-power clipboard emoji images app-installer notifications; do
+  rg -Fq "\"$surface\"" "$shell/shell.qml" || fail "static surface is not routed: $surface"
+done
 
 if command -v qmllint >/dev/null; then
   mapfile -t qml_files < <(find "$shell" -type f -name '*.qml' -print | sort)
@@ -62,6 +95,9 @@ if command -v qmllint >/dev/null; then
 fi
 
 node --check "$shell/Osd/OsdModel.js"
+node --check "$shell/Surfaces/InstallerModel.js"
+node --check "$shell/Surfaces/NotificationModel.js"
 node "$root/test/osd-model.js"
+node "$root/test/phase4-models.js"
 
 printf '%s\n' 'shell contract: ok'

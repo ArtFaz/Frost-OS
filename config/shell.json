@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "bar": {
     "enabled": true,
     "position": "top"
@@ -8,8 +8,14 @@
     "enabled": true
   },
   "surfaces": {
+    "launcher": true,
     "commandCenter": true,
-    "notificationCenter": true
+    "notificationCenter": true,
+    "clipboard": true,
+    "emojiPicker": true,
+    "imagePicker": true,
+    "appInstaller": true,
+    "tailscale": false,
+    "agents": false
   }
 }
-

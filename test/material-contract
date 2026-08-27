@@ -38,7 +38,7 @@ for duration in 120 160 180; do
 done
 
 rg -q 'size = 5,' "$hyprland" || fail 'compositor blur size is not the approved value'
-[[ $(rg -c 'ignore_alpha = 0\.12,' "$hyprland") == 2 ]] ||
+[[ $(rg -c 'ignore_alpha = 0\.12,' "$hyprland") == 3 ]] ||
   fail 'Frost layer blur rules do not share the approved alpha threshold'
 rg -Fq 'blurSize = 5' "$theme_data" || fail 'theme blur size disagrees with the compositor'
 rg -Fq 'blurPasses = 2' "$theme_data" || fail 'theme blur passes disagree with the compositor'

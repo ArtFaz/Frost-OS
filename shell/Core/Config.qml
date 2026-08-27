@@ -13,7 +13,7 @@ QtObject {
     readonly property string defaultsPath: "/usr/share/frost/config/shell.json"
     readonly property string userPath: configHome + "/frost/shell.json"
     readonly property var fallback: ({
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "bar": {
             "enabled": true,
             "position": "top"
@@ -22,34 +22,24 @@ QtObject {
             "enabled": true
         },
         "surfaces": {
+            "launcher": true,
             "commandCenter": true,
-            "notificationCenter": true
+            "notificationCenter": true,
+            "clipboard": true,
+            "emojiPicker": true,
+            "imagePicker": true,
+            "appInstaller": true,
+            "tailscale": false,
+            "agents": false
         }
     })
     property var value: fallback
     readonly property bool barEnabled: value.bar.enabled
     readonly property string barPosition: value.bar.position
     readonly property bool osdEnabled: value.osd.enabled
+    readonly property var surfaces: value.surfaces
     property FileView defaultsFile
-
-    defaultsFile: FileView {
-        path: root.defaultsPath
-        watchChanges: false
-        printErrors: false
-        onLoaded: root.reloadConfig()
-        onLoadFailed: root.reloadConfig()
-    }
-
     property FileView userFile
-
-    userFile: FileView {
-        path: root.userPath
-        watchChanges: true
-        printErrors: false
-        onLoaded: root.reloadConfig()
-        onLoadFailed: root.reloadConfig()
-        onFileChanged: reload()
-    }
 
     function exactKeys(object, expected) {
         if (object === null || typeof object !== "object" || Array.isArray(object))
@@ -64,7 +54,7 @@ QtObject {
         if (!exactKeys(candidate, ["schemaVersion", "bar", "osd", "surfaces"]))
             return null;
 
-        if (candidate.schemaVersion !== 1)
+        if (candidate.schemaVersion !== 2)
             return null;
 
         if (!exactKeys(candidate.bar, ["enabled", "position"]))
@@ -79,15 +69,15 @@ QtObject {
         if (!exactKeys(candidate.osd, ["enabled"]) || typeof candidate.osd.enabled !== "boolean")
             return null;
 
-        if (!exactKeys(candidate.surfaces, ["commandCenter", "notificationCenter"]))
+        if (!exactKeys(candidate.surfaces, ["launcher", "commandCenter", "notificationCenter", "clipboard", "emojiPicker", "imagePicker", "appInstaller", "tailscale", "agents"]))
             return null;
 
-        if (typeof candidate.surfaces.commandCenter !== "boolean")
-            return null;
+        const surfaceNames = ["launcher", "commandCenter", "notificationCenter", "clipboard", "emojiPicker", "imagePicker", "appInstaller", "tailscale", "agents"];
+        for (let index = 0; index < surfaceNames.length; index++) {
+            if (typeof candidate.surfaces[surfaceNames[index]] !== "boolean")
+                return null;
 
-        if (typeof candidate.surfaces.notificationCenter !== "boolean")
-            return null;
-
+        }
         return candidate;
     }
 
@@ -104,6 +94,23 @@ QtObject {
         const userRaw = String(userFile.text() || "").trim();
         const user = userRaw ? parse(userRaw) : null;
         value = user || defaults;
+    }
+
+    defaultsFile: FileView {
+        path: root.defaultsPath
+        watchChanges: false
+        printErrors: false
+        onLoaded: root.reloadConfig()
+        onLoadFailed: root.reloadConfig()
+    }
+
+    userFile: FileView {
+        path: root.userPath
+        watchChanges: true
+        printErrors: false
+        onLoaded: root.reloadConfig()
+        onLoadFailed: root.reloadConfig()
+        onFileChanged: reload()
     }
 
 }

@@ -4,6 +4,7 @@ set -euo pipefail
 
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 ledger=$root/docs/provenance/ports.json
+data_ledger=$root/docs/provenance/data.json
 
 fail() {
   printf 'provenance contract: %s\n' "$1" >&2
@@ -48,5 +49,26 @@ extra=$(comm -13 \
   <(find "$root/shell" -type f \( -name '*.qml' -o -name '*.js' \) -printf '%P\n' | sed 's|^|shell/|' | sort) \
   <(jq -r '.entries[].destination' "$ledger" | sort))
 [[ -z $extra ]] || fail "ledger destination is not a shell implementation: $extra"
+
+jq -e '
+  .schemaVersion == 1 and
+  (.entries | type == "array" and length == 2) and
+  all(.entries[];
+    (.destination | startswith("config/data/") and (contains("..") | not)) and
+    .authority == "Frost-authored" and
+    (.derivation | type == "string" and length > 0) and
+    .license == "Frost project license" and
+    .executable == false
+  ) and
+  ((.entries | map(.destination) | unique | length) == (.entries | length))
+' "$data_ledger" >/dev/null || fail 'data provenance ledger is invalid'
+while IFS= read -r destination; do
+  [[ -f $root/$destination && ! -L $root/$destination && ! -x $root/$destination ]] ||
+    fail "missing safe data destination: $destination"
+done < <(jq -r '.entries[].destination' "$data_ledger")
+missing_data=$(comm -23 \
+  <(find "$root/config/data" -type f -printf '%P\n' | sed 's|^|config/data/|' | sort) \
+  <(jq -r '.entries[].destination' "$data_ledger" | sort))
+[[ -z $missing_data ]] || fail "data file lacks provenance: $missing_data"
 
 printf '%s\n' 'provenance contract: ok'

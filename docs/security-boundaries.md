@@ -54,7 +54,7 @@ the normal session sources its own UWSM environment again.
 | Direct pacman bypasses migration | Donor blocks pacman globally | Pacman stays available; hook only marks pending; doctor/login notify | Direct pacman integration fixture |
 | Update proceeds without recovery | Best-effort or coupled update flows | Snapshot is mandatory and recorded before transaction | Injected Snapper failure |
 | Donor supply-chain dependency returns | PKGBUILDs and ISO reference donor Git/repos/mirrors | Source-contract rejects donor endpoints outside notices; builds run with donors unavailable | Offline build and forbidden-string tests |
-| AUR code enters trusted base | Donor helper installs AUR | Frost base only uses official Arch or audited Frost-built packages | Dependency/source audit |
+| AUR code enters trusted base or runs with privilege | Donor helper installs AUR | Bootstrap/core remain Arch/Frost; optional AUR is explicit, pinned and later built unprivileged in isolation | Dependency/source/lock audit |
 | Path traversal or symlink escape | Donor refresh helper accepts `..`; themes are mutable trees | Canonicalize, constrain roots, use no-follow checks | Traversal/symlink tests |
 | Root hook executes user action | Donor package hooks and scriptlets mix lifecycle work | Root hooks only mark machine state; user migrations run as the user | Hook fixture and UID assertions |
 | ISO destroys wrong disk | Installer has full partition/mount authority | Explicit resolved target, protected-mode verification, displayed plan and confirmation | Disposable-disk tests only |
@@ -72,6 +72,8 @@ PAM changes must use a dedicated Hyprlock service with no `nullok`, empty-passwo
 - Unknown fields that influence execution are rejected.
 - Configuration never becomes a shell command string.
 - Commands use a fixed executable plus an argv array. User-controlled values are validated as data, not escaped for a shell.
+- QML process ownership is restricted to `qs.Core.ShellBackend`: exactly two serialized processes, both entering only `/usr/bin/frost shell-data` or `/usr/bin/frost shell-action`.
+- Rust validates the action/data allowlist again, uses absolute executable paths, canonicalizes image roots and caps output/file sizes.
 - URLs are parsed and restricted before a fixed browser launcher receives them.
 - Privileged operations leave QML and cross a typed CLI/helper boundary.
 - `--json` stdout remains strictly machine-readable; diagnostics go to stderr.
@@ -104,7 +106,7 @@ A failed snapshot aborts before pacman. A failed pacman transaction does not run
 
 ## Phase gates
 
-- Phase 1 must add executable source-contract tests for donor endpoints, dynamic QML, executable themes, generic process execution and unsafe path/config handling.
+- Phase 1 must add executable source-contract tests for donor endpoints, dynamic QML, executable themes, process execution outside the typed Frost backend and unsafe path/config handling.
 - Phase 2 must prove the session does not share notification, lock or Polkit ownership with Omarchy.
 - Phases 3–4 must inventory every runtime command and package consumer as surfaces are ported.
 - Phase 6 must prove package ownership, PAM and least privilege.

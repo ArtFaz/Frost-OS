@@ -6,7 +6,7 @@
   "additionalProperties": false,
   "required": ["schemaVersion", "bar", "osd", "surfaces"],
   "properties": {
-    "schemaVersion": { "const": 1 },
+    "schemaVersion": { "const": 2 },
     "bar": {
       "type": "object",
       "additionalProperties": false,
@@ -27,12 +27,18 @@
     "surfaces": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["commandCenter", "notificationCenter"],
+      "required": ["launcher", "commandCenter", "notificationCenter", "clipboard", "emojiPicker", "imagePicker", "appInstaller", "tailscale", "agents"],
       "properties": {
+        "launcher": { "type": "boolean" },
         "commandCenter": { "type": "boolean" },
-        "notificationCenter": { "type": "boolean" }
+        "notificationCenter": { "type": "boolean" },
+        "clipboard": { "type": "boolean" },
+        "emojiPicker": { "type": "boolean" },
+        "imagePicker": { "type": "boolean" },
+        "appInstaller": { "type": "boolean" },
+        "tailscale": { "type": "boolean" },
+        "agents": { "type": "boolean" }
       }
     }
   }
 }
-
