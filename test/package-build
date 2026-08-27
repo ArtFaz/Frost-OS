@@ -38,12 +38,17 @@ for expected in \
   usr/share/frost/default/bash/bashrc \
   usr/share/frost/config/shell.json \
   usr/share/frost/shell/shell.qml \
+  usr/share/frost/shell/Core/Motion.qml \
+  usr/share/frost/shell/Primitives/FocusRing.qml \
+  usr/share/frost/shell/Primitives/GlassSurface.qml \
+  usr/share/frost/shell/Primitives/InteractiveSurface.qml \
   usr/share/frost/shell/Bar/Bar.qml \
   usr/share/frost/shell/Bar/Workspaces.qml \
   usr/share/frost/shell/Bar/Tray.qml \
   usr/share/frost/shell/Bar/Clock.qml \
   usr/share/frost/shell/Osd/Osd.qml \
   usr/share/frost/shell/Osd/OsdModel.js \
+  usr/share/doc/frost/phase4-surface-inventory.md \
   usr/share/doc/frost/provenance/ports.json \
   usr/share/frost/themes/frost/theme.toml; do
   if ! printf '%s\n' "${paths[@]}" | grep -qx "$expected"; then

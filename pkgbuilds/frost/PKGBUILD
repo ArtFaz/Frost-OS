@@ -1,6 +1,6 @@
 pkgname=frost
 pkgver=0.2.0
-pkgrel=7
+pkgrel=8
 pkgdesc='Independent Frost desktop runtime and diagnostics CLI'
 arch=('x86_64')
 url='https://github.com/ArtFaz/Frost-OS'
@@ -85,6 +85,8 @@ package() {
   install -d -m0755 "$pkgdir/etc/frost"
   install -Dm644 docs/architecture.md \
     "$pkgdir/usr/share/doc/frost/architecture.md"
+  install -Dm644 docs/phase4-surface-inventory.md \
+    "$pkgdir/usr/share/doc/frost/phase4-surface-inventory.md"
   install -Dm644 docs/preview-session.md \
     "$pkgdir/usr/share/doc/frost/preview-session.md"
   install -Dm644 docs/security-boundaries.md \
