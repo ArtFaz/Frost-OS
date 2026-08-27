@@ -28,7 +28,7 @@ for expected in \
   usr/lib/systemd/user/frost-idle.service \
   usr/lib/systemd/user/frost-lock.service \
   usr/share/wayland-sessions/frost.desktop \
-  usr/share/frost/default/hypr/hyprland.conf \
+  usr/share/frost/default/hypr/hyprland.lua \
   usr/share/frost/default/hypr/hypridle.conf \
   usr/share/frost/default/hypr/hyprlock.conf \
   usr/share/frost/default/mako/config \

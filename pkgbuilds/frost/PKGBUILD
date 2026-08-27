@@ -1,6 +1,6 @@
 pkgname=frost
 pkgver=0.2.0
-pkgrel=3
+pkgrel=4
 pkgdesc='Independent Frost desktop runtime and diagnostics CLI'
 arch=('x86_64')
 url='https://github.com/ArtFaz/Frost-OS'
@@ -57,8 +57,8 @@ package() {
   find "$pkgdir/usr/share/frost/themes" -type d -exec chmod 0755 {} +
   find "$pkgdir/usr/share/frost/themes" -type f -exec chmod 0644 {} +
 
-  install -Dm644 default/hypr/hyprland.conf \
-    "$pkgdir/usr/share/frost/default/hypr/hyprland.conf"
+  install -Dm644 default/hypr/hyprland.lua \
+    "$pkgdir/usr/share/frost/default/hypr/hyprland.lua"
   install -Dm644 default/hypr/hypridle.conf \
     "$pkgdir/usr/share/frost/default/hypr/hypridle.conf"
   install -Dm644 default/hypr/hyprlock.conf \
