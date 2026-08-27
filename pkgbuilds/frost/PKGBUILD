@@ -1,12 +1,13 @@
 pkgname=frost
 pkgver=0.2.0
-pkgrel=4
+pkgrel=5
 pkgdesc='Independent Frost desktop runtime and diagnostics CLI'
 arch=('x86_64')
 url='https://github.com/ArtFaz/Frost-OS'
 license=('MIT')
 depends=(
   'bash'
+  'brightnessctl'
   'cliphist'
   'ghostty'
   'glibc'
@@ -15,15 +16,14 @@ depends=(
   'hyprlock'
   'hyprpolkitagent'
   'mako'
+  'quickshell'
   'systemd'
   'uwsm'
+  'wireplumber'
   'wl-clipboard'
 )
-optdepends=(
-  'quickshell: static Frost shell runtime beginning in Phase 3'
-)
 makedepends=('cargo')
-checkdepends=('desktop-file-utils')
+checkdepends=('desktop-file-utils' 'nodejs')
 options=('!debug')
 source=("${pkgname}-${pkgver}.tar.gz")
 sha256sums=('SKIP')
@@ -47,6 +47,7 @@ package() {
 
   install -Dm755 "$srcdir/target/release/frost" "$pkgdir/usr/bin/frost"
   install -Dm755 bin/frost-hyprland "$pkgdir/usr/lib/frost/frost-hyprland"
+  install -Dm755 bin/frost-osd "$pkgdir/usr/lib/frost/frost-osd"
   install -Dm755 bin/frost-terminal "$pkgdir/usr/lib/frost/frost-terminal"
 
   install -Dm644 config/shell.json "$pkgdir/usr/share/frost/config/shell.json"
@@ -56,6 +57,11 @@ package() {
   cp -r themes/. "$pkgdir/usr/share/frost/themes/"
   find "$pkgdir/usr/share/frost/themes" -type d -exec chmod 0755 {} +
   find "$pkgdir/usr/share/frost/themes" -type f -exec chmod 0644 {} +
+
+  install -d "$pkgdir/usr/share/frost/shell"
+  cp -r shell/. "$pkgdir/usr/share/frost/shell/"
+  find "$pkgdir/usr/share/frost/shell" -type d -exec chmod 0755 {} +
+  find "$pkgdir/usr/share/frost/shell" -type f -exec chmod 0644 {} +
 
   install -Dm644 default/hypr/hyprland.lua \
     "$pkgdir/usr/share/frost/default/hypr/hyprland.lua"
@@ -83,5 +89,9 @@ package() {
     "$pkgdir/usr/share/doc/frost/preview-session.md"
   install -Dm644 docs/security-boundaries.md \
     "$pkgdir/usr/share/doc/frost/security-boundaries.md"
+  install -Dm644 docs/provenance/ports.json \
+    "$pkgdir/usr/share/doc/frost/provenance/ports.json"
+  install -Dm644 THIRD_PARTY.md \
+    "$pkgdir/usr/share/doc/frost/THIRD_PARTY.md"
   install -Dm644 LICENSE "$pkgdir/usr/share/licenses/frost/LICENSE"
 }

@@ -21,8 +21,10 @@ mapfile -t paths < <(bsdtar -tf "$package")
 for expected in \
   usr/bin/frost \
   usr/lib/frost/frost-hyprland \
+  usr/lib/frost/frost-osd \
   usr/lib/frost/frost-terminal \
   usr/lib/systemd/user/frost-session.target \
+  usr/lib/systemd/user/frost-shell.service \
   usr/lib/systemd/user/frost-notifications.service \
   usr/lib/systemd/user/frost-polkit.service \
   usr/lib/systemd/user/frost-idle.service \
@@ -35,6 +37,14 @@ for expected in \
   usr/share/frost/default/ghostty/config \
   usr/share/frost/default/bash/bashrc \
   usr/share/frost/config/shell.json \
+  usr/share/frost/shell/shell.qml \
+  usr/share/frost/shell/Bar/Bar.qml \
+  usr/share/frost/shell/Bar/Workspaces.qml \
+  usr/share/frost/shell/Bar/Tray.qml \
+  usr/share/frost/shell/Bar/Clock.qml \
+  usr/share/frost/shell/Osd/Osd.qml \
+  usr/share/frost/shell/Osd/OsdModel.js \
+  usr/share/doc/frost/provenance/ports.json \
   usr/share/frost/themes/frost/theme.toml; do
   if ! printf '%s\n' "${paths[@]}" | grep -qx "$expected"; then
     printf 'package is missing %s\n' "$expected" >&2
@@ -45,6 +55,7 @@ done
 package_info=$(bsdtar -xOf "$package" .PKGINFO)
 for dependency in \
   bash \
+  brightnessctl \
   cliphist \
   ghostty \
   hypridle \
@@ -52,8 +63,10 @@ for dependency in \
   hyprlock \
   hyprpolkitagent \
   mako \
+  quickshell \
   systemd \
   uwsm \
+  wireplumber \
   wl-clipboard; do
   if ! grep -Eq "^depend = ${dependency}([<=>].*)?$" <<<"$package_info"; then
     printf 'package is missing fixed session dependency %s\n' "$dependency" >&2
