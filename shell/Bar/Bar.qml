@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import qs.Core
+import qs.Primitives
 
 Item {
     id: root
@@ -32,11 +33,9 @@ Item {
                 right: true
             }
 
-            Rectangle {
+            GlassSurface {
                 anchors.fill: parent
-                color: Theme.barBackground
-                border.color: Theme.border
-                border.width: 1
+                surfaceRole: "bar"
 
                 Workspaces {
                     anchors.left: parent.left

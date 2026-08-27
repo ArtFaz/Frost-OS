@@ -29,6 +29,42 @@
       "notice": "docs/provenance.md"
     },
     {
+      "destination": "shell/Core/Motion.qml",
+      "originRepository": "staging",
+      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
+      "originPath": "docs/VISION.md",
+      "transformation": "rewritten-from-concept",
+      "license": "pending-confirmation",
+      "notice": "docs/provenance.md"
+    },
+    {
+      "destination": "shell/Primitives/GlassSurface.qml",
+      "originRepository": "staging",
+      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
+      "originPath": "config/omarchy/plugins/art.frosted-glass/GlassSurface.qml",
+      "transformation": "rewritten-from-concept",
+      "license": "pending-confirmation",
+      "notice": "docs/provenance.md"
+    },
+    {
+      "destination": "shell/Primitives/FocusRing.qml",
+      "originRepository": "staging",
+      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
+      "originPath": "config/omarchy/plugins/art.frosted-glass/GlassKeyboardPanel.qml",
+      "transformation": "rewritten-from-concept",
+      "license": "pending-confirmation",
+      "notice": "docs/provenance.md"
+    },
+    {
+      "destination": "shell/Primitives/InteractiveSurface.qml",
+      "originRepository": "staging",
+      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
+      "originPath": "config/omarchy/plugins/art.frosted-glass/Glass.qml",
+      "transformation": "rewritten-from-concept",
+      "license": "pending-confirmation",
+      "notice": "docs/provenance.md"
+    },
+    {
       "destination": "shell/Bar/Bar.qml",
       "originRepository": "Frost-OS",
       "originCommit": "f4a8cc9cd4137469393f815ccef08a849ce9005d",

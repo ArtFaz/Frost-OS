@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell.Hyprland
 import qs.Core
+import qs.Primitives
 
 Row {
     id: root
@@ -22,7 +23,7 @@ Row {
     Repeater {
         model: [1, 2, 3, 4, 5]
 
-        Rectangle {
+        InteractiveSurface {
             id: workspaceButton
 
             required property int modelData
@@ -32,9 +33,9 @@ Row {
 
             width: 26
             height: Theme.barHeight - 8
-            radius: Theme.controlRadius
-            color: focused ? Theme.selected : "transparent"
+            selected: focused
             opacity: occupied || focused ? 1 : 0.58
+            onActivated: Hyprland.dispatch("workspace " + workspaceButton.modelData)
 
             Text {
                 anchors.centerIn: parent
@@ -43,12 +44,6 @@ Row {
                 font.family: "sans-serif"
                 font.pixelSize: 13
                 font.bold: workspaceButton.focused
-            }
-
-            MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                onClicked: Hyprland.dispatch("workspace " + workspaceButton.modelData)
             }
 
         }

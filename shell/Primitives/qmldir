@@ -1,0 +1,4 @@
+module qs.Primitives
+FocusRing 1.0 FocusRing.qml
+GlassSurface 1.0 GlassSurface.qml
+InteractiveSurface 1.0 InteractiveSurface.qml

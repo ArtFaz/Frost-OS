@@ -6,8 +6,10 @@ background = "#0f1724"
 foreground = "#eef6ff"
 accent = "#8ed8ff"
 surface = "#1a2738"
+urgent = "#ff6b7a"
 
 [glass]
 opacity = 0.78
-blurRadius = 24
-
+blurSize = 5
+blurPasses = 2
+ignoreAlpha = 0.12

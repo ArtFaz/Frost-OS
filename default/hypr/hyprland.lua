@@ -32,7 +32,7 @@ hl.config({
         rounding = 12,
         blur = {
             enabled = true,
-            size = 8,
+            size = 5,
             passes = 2,
             new_optimizations = true,
         },
@@ -63,14 +63,14 @@ hl.layer_rule({
     name = "frost-bar-blur",
     match = { namespace = "^frost-bar$" },
     blur = true,
-    ignore_alpha = 0.08,
+    ignore_alpha = 0.12,
 })
 
 hl.layer_rule({
     name = "frost-osd-blur",
     match = { namespace = "^frost-osd$" },
     blur = true,
-    ignore_alpha = 0.08,
+    ignore_alpha = 0.12,
 })
 
 hl.on("hyprland.start", function()

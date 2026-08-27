@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Wayland
 import qs.Core
+import qs.Primitives
 
 Item {
     id: root
@@ -64,7 +65,7 @@ Item {
     Timer {
         id: retireTimer
 
-        interval: 180
+        interval: Motion.deliberate
         onTriggered: {
             if (!root.opened)
                 root.panelVisible = false;
@@ -96,7 +97,7 @@ Item {
                 left: true
             }
 
-            Rectangle {
+            GlassSurface {
                 id: card
 
                 width: 300
@@ -104,10 +105,7 @@ Item {
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.bottom: parent.bottom
                 anchors.bottomMargin: 64
-                radius: Theme.radius
-                color: Theme.cardBackground
-                border.color: Theme.border
-                border.width: 1
+                surfaceRole: "osd"
                 opacity: root.opened ? 1 : 0
                 scale: root.opened ? 1 : 0.97
 
@@ -160,8 +158,8 @@ Item {
 
                             Behavior on width {
                                 NumberAnimation {
-                                    duration: 120
-                                    easing.type: Easing.OutCubic
+                                    duration: Motion.fast
+                                    easing.type: Motion.easing
                                 }
 
                             }
@@ -174,16 +172,16 @@ Item {
 
                 Behavior on opacity {
                     NumberAnimation {
-                        duration: 160
-                        easing.type: Easing.OutCubic
+                        duration: Motion.standard
+                        easing.type: Motion.easing
                     }
 
                 }
 
                 Behavior on scale {
                     NumberAnimation {
-                        duration: 180
-                        easing.type: Easing.OutCubic
+                        duration: Motion.deliberate
+                        easing.type: Motion.easing
                     }
 
                 }

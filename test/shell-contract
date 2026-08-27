@@ -13,7 +13,11 @@ fail() {
 for relative_path in \
   shell.qml \
   Core/Config.qml \
+  Core/Motion.qml \
   Core/Theme.qml \
+  Primitives/FocusRing.qml \
+  Primitives/GlassSurface.qml \
+  Primitives/InteractiveSurface.qml \
   Bar/Bar.qml \
   Bar/Workspaces.qml \
   Bar/Tray.qml \
@@ -43,6 +47,14 @@ rg -q 'model: SystemTray\.items' "$shell/Bar/Tray.qml" ||
   fail 'static system tray model is missing'
 rg -q 'model: \[1, 2, 3, 4, 5\]' "$shell/Bar/Workspaces.qml" ||
   fail 'fixed workspace composition is missing'
+rg -q '^import qs\.Primitives$' "$shell/Bar/Bar.qml" ||
+  fail 'bar does not use the static Frost primitive module'
+rg -q 'surfaceRole: "bar"' "$shell/Bar/Bar.qml" ||
+  fail 'bar does not declare its Frosted Glass role'
+rg -q 'surfaceRole: "osd"' "$shell/Osd/Osd.qml" ||
+  fail 'OSD does not declare its Frosted Glass role'
+rg -q 'InteractiveSurface' "$shell/Bar/Workspaces.qml" ||
+  fail 'workspace controls do not use the focusable Frost primitive'
 
 if command -v qmllint >/dev/null; then
   mapfile -t qml_files < <(find "$shell" -type f -name '*.qml' -print | sort)

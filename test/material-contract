@@ -1,0 +1,47 @@
+#!/bin/bash
+
+set -euo pipefail
+
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+theme=$root/shell/Core/Theme.qml
+motion=$root/shell/Core/Motion.qml
+interactive=$root/shell/Primitives/InteractiveSurface.qml
+hyprland=$root/default/hypr/hyprland.lua
+theme_data=$root/themes/frost/theme.toml
+
+fail() {
+  printf 'material contract: %s\n' "$1" >&2
+  exit 1
+}
+
+for token in \
+  'readonly property int radius: 14' \
+  'readonly property int rowRadius: 8' \
+  'readonly property int controlRadius: 6' \
+  'readonly property int barHoverRadius: 4' \
+  'readonly property int focusWidth: 1'; do
+  rg -Fq "$token" "$theme" || fail "missing visual token: $token"
+done
+
+rg -Fq 'readonly property color controlHover: alpha(foreground, 0.08)' "$theme" ||
+  fail 'hover must use a neutral foreground fill'
+rg -Fq 'readonly property color selected: alpha(accent, 0.14)' "$theme" ||
+  fail 'selection must use the semantic accent'
+rg -Fq 'activeFocusOnTab: enabled' "$interactive" ||
+  fail 'interactive primitive is not keyboard focusable'
+rg -Fq 'shown: root.activeFocus' "$interactive" ||
+  fail 'interactive primitive does not expose its focus ring'
+
+for duration in 120 160 180; do
+  rg -q "reduced \? 0 : $duration" "$motion" ||
+    fail "missing bounded motion duration: $duration"
+done
+
+rg -q 'size = 5,' "$hyprland" || fail 'compositor blur size is not the approved value'
+[[ $(rg -c 'ignore_alpha = 0\.12,' "$hyprland") == 2 ]] ||
+  fail 'Frost layer blur rules do not share the approved alpha threshold'
+rg -Fq 'blurSize = 5' "$theme_data" || fail 'theme blur size disagrees with the compositor'
+rg -Fq 'blurPasses = 2' "$theme_data" || fail 'theme blur passes disagree with the compositor'
+rg -Fq 'ignoreAlpha = 0.12' "$theme_data" || fail 'theme alpha threshold disagrees with the compositor'
+
+printf '%s\n' 'material contract: ok'
