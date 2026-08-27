@@ -27,6 +27,13 @@ done
 mapfile -t ipc_targets < <(rg --no-filename -o 'target:\s*"[^"]+"' "$shell" --glob '*.qml')
 [[ ${#ipc_targets[@]} == 1 && ${ipc_targets[0]} == 'target: "frost"' ]] ||
   fail 'shell must expose exactly one Frost IPC target'
+rg -q '^import Quickshell\.Io$' "$shell/shell.qml" ||
+  fail 'IpcHandler must be imported from Quickshell.Io'
+if rg -q 'function\s+[^(]+\([^)]*,' "$shell/shell.qml"; then
+  fail 'Frost IPC functions must accept at most one argument for QuickShell 0.3.1 compatibility'
+fi
+rg -q 'ipc call frost showOsd "\$payload"' "$root/bin/frost-osd" ||
+  fail 'OSD wrapper must call the single-argument Frost IPC method'
 
 rg -q 'model: root\.enabled \? Quickshell\.screens : \[\]' "$shell/Bar/Bar.qml" ||
   fail 'bar is not composed per screen'

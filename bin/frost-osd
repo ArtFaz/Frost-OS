@@ -61,5 +61,5 @@ if [[ ! $value =~ ^[0-9]+$ ]]; then
 fi
 
 payload=$(printf '{"icon":"%s","value":%d,"max":100,"duration":1200}' "$icon" "$value")
-/usr/bin/quickshell --path /usr/share/frost/shell ipc call frost show osd "$payload" \
+/usr/bin/quickshell --path /usr/share/frost/shell ipc call frost showOsd "$payload" \
   >/dev/null 2>&1 || true

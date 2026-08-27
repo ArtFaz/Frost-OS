@@ -2,6 +2,7 @@ import "Bar" as BarComponents
 import "Osd" as OsdComponents
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import qs.Core
 
 ShellRoot {
@@ -34,15 +35,16 @@ ShellRoot {
             });
         }
 
-        function show(surface: string, payload: string) : string {
+        function show(surface: string) : string {
             if (surface === "bar") {
                 root.barRuntimeVisible = true;
                 return "ok";
             }
-            if (surface === "osd")
-                return osd.showPayload(payload);
-
             return "error:unsupported-surface";
+        }
+
+        function showOsd(payload: string) : string {
+            return osd.showPayload(payload);
         }
 
         function hide(surface: string) : string {
