@@ -10,7 +10,7 @@ case $fixture in
 esac
 trap 'rm -rf -- "$fixture"' EXIT
 
-mkdir -p "$fixture/cli" "$fixture/shell" "$fixture/themes/frost"
+mkdir -p "$fixture/bin" "$fixture/cli" "$fixture/shell" "$fixture/themes/frost"
 printf '%s\n' 'safe source' >"$fixture/cli/main.rs"
 printf '%s\n' 'schemaVersion = 1' >"$fixture/themes/frost/theme.toml"
 FROST_SOURCE_ROOT="$fixture" "$root/test/source-contract" >/dev/null
@@ -21,6 +21,23 @@ if FROST_SOURCE_ROOT="$fixture" "$root/test/source-contract" >/dev/null 2>&1; th
   exit 1
 fi
 printf '%s\n' 'safe source' >"$fixture/cli/main.rs"
+
+printf '%s\n' 'readonly frost_transition_environment=OMARCHY_PATH' >"$fixture/bin/frost-hyprland"
+if FROST_SOURCE_ROOT="$fixture" "$root/test/source-contract" >/dev/null 2>&1; then
+  printf '%s\n' 'expected incomplete transition quarantine fixture to fail' >&2
+  exit 1
+fi
+printf '%s\n' \
+  'readonly frost_transition_environment=OMARCHY_PATH' \
+  '/usr/bin/systemctl --user unset-environment "$frost_transition_environment"' \
+  'unset "$frost_transition_environment"' >"$fixture/bin/frost-hyprland"
+FROST_SOURCE_ROOT="$fixture" "$root/test/source-contract" >/dev/null
+printf '%s\n' 'printf "%s\n" "$frost_transition_environment"' >>"$fixture/bin/frost-hyprland"
+if FROST_SOURCE_ROOT="$fixture" "$root/test/source-contract" >/dev/null 2>&1; then
+  printf '%s\n' 'expected transition variable escape fixture to fail' >&2
+  exit 1
+fi
+rm "$fixture/bin/frost-hyprland"
 
 printf '%s\n' 'Process {' >"$fixture/shell/Bad.qml"
 if FROST_SOURCE_ROOT="$fixture" "$root/test/source-contract" >/dev/null 2>&1; then

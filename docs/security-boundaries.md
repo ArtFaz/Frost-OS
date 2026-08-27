@@ -29,6 +29,17 @@ Status: initial Phase 0 threat model and implementation contract.
 
 No fallback may create a second owner inside the Frost session. A fallback can be installed for recovery but must be inactive while the primary authority is active.
 
+### Coexistence transition quarantine
+
+UWSM environment fragments are global rather than desktop-entry scoped. During
+the coexistence preview, the Frost compositor wrapper removes the single legacy
+session-root variable from both the systemd user manager and its own process
+before `graphical-session.target` is reached. This is a negative boundary only:
+the value is never read, resolved, executed, or used as a path. Source and
+session contracts allow the foreign identifier in exactly one declaration and
+require its only two uses to be fixed `unset` operations. A subsequent login to
+the normal session sources its own UWSM environment again.
+
 ## Initial threats and required controls
 
 | Threat | Donor evidence | Frost control | Verification |

@@ -14,8 +14,27 @@ fail() {
 }
 
 if ((${#active_roots[@]} > 0)); then
-  if rg -n -i '(omarchy|omacom|pkgs\.omarchy|github\.com/basecamp)' "${active_roots[@]}"; then
-    fail 'donor identity or endpoint found in active source'
+  mapfile -t donor_matches < <(
+    rg --with-filename --no-line-number -i \
+      '(omarchy|omacom|pkgs\.omarchy|github\.com/basecamp)' \
+      "${active_roots[@]}" || true
+  )
+  allowed_transition_match="$root/bin/frost-hyprland:readonly frost_transition_environment=OMARCHY_PATH"
+  for match in "${donor_matches[@]}"; do
+    [[ $match == "$allowed_transition_match" ]] || {
+      printf '%s\n' "$match" >&2
+      fail 'donor identity or endpoint found in active source'
+    }
+  done
+
+  if ((${#donor_matches[@]} > 0)); then
+    wrapper=$root/bin/frost-hyprland
+    rg -q '^/usr/bin/systemctl --user unset-environment "\$frost_transition_environment"$' "$wrapper" ||
+      fail 'foreign transition environment is not removed from the user manager'
+    rg -q '^unset "\$frost_transition_environment"$' "$wrapper" ||
+      fail 'foreign transition environment is not removed from the compositor process'
+    [[ $(rg -c 'frost_transition_environment' "$wrapper") == 3 ]] ||
+      fail 'foreign transition environment may only be declared and unset'
   fi
 fi
 

@@ -3,6 +3,13 @@
 set -euo pipefail
 
 readonly frost_hyprland_config=/usr/share/frost/default/hypr/hyprland.lua
+readonly frost_transition_environment=OMARCHY_PATH
+
+# UWSM environment fragments are global to every desktop entry. Quarantine the
+# previous session identity before graphical-session.target evaluates enabled
+# user units; the normal session imports it again on its own next startup.
+/usr/bin/systemctl --user unset-environment "$frost_transition_environment"
+unset "$frost_transition_environment"
 
 export FROST_SESSION=1
 export FROST_HYPRLAND_CONFIG=$frost_hyprland_config

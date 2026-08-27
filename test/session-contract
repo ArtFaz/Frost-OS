@@ -61,9 +61,24 @@ fi
 if rg -n '^BusName=org\.freedesktop\.Notifications$' "$units"; then
   fail 'Frost units may not duplicate the upstream Mako systemd bus reservation'
 fi
-if rg -n -i '(omarchy|omacom|pkgs\.omarchy)' "$root/bin" "$root/default"; then
-  fail 'donor guard, identity, or endpoint found in Frost session assets'
-fi
+mapfile -t donor_matches < <(
+  rg --with-filename --no-line-number -i '(omarchy|omacom|pkgs\.omarchy)' \
+    "$root/bin" "$root/default" || true
+)
+allowed_transition_match="$root/bin/frost-hyprland:readonly frost_transition_environment=OMARCHY_PATH"
+for match in "${donor_matches[@]}"; do
+  [[ $match == "$allowed_transition_match" ]] || {
+    printf '%s\n' "$match" >&2
+    fail 'donor guard, identity, or endpoint found in Frost session assets'
+  }
+done
+[[ ${#donor_matches[@]} == 1 ]] || fail 'Frost session boundary must declare exactly one foreign transition variable'
+rg -q '^/usr/bin/systemctl --user unset-environment "\$frost_transition_environment"$' \
+  "$root/bin/frost-hyprland" || fail 'Frost wrapper does not quarantine the user-manager transition environment'
+rg -q '^unset "\$frost_transition_environment"$' "$root/bin/frost-hyprland" ||
+  fail 'Frost wrapper does not quarantine the process transition environment'
+[[ $(rg -c 'frost_transition_environment' "$root/bin/frost-hyprland") == 3 ]] ||
+  fail 'foreign transition variable escaped its fixed quarantine operations'
 hyprland_config=$root/default/hypr/hyprland.lua
 if rg -n '\b(require|dofile|loadfile)\s*\(|os\.execute\s*\(|io\.popen\s*\(' "$hyprland_config"; then
   fail 'Hyprland Lua may not load or execute an external runtime tree'
