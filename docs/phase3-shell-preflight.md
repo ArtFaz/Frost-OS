@@ -1,6 +1,6 @@
 # Phase 3 static shell preflight
 
-Status: preparatory work only. Gate 2 remains open until the required graphical cycles are confirmed; this document does not activate or package the shell.
+Status: Gate 2 closed; the static source composition is implemented and validated. Packaging and live Gate 3 activation remain pending.
 
 ## Dependency decision
 
@@ -46,4 +46,4 @@ Menu, notification center, command center, audio/network/Bluetooth/display/power
 
 Source validation will use the Frost source contract, `qmllint`, deterministic JavaScript model tests and package inspection. Real surface, multi-monitor, hotplug, exclusive-zone, OSD and crash/restart tests belong to Gate 3 and require explicit live-session authorization.
 
-No Phase 3 package will be installed and no shell process will be started while Gate 2 remains unconfirmed.
+The Phase 3 package and shell process remain inactive until the signed package is reviewed and live Gate 3 activation is explicitly authorized.

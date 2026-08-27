@@ -17,7 +17,7 @@ First validate both local packages using the public-key-only keyring:
 ```bash
 gpg --show-keys --fingerprint /home/art/Frosted-Glass/frost-pkgs/pkgbuilds/frost-keyring/frost.gpg
 gpgv --keyring /home/art/Frosted-Glass/frost-pkgs/pkgbuilds/frost-keyring/frost.gpg /home/art/Frosted-Glass/frost-pkgs/repo/x86_64/frost-keyring-20260826-1-any.pkg.tar.zst.sig /home/art/Frosted-Glass/frost-pkgs/repo/x86_64/frost-keyring-20260826-1-any.pkg.tar.zst
-gpgv --keyring /home/art/Frosted-Glass/frost-pkgs/pkgbuilds/frost-keyring/frost.gpg /home/art/Frosted-Glass/frost-pkgs/repo/x86_64/frost-0.2.0-4-x86_64.pkg.tar.zst.sig /home/art/Frosted-Glass/frost-pkgs/repo/x86_64/frost-0.2.0-4-x86_64.pkg.tar.zst
+gpgv --keyring /home/art/Frosted-Glass/frost-pkgs/pkgbuilds/frost-keyring/frost.gpg /home/art/Frosted-Glass/frost-pkgs/repo/x86_64/frost-0.2.0-5-x86_64.pkg.tar.zst.sig /home/art/Frosted-Glass/frost-pkgs/repo/x86_64/frost-0.2.0-5-x86_64.pkg.tar.zst
 ```
 
 After the fingerprint has been checked against the execution journal, bootstrap only that key and install the official dependencies plus the two signed local packages:
@@ -26,7 +26,7 @@ After the fingerprint has been checked against the execution journal, bootstrap 
 sudo pacman-key --add /home/art/Frosted-Glass/frost-pkgs/pkgbuilds/frost-keyring/frost.gpg
 sudo pacman-key --lsign-key 9F8D63165ACC27A4FDCCED02FD40A38811EDD104
 sudo pacman -S --needed extra/cliphist extra/hypridle extra/hyprlock extra/hyprpolkitagent extra/mako
-sudo pacman -U /home/art/Frosted-Glass/frost-pkgs/repo/x86_64/frost-keyring-20260826-1-any.pkg.tar.zst /home/art/Frosted-Glass/frost-pkgs/repo/x86_64/frost-0.2.0-4-x86_64.pkg.tar.zst
+sudo pacman -U /home/art/Frosted-Glass/frost-pkgs/repo/x86_64/frost-keyring-20260826-1-any.pkg.tar.zst /home/art/Frosted-Glass/frost-pkgs/repo/x86_64/frost-0.2.0-5-x86_64.pkg.tar.zst
 systemctl --user daemon-reload
 pacman -Qkk frost frost-keyring
 ```

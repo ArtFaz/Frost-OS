@@ -40,6 +40,8 @@ Status: sufficient for the currently authorized private implementation; insuffic
 
 ## Per-file port ledger schema
 
+The active machine-readable ledger is `docs/provenance/ports.json`. The Phase 3 entries point only to the frozen `Frost-OS` and `staging` commits recorded above and classify every QML/JavaScript implementation file as a private `rewritten-from-concept` port. The test suite rejects unfrozen commits, missing destinations, duplicate destinations and unledgered shell implementation files.
+
 Phase 1 creates `THIRD_PARTY.md` and a machine-readable ledger using these fields:
 
 ```json
