@@ -16,6 +16,7 @@ Status: sufficient for the currently authorized private implementation; insuffic
 
 | Source | Audited commit/state | Declared or observed license | Authorized use now | Publication status |
 |---|---|---|---|---|
+| `mavxa/DynamicGlacier` | `70824af6350927c429ed57fb83d89ed843e6cd84` | MIT, copyright 2026 mavxa | Adapted Frost Island runtime with preserved notice | Allowed for traced files under the included MIT notice |
 | `Definitive Frost-OS/omarchy` | `0ae1694830b6` | MIT, copyright David Heinemeier Hansson | Reference and selective MIT-licensed ports with notice | Allowed only for traced files with preserved MIT notice |
 | Omarchy stable source used by donor PKGBUILDs | `13f18b2cb7286fb54f87daf571a031aa6af3d8f0`, tag `v4.0.1` | MIT | Reference and selective traced ports | Allowed only for traced files with preserved MIT notice |
 | `Definitive Frost-OS/omarchy-pkgs` | `5a73fd899940` | Repository MIT; individual built software has its own licenses | Packaging/ownership reference | Recipe reuse requires trace; built packages require upstream review |
@@ -57,6 +58,8 @@ Phase 1 creates `THIRD_PARTY.md` and a machine-readable ledger using these field
 ```
 
 Allowed transformation values are `original`, `adapted`, `rewritten-from-concept`, and `generated`. `rewritten-from-concept` means no copyrightable implementation was copied; it still records why the design exists.
+
+`original` is reserved for Frost-authored files with no donor lineage at all. Such an entry carries `originRepository: "Frost"`, an empty `originCommit` and `originPath`, and `license: "Frost project license"`. This exists so that first-party work built directly on an upstream library API is not recorded as derived from a rights-blocked donor, which would overstate the publication debt and make the ledger less accurate, not more cautious. The test enforces the frozen donor commits for every other origin.
 
 ## Publication blockers
 

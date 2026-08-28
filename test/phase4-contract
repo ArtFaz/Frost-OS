@@ -6,56 +6,48 @@ root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 shell=$root/shell
 config=$root/config/shell.json
 
-fail() {
-  printf 'phase4 contract: %s\n' "$1" >&2
-  exit 1
-}
+fail() { printf 'island contract: %s\n' "$1" >&2; exit 1; }
 
 jq -e '
-  .schemaVersion == 2 and
-  (.surfaces | keys | sort) == (["agents", "appInstaller", "clipboard", "commandCenter", "emojiPicker", "imagePicker", "launcher", "notificationCenter", "tailscale"] | sort) and
-  .surfaces.tailscale == false and
-  .surfaces.agents == false
-' "$config" >/dev/null || fail 'surface configuration or optional fail-closed defaults are invalid'
+  .schemaVersion == 3 and
+  (. | keys | sort) == (["island", "schemaVersion"] | sort) and
+  (.island | keys | sort) == (["enabled", "handleStyle", "idleHeight", "idleWidth"] | sort) and
+  (.island.handleStyle == "bump" or .island.handleStyle == "strip") and
+  (.island.idleWidth >= 300 and .island.idleWidth <= 520) and
+  (.island.idleHeight >= 112 and .island.idleHeight <= 180)
+' "$config" >/dev/null || fail 'schema v3 island configuration is invalid'
 
-jq -e '.schemaVersion == 1 and (.items | length >= 10) and all(.items[]; (.source == "arch" or .source == "frost" or .source == "aur"))' \
-  "$root/config/data/app-inventory.json" >/dev/null || fail 'typed application inventory is invalid'
-jq -e '.schemaVersion == 1 and (.items | length >= 80)' "$root/config/data/emojis.json" >/dev/null ||
-  fail 'emoji catalog is invalid'
-
-for direct_module in \
-  Quickshell.Networking \
-  Quickshell.Bluetooth \
-  Quickshell.Services.Mpris \
-  Quickshell.Services.Pipewire \
-  Quickshell.Services.UPower; do
-  rg -Fq "import $direct_module" "$shell/Core/SystemState.qml" "$shell/Surfaces" ||
-    fail "stable direct interface is not used: $direct_module"
+for mode in wifi bluetooth battery audio notifications media volume; do
+  rg -Fq "\"$mode\"" "$shell/Island/DynamicGlacier.qml" || fail "island mode is missing: $mode"
 done
-
-rg -Fq 'path: "/usr/share/frost/config/data/app-inventory.json"' "$shell/Surfaces/AppInstallerPanel.qml" ||
-  fail 'application installer does not use package-owned typed data'
-if rg -n '(pacman|makepkg|yay|paru|pkexec|sudo)' "$shell/Surfaces/AppInstallerPanel.qml" "$shell/Surfaces/InstallerModel.js"; then
-  fail 'application installer frontend crosses the Phase 4 privilege boundary'
-fi
-rg -Fq 'ShellBackend.query("notifications")' "$shell/Surfaces/NotificationPanel.qml" ||
-  fail 'notification center does not consume the typed Mako view'
-rg -Fq 'ShellBackend.query("weather")' "$shell/Core/WeatherState.qml" ||
-  fail 'weather does not consume the typed Frost data boundary'
-if rg -n -i '(ipinfo|ip-api|geolocation|geoip)' "$shell" "$root/cli/src"; then
-  fail 'weather may not infer a city from an IP address'
-fi
-rg -Fq 'ShellBackend.query("indicators")' "$shell/Core/IndicatorState.qml" ||
-  fail 'bar indicators do not consume the typed Frost state boundary'
-rg -Fq 'ShellBackend.action("stay-awake-toggle")' "$shell/Bar/Bar.qml" ||
-  fail 'stay-awake indicator is not wired to its typed action'
-rg -Fq 'Config.surfaces.tailscale' "$shell/Surfaces/ControlCenter.qml" ||
-  fail 'Tailscale surface does not fail closed behind its feature selection'
-rg -Fq 'Config.surfaces.agents' "$shell/Surfaces/ControlCenter.qml" ||
-  fail 'agents surface does not fail closed behind its feature selection'
-
-for binding in ' + SPACE"' ' + A"' ' + N"' ' + V"' ' + period"' ' + I"'; do
-  rg -Fq "$binding" "$root/default/hypr/hyprland.lua" || fail "missing Frost surface binding: $binding"
+for action in wifi-connect wifi-disconnect wifi-radio bluetooth-radio power-profile battery-threshold; do
+  rg -Fq "\"$action\"" "$shell/Core/ShellBackend.qml" "$root/cli/src/main.rs" || fail "typed island action is missing: $action"
 done
+rg -Fq 'name = "frost-island-blur"' "$root/default/hypr/hyprland.lua" || fail 'Hyprland blur rule is missing'
+rg -Fq 'namespace = "^frost-island$"' "$root/default/hypr/hyprland.lua" || fail 'blur rule targets the wrong namespace'
+# Anchored on a non-letter so the Mako *viewer* (toggleNotificationsPanel) is not
+# mistaken for the removed notification-center surface, which owned the server.
+if rg -n 'toggle(ControlCenter|Notifications|Clipboard|Emoji|Images|AppInstaller|Launcher)[^A-Za-z]' \
+  "$root/default/hypr/hyprland.lua" "$shell"; then
+  fail 'removed Phase 4 surface routing remains active'
+fi
+# Mako stays the only notification server: the island may read and act through
+# makoctl, but must never register or implement one.
+if rg -n 'NotificationServer|org\.freedesktop\.Notifications' "$shell"; then
+  fail 'the island must not act as a notification server'
+fi
+# The in-island launcher and the in-island settings page were removed on purpose:
+# app launching lives outside the shell and the island carries no configuration UI.
+# Matched as routing, not as any occurrence of the words, so an icon glyph named
+# "settings" in the shared map does not trip it.
+if rg -n 'toggle (apps|settings)|mode === "(apps|settings)"|mode = "(apps|settings)"|toggle(Apps|Settings)Panel' \
+  "$root/default/hypr/hyprland.lua" "$shell"; then
+  fail 'removed island apps/settings routing remains active'
+fi
+rg -Fq 'target: "frost"' "$shell/Island/DynamicGlacier.qml" || fail 'Frost IPC target is missing'
+rg -Fq 'function showOsd(payload: string)' "$shell/Island/DynamicGlacier.qml" || fail 'hardware OSD bridge is missing'
+rg -Fq 'omarchy toggle bar off' "$root/tools/preview-shell" || fail 'preview does not hide the existing bar'
+rg -Fq 'rule:destroy()' "$root/tools/preview-shell" || fail 'preview does not remove its Hyprland rule'
+rg -Fq '_G.frost_island_preview_rule = nil' "$root/tools/preview-shell" || fail 'preview does not release its Hyprland rule handle'
 
-printf '%s\n' 'phase4 contract: ok'
+printf '%s\n' 'island contract: ok'

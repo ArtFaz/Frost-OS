@@ -17,6 +17,7 @@ QtObject {
     property color success: "#a9b665"
     property color warning: "#d8a657"
     property bool runtimeLoaded: false
+    readonly property string sourceRoot: Quickshell.env("FROST_PREVIEW") === "1" ? Quickshell.env("FROST_SOURCE_ROOT") : ""
 
     readonly property bool light: mode === "light"
     readonly property color surface: background
@@ -142,7 +143,7 @@ QtObject {
     }
 
     property FileView fallbackFile: FileView {
-        path: "/usr/share/frost/themes/gruvbox/theme.toml"
+        path: root.sourceRoot !== "" ? root.sourceRoot + "/themes/gruvbox/theme.toml" : "/usr/share/frost/themes/gruvbox/theme.toml"
         watchChanges: false
         printErrors: false
         onLoaded: {

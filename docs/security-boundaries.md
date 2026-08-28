@@ -19,7 +19,7 @@ Status: initial Phase 0 threat model and implementation contract.
 
 ## Security authorities
 
-- Notifications: Mako only.
+- Notifications: Mako only. Frost's viewer is a makoctl client behind the typed CLI boundary; it never registers `org.freedesktop.Notifications` and never acts on a notification hint, only on an id the user selected.
 - Lock and PAM: Hyprlock only.
 - Polkit: hyprpolkitagent only.
 - Session lifecycle: UWSM plus `frost-session.target`.

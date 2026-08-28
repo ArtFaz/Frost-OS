@@ -1,43 +1,21 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://frost.invalid/schema/shell.schema.json",
-  "title": "Frost shell configuration",
+  "title": "Frost Island configuration",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "bar", "osd", "surfaces"],
+  "required": ["schemaVersion", "island"],
   "properties": {
-    "schemaVersion": { "const": 2 },
-    "bar": {
+    "schemaVersion": { "const": 3 },
+    "island": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["enabled", "position"],
+      "required": ["enabled", "handleStyle", "idleWidth", "idleHeight"],
       "properties": {
         "enabled": { "type": "boolean" },
-        "position": { "enum": ["top", "bottom"] }
-      }
-    },
-    "osd": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["enabled"],
-      "properties": {
-        "enabled": { "type": "boolean" }
-      }
-    },
-    "surfaces": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["launcher", "commandCenter", "notificationCenter", "clipboard", "emojiPicker", "imagePicker", "appInstaller", "tailscale", "agents"],
-      "properties": {
-        "launcher": { "type": "boolean" },
-        "commandCenter": { "type": "boolean" },
-        "notificationCenter": { "type": "boolean" },
-        "clipboard": { "type": "boolean" },
-        "emojiPicker": { "type": "boolean" },
-        "imagePicker": { "type": "boolean" },
-        "appInstaller": { "type": "boolean" },
-        "tailscale": { "type": "boolean" },
-        "agents": { "type": "boolean" }
+        "handleStyle": { "enum": ["bump", "strip"] },
+        "idleWidth": { "type": "integer", "minimum": 300, "maximum": 520, "multipleOf": 10 },
+        "idleHeight": { "type": "integer", "minimum": 112, "maximum": 180, "multipleOf": 4 }
       }
     }
   }

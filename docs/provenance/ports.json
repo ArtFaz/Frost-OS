@@ -2,46 +2,10 @@
   "schemaVersion": 1,
   "entries": [
     {
-      "destination": "shell/shell.qml",
-      "originRepository": "Frost-OS",
-      "originCommit": "f4a8cc9cd4137469393f815ccef08a849ce9005d",
-      "originPath": "shell/shell.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
-    },
-    {
       "destination": "shell/Core/Config.qml",
       "originRepository": "Frost-OS",
       "originCommit": "f4a8cc9cd4137469393f815ccef08a849ce9005d",
       "originPath": "shell/shell.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
-    },
-    {
-      "destination": "shell/Core/IndicatorState.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.bar/indicators/StayAwake.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
-    },
-    {
-      "destination": "shell/Core/Theme.qml",
-      "originRepository": "Frost-OS",
-      "originCommit": "f4a8cc9cd4137469393f815ccef08a849ce9005d",
-      "originPath": "shell/components/frost/Glass.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
-    },
-    {
-      "destination": "shell/Core/Style.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.frosted-glass/glass.conf",
       "transformation": "rewritten-from-concept",
       "license": "pending-confirmation",
       "notice": "docs/provenance.md"
@@ -56,114 +20,6 @@
       "notice": "docs/provenance.md"
     },
     {
-      "destination": "shell/Primitives/GlassSurface.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.frosted-glass/GlassSurface.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
-    },
-    {
-      "destination": "shell/Primitives/FocusRing.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.frosted-glass/GlassKeyboardPanel.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
-    },
-    {
-      "destination": "shell/Primitives/InteractiveSurface.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.frosted-glass/Glass.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
-    },
-    {
-      "destination": "shell/Bar/Bar.qml",
-      "originRepository": "Frost-OS",
-      "originCommit": "f4a8cc9cd4137469393f815ccef08a849ce9005d",
-      "originPath": "shell/components/bar/Bar.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
-    },
-    {
-      "destination": "shell/Bar/Workspaces.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.workspaces/Workspaces.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
-    },
-    {
-      "destination": "shell/Bar/Tray.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.bar/widgets/Tray.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
-    },
-    {
-      "destination": "shell/Bar/Clock.qml",
-      "originRepository": "Frost-OS",
-      "originCommit": "f4a8cc9cd4137469393f815ccef08a849ce9005d",
-      "originPath": "shell/components/bar/Bar.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
-    },
-    {
-      "destination": "shell/Osd/Osd.qml",
-      "originRepository": "Frost-OS",
-      "originCommit": "f4a8cc9cd4137469393f815ccef08a849ce9005d",
-      "originPath": "shell/components/osd/Osd.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
-    },
-    {
-      "destination": "shell/Osd/OsdModel.js",
-      "originRepository": "Frost-OS",
-      "originCommit": "f4a8cc9cd4137469393f815ccef08a849ce9005d",
-      "originPath": "shell/components/osd/OsdModel.js",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
-    },
-    {
-      "destination": "shell/Bar/Media.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.media/BarWidget.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
-    },
-    {
-      "destination": "shell/Bar/MenuButton.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.menu/BarWidget.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
-    },
-    {
-      "destination": "shell/Bar/Status.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.bar/Bar.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
-    },
-    {
       "destination": "shell/Core/ShellBackend.qml",
       "originRepository": "staging",
       "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
@@ -173,223 +29,106 @@
       "notice": "docs/provenance.md"
     },
     {
-      "destination": "shell/Core/SystemState.qml",
+      "destination": "shell/Core/Style.qml",
       "originRepository": "staging",
       "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.command-center/Panel.qml",
+      "originPath": "config/omarchy/plugins/art.frosted-glass/glass.conf",
       "transformation": "rewritten-from-concept",
       "license": "pending-confirmation",
       "notice": "docs/provenance.md"
     },
     {
-      "destination": "shell/Core/WeatherState.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/shell.json",
+      "destination": "shell/Core/Theme.qml",
+      "originRepository": "Frost-OS",
+      "originCommit": "f4a8cc9cd4137469393f815ccef08a849ce9005d",
+      "originPath": "shell/components/frost/Glass.qml",
       "transformation": "rewritten-from-concept",
       "license": "pending-confirmation",
       "notice": "docs/provenance.md"
     },
     {
-      "destination": "shell/Primitives/ModuleCard.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.command-center/ModuleCard.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
+      "destination": "shell/Island/AudioIndicator.qml",
+      "originRepository": "https://github.com/mavxa/DynamicGlacier",
+      "originCommit": "70824af6350927c429ed57fb83d89ed843e6cd84",
+      "originPath": "quickshell/modules/dynamicGlacier/AudioIndicator.qml",
+      "transformation": "adapted",
+      "license": "MIT",
+      "notice": "docs/licenses/DynamicGlacier-MIT.txt"
+    },
+    {
+      "destination": "shell/Island/AudioPanel.qml",
+      "originRepository": "Frost",
+      "originCommit": "",
+      "originPath": "",
+      "transformation": "original",
+      "license": "Frost project license",
       "notice": "docs/provenance.md"
     },
     {
-      "destination": "shell/Primitives/PanelHeader.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.frosted-glass/GlassKeyboardPanel.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
+      "destination": "shell/Island/BatteryPanel.qml",
+      "originRepository": "https://github.com/mavxa/DynamicGlacier",
+      "originCommit": "70824af6350927c429ed57fb83d89ed843e6cd84",
+      "originPath": "quickshell/modules/dynamicGlacier/BatteryPanel.qml",
+      "transformation": "adapted",
+      "license": "MIT",
+      "notice": "docs/licenses/DynamicGlacier-MIT.txt"
     },
     {
-      "destination": "shell/Primitives/SearchField.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.menu/Menu.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
+      "destination": "shell/Island/BluetoothPanel.qml",
+      "originRepository": "https://github.com/mavxa/DynamicGlacier",
+      "originCommit": "70824af6350927c429ed57fb83d89ed843e6cd84",
+      "originPath": "quickshell/modules/dynamicGlacier/BluetoothPanel.qml",
+      "transformation": "adapted",
+      "license": "MIT",
+      "notice": "docs/licenses/DynamicGlacier-MIT.txt"
     },
     {
-      "destination": "shell/Primitives/SurfaceButton.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.frosted-glass/Glass.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
+      "destination": "shell/Island/DynamicGlacier.qml",
+      "originRepository": "https://github.com/mavxa/DynamicGlacier",
+      "originCommit": "70824af6350927c429ed57fb83d89ed843e6cd84",
+      "originPath": "quickshell/modules/dynamicGlacier/DynamicGlacier.qml",
+      "transformation": "adapted",
+      "license": "MIT",
+      "notice": "docs/licenses/DynamicGlacier-MIT.txt"
     },
     {
-      "destination": "shell/Primitives/ToggleSwitch.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.command-center/ModuleCard.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
+      "destination": "shell/Island/FrostGlassSurface.qml",
+      "originRepository": "https://github.com/mavxa/DynamicGlacier",
+      "originCommit": "70824af6350927c429ed57fb83d89ed843e6cd84",
+      "originPath": "quickshell/modules/dynamicGlacier/LiquidGlassSurface.qml",
+      "transformation": "adapted",
+      "license": "MIT",
+      "notice": "docs/licenses/DynamicGlacier-MIT.txt"
     },
     {
-      "destination": "shell/Primitives/ValueSlider.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.audio/Panel.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
+      "destination": "shell/Island/IslandContent.qml",
+      "originRepository": "https://github.com/mavxa/DynamicGlacier",
+      "originCommit": "70824af6350927c429ed57fb83d89ed843e6cd84",
+      "originPath": "quickshell/modules/dynamicGlacier/IslandContent.qml",
+      "transformation": "adapted",
+      "license": "MIT",
+      "notice": "docs/licenses/DynamicGlacier-MIT.txt"
     },
     {
-      "destination": "shell/Surfaces/SurfaceHost.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.frosted-glass/GlassKeyboardPanel.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
+      "destination": "shell/Island/IslandSurface.qml",
+      "originRepository": "https://github.com/mavxa/DynamicGlacier",
+      "originCommit": "70824af6350927c429ed57fb83d89ed843e6cd84",
+      "originPath": "quickshell/modules/dynamicGlacier/IslandSurface.qml",
+      "transformation": "adapted",
+      "license": "MIT",
+      "notice": "docs/licenses/DynamicGlacier-MIT.txt"
     },
     {
-      "destination": "shell/Surfaces/Launcher.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.menu/Menu.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
+      "destination": "shell/Island/MIcon.qml",
+      "originRepository": "https://github.com/mavxa/DynamicGlacier",
+      "originCommit": "70824af6350927c429ed57fb83d89ed843e6cd84",
+      "originPath": "quickshell/modules/dynamicGlacier/MIcon.qml",
+      "transformation": "adapted",
+      "license": "MIT",
+      "notice": "docs/licenses/DynamicGlacier-MIT.txt"
     },
     {
-      "destination": "shell/Surfaces/ControlCenter.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.command-center/Panel.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
-    },
-    {
-      "destination": "shell/Surfaces/CalendarPanel.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/shell.json",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
-    },
-    {
-      "destination": "shell/Surfaces/WeatherPanel.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/shell.json",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
-    },
-    {
-      "destination": "shell/Surfaces/ReminderPanel.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.bar/indicators/Reminder.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
-    },
-    {
-      "destination": "shell/Surfaces/MediaCard.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.media/BarWidget.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
-    },
-    {
-      "destination": "shell/Surfaces/NetworkPanel.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.network/Panel.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
-    },
-    {
-      "destination": "shell/Surfaces/BluetoothPanel.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.bluetooth/Panel.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
-    },
-    {
-      "destination": "shell/Surfaces/AudioPanel.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.audio/Panel.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
-    },
-    {
-      "destination": "shell/Surfaces/DisplayPowerPanel.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.monitor/Panel.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
-    },
-    {
-      "destination": "shell/Surfaces/ClipboardPanel.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.clipboard/Clipboard.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
-    },
-    {
-      "destination": "shell/Surfaces/EmojiPanel.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.emojis/Emojis.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
-    },
-    {
-      "destination": "shell/Surfaces/ImagePickerPanel.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.image-picker/ImagePicker.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
-    },
-    {
-      "destination": "shell/Surfaces/AppInstallerPanel.qml",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.menu/Menu.qml",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
-    },
-    {
-      "destination": "shell/Surfaces/InstallerModel.js",
-      "originRepository": "staging",
-      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.menu/MenuModel.js",
-      "transformation": "rewritten-from-concept",
-      "license": "pending-confirmation",
-      "notice": "docs/provenance.md"
-    },
-    {
-      "destination": "shell/Surfaces/NotificationPanel.qml",
+      "destination": "shell/Island/NotificationsPanel.qml",
       "originRepository": "staging",
       "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
       "originPath": "config/omarchy/plugins/art.notification-center/Panel.qml",
@@ -398,19 +137,55 @@
       "notice": "docs/provenance.md"
     },
     {
-      "destination": "shell/Surfaces/NotificationModel.js",
+      "destination": "shell/Island/PanelHeader.qml",
+      "originRepository": "Frost",
+      "originCommit": "",
+      "originPath": "",
+      "transformation": "original",
+      "license": "Frost project license",
+      "notice": "docs/provenance.md"
+    },
+    {
+      "destination": "shell/Island/PanelSwitch.qml",
+      "originRepository": "Frost",
+      "originCommit": "",
+      "originPath": "",
+      "transformation": "original",
+      "license": "Frost project license",
+      "notice": "docs/provenance.md"
+    },
+    {
+      "destination": "shell/Island/PeekStatusRow.qml",
+      "originRepository": "https://github.com/mavxa/DynamicGlacier",
+      "originCommit": "70824af6350927c429ed57fb83d89ed843e6cd84",
+      "originPath": "quickshell/modules/dynamicGlacier/HandleStyleSwitch.qml",
+      "transformation": "adapted",
+      "license": "MIT",
+      "notice": "docs/licenses/DynamicGlacier-MIT.txt"
+    },
+    {
+      "destination": "shell/Island/TrayRail.qml",
       "originRepository": "staging",
       "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.notification-center/Model.js",
+      "originPath": "config/omarchy/plugins/art.bar/widgets/Tray.qml",
       "transformation": "rewritten-from-concept",
       "license": "pending-confirmation",
       "notice": "docs/provenance.md"
     },
     {
-      "destination": "shell/Surfaces/OptionalPanel.qml",
+      "destination": "shell/Island/WorkspaceRail.qml",
       "originRepository": "staging",
       "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
-      "originPath": "config/omarchy/plugins/art.tailscale/Panel.qml",
+      "originPath": "config/omarchy/plugins/art.workspaces/Workspaces.qml",
+      "transformation": "rewritten-from-concept",
+      "license": "pending-confirmation",
+      "notice": "docs/provenance.md"
+    },
+    {
+      "destination": "shell/shell.qml",
+      "originRepository": "Frost-OS",
+      "originCommit": "f4a8cc9cd4137469393f815ccef08a849ce9005d",
+      "originPath": "shell/shell.qml",
       "transformation": "rewritten-from-concept",
       "license": "pending-confirmation",
       "notice": "docs/provenance.md"

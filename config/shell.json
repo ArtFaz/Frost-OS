@@ -1,21 +1,9 @@
 {
-  "schemaVersion": 2,
-  "bar": {
+  "schemaVersion": 3,
+  "island": {
     "enabled": true,
-    "position": "top"
-  },
-  "osd": {
-    "enabled": true
-  },
-  "surfaces": {
-    "launcher": true,
-    "commandCenter": true,
-    "notificationCenter": true,
-    "clipboard": true,
-    "emojiPicker": true,
-    "imagePicker": true,
-    "appInstaller": true,
-    "tailscale": false,
-    "agents": false
+    "handleStyle": "bump",
+    "idleWidth": 380,
+    "idleHeight": 148
   }
 }

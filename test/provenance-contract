@@ -16,12 +16,41 @@ jq -e '
   (.entries | type == "array") and
   all(.entries[];
     (.destination | type == "string" and startswith("shell/") and (contains("..") | not)) and
-    (.originRepository == "Frost-OS" or .originRepository == "staging") and
-    (.originCommit | test("^[0-9a-f]{40}$")) and
-    (.originPath | type == "string" and length > 0 and (startswith("/") | not)) and
-    (.transformation == "adapted" or .transformation == "rewritten-from-concept") and
-    .license == "pending-confirmation" and
-    .notice == "docs/provenance.md"
+    (.originRepository == "Frost" or
+      .originRepository == "Frost-OS" or
+      .originRepository == "staging" or
+      .originRepository == "https://github.com/mavxa/DynamicGlacier") and
+    (.transformation == "original" or
+      .transformation == "adapted" or
+      .transformation == "rewritten-from-concept") and
+    (
+      (
+        .originRepository == "https://github.com/mavxa/DynamicGlacier" and
+        (.originCommit | test("^[0-9a-f]{40}$")) and
+        (.originPath | type == "string" and length > 0 and (startswith("/") | not)) and
+        (.transformation == "adapted" or .transformation == "rewritten-from-concept") and
+        .license == "MIT" and
+        .notice == "docs/licenses/DynamicGlacier-MIT.txt"
+      ) or
+      (
+        (.originRepository == "Frost-OS" or .originRepository == "staging") and
+        (.originCommit | test("^[0-9a-f]{40}$")) and
+        (.originPath | type == "string" and length > 0 and (startswith("/") | not)) and
+        (.transformation == "adapted" or .transformation == "rewritten-from-concept") and
+        .license == "pending-confirmation" and
+        .notice == "docs/provenance.md"
+      ) or
+      (
+        # Frost-authored work with no donor lineage. Recording it as derived
+        # from a rights-blocked donor would overstate the publication debt.
+        .originRepository == "Frost" and
+        .transformation == "original" and
+        .originCommit == "" and
+        .originPath == "" and
+        .license == "Frost project license" and
+        .notice == "docs/provenance.md"
+      )
+    )
   ) and
   ((.entries | map(.destination) | unique | length) == (.entries | length))
 ' "$ledger" >/dev/null || fail 'ledger schema or entry constraint failed'
@@ -30,6 +59,10 @@ while IFS=$'\t' read -r repository commit; do
   case $repository in
     Frost-OS) expected=f4a8cc9cd4137469393f815ccef08a849ce9005d ;;
     staging) expected=824831e75171dc4c87c8d53dfd22e3e07de7f6a6 ;;
+    https://github.com/mavxa/DynamicGlacier)
+      expected=70824af6350927c429ed57fb83d89ed843e6cd84
+      ;;
+    Frost) expected= ;;
     *) fail "unknown source repository: $repository" ;;
   esac
   [[ $commit == "$expected" ]] || fail "unfrozen source commit for $repository"

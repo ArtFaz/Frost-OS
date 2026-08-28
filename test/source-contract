@@ -61,15 +61,19 @@ if [[ -d $shell_root ]]; then
   done
   if [[ -f $backend ]]; then
     [[ $(rg -c '\bProcess\s*\{' "$backend") == 2 ]] || fail 'typed Frost backend must own exactly two serialized processes'
-    rg -Fq 'dataProcess.command = ["/usr/bin/frost", "shell-data", kind];' "$backend" ||
+    rg -Fq 'dataProcess.command = [root.frostExecutable, "shell-data", kind];' "$backend" ||
       fail 'typed Frost data process does not use the fixed CLI boundary'
-    rg -Fq 'actionProcess.command = command;' "$backend" ||
+    rg -Fq '? Quickshell.env("FROST_CLI") : "/usr/bin/frost"' "$backend" ||
+      fail 'preview CLI override is not gated with the installed fixed boundary'
+    rg -Fq 'actionProcess.command = next.command;' "$backend" ||
       fail 'typed Frost action process boundary is missing'
-    [[ $(rg -c 'command = \["/usr/bin/frost", "shell-action", name' "$backend") == 3 ]] ||
-      fail 'typed Frost action argv may only use the fixed CLI entrypoint'
-    if rg -n '(workingDirectory|environment|stdinEnabled|\.exec\s*\()' "$backend"; then
+    [[ $(rg -c '\[root\.frostExecutable, "shell-action", name\]' "$backend") == 1 ]] ||
+      fail 'typed Frost action queue must use exactly one fixed CLI entrypoint'
+    if rg -n '(workingDirectory|environment|\.exec\s*\()' "$backend"; then
       fail 'typed Frost backend exposes unsupported process controls'
     fi
+    [[ $(rg -c 'stdinEnabled: true' "$backend") == 1 ]] || fail 'typed backend must expose exactly one stdin channel'
+    rg -Fq '"input": name === "wifi-connect"' "$backend" || fail 'stdin may only carry the validated Wi-Fi secret'
   fi
   if find "$shell_root" -type l -print -quit | grep -q .; then
     fail 'shell symlink found'

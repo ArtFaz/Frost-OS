@@ -1,34 +1,32 @@
-# Phase 4 visual parity contract
+# Frost Island parity contract
 
-This contract freezes the first-party Frost shell against the visual and functional authority in `staging` commit `824831e75171dc4c87c8d53dfd22e3e07de7f6a6`. The donor tree remains read-only. Every implementation is a static Frost rewrite recorded in `docs/provenance/ports.json`; no plugin registry, manifest, command guard, environment authority or runtime path is imported.
+The active shell is based on DynamicGlacier commit 70824af6350927c429ed57fb83d89ed843e6cd84, adapted under the MIT license. The exact per-file origins and transformations are recorded in docs/provenance/ports.json. The former Phase 4 bar, OSD and surface host are intentionally removed rather than kept as a second UI authority.
 
-## Fixed visual language
+## Fixed identity
 
-`shell/Core/Style.qml` owns geometry, typography and density. `shell/Core/Theme.qml` owns fixed Frosted Glass material roles and consumes only the selected semantic palette. Themes may provide exactly `background`, `foreground`, `muted`, `accent`, `urgent`, `highlight`, `success` and `warning` under schema version 1. They cannot change alpha, blur, radius, spacing, fonts, motion or layout.
+- One top-centre frost-island layer surface owns the shell UI.
+- FrostGlassSurface.qml is the only glass material. Liquid Glass settings and variants are absent.
+- Frost semantic theme colors, JetBrains Mono text and Nerd Font glyphs replace donor material/font choices.
+- Hyprland supplies blur only to the exact frost-island namespace with size 5 and ignore-alpha 0.12.
+- Handle style and bounded idle width/height remain schema-version-3 data in `config/shell.json`. The island exposes no UI to change them.
 
-The frozen baseline is a 30 px bar, 14 px principal radius, 8 px row radius, 6 px control radius, 448 px menu, 420 px panels, 400 x 500 emoji picker, 720 x 450 image picker and 875 x 600 clipboard. The text face is JetBrains Mono; UI glyphs use the package-owned Nerd Font symbol face and emoji use Noto Color Emoji. Gruvbox is the default palette.
+## Active modes
 
-## Surface mapping
+| Mode | State and actions |
+|---|---|
+| idle | clock, battery state and percentage, volume with scroll and mute, Wi-Fi and Bluetooth status, idle-inhibitor toggle, media-activity indicator and privacy indicators |
+| media | becomes the default open face while a player is active: cover art, track, transport and progress, with a chevron back to the idle face |
+| Wi-Fi | radio, rescan, connect and disconnect through the typed Frost boundary |
+| Bluetooth | native Quickshell adapter discovery and device operations |
+| battery | UPower telemetry, charging state, power profile and supported charge threshold |
+| audio | native PipeWire master and input levels, mute, output selection and a per-application mixer |
+| notifications | a viewer onto Mako: lists what makoctl reports, dismisses one or all, invokes the default action and toggles the dnd mode. It registers no notification server and holds no notification state of its own |
+| volume/brightness | hardware-key and reactive OSD morphs; brightness is polled from sysfs so any tool that changes it is reflected |
 
-| Staging concept | Static Frost owner | Contract |
-|---|---|---|
-| custom bar and layout | `shell/Bar` | left menu/workspaces/media, centered reminder/stay-awake, clock, notifications and conditional weather, right tray plus conditional and system modules |
-| menu | `Surfaces/Launcher.qml` | 448 px routed keyboard menu with applications, tools, style, setup, installer, about and session actions |
-| command center | `Surfaces/ControlCenter.qml` | 420 px connectivity group, audio, display, media and power modules |
-| clipboard | `Surfaces/ClipboardPanel.qml` | 875 x 600 history/preview split view |
-| emoji picker | `Surfaces/EmojiPanel.qml` | 400 x 500 searchable 44 px grid and direct clipboard copy |
-| image picker | `Surfaces/ImagePickerPanel.qml` | 720 x 450 preview carousel and typed image copy |
-| calendar | `Surfaces/CalendarPanel.qml` | clock-attached 420 px month view |
-| notification center | `Surfaces/NotificationPanel.qml` | 420 x 620 typed projection of Mako active/history state |
-| OSD | `shell/Osd/Osd.qml` | focused-monitor Frost overlay driven by bounded IPC payloads |
-| notification popups | Mako with generated Frost config | Mako remains the sole notification server |
-| lock | Hyprlock with generated Frost config | Hyprlock and PAM remain the sole lock/authentication authority |
-| Tailscale and agents | static conditional modules | absent by default and shown only by explicit Frost feature selection |
-
-Weather remains absent until a city is explicitly configured with `frost weather set CITY`; Frost never infers location from an IP address. Its fixed Rust boundary uses the official Open-Meteo geocoding and forecast endpoints with response caps, a short timeout and a 15-minute normalized cache. System-update UI remains absent until the Phase 7 update authority exists. The installer is a real typed selection and review frontend, while package application remains deliberately disabled until the Phase 6 backend gate.
+Mako remains the sole notification server; the island reads and acts on notifications only through the typed `frost shell-data notifications` / `frost shell-action notification-*` boundary, which calls fixed `makoctl` arguments. Hyprlock/PAM and hyprpolkitagent remain separate authorities. The public frost IPC target exposes only bounded single-argument methods for show, toggle, hide and hardware OSD data.
 
 ## Action boundary
 
-QML never constructs a shell command. `Core/ShellBackend.qml` owns exactly two serialized processes and can call only `frost shell-data` or `frost shell-action`. Workspace activation uses the Hyprland Lua dispatcher. Theme changes, clipboard/image copy, Mako operations, brightness and session actions are validated again in the Rust CLI. Restart and poweroff require an explicit confirmation card.
+QML never constructs or invokes a shell. Core/ShellBackend.qml owns exactly two serialized Process objects and dispatches only allowlisted frost shell-data and frost shell-action calls. The Rust CLI validates every action again and calls fixed absolute clients. Wi-Fi passwords are bounded printable data sent over stdin, never process arguments.
 
-Mako and Hyprlock consume materialized runtime configs. If theme materialization is unavailable, their Frost launchers fall back to immutable package configs so visual state cannot disable either authority.
+tools/preview-shell runs the Frost worktree directly with isolated XDG state and preview-only source/CLI overrides. It temporarily hides the Omarchy bar and installs a namespace-scoped blur rule; cleanup restores the bar and releases the rule handle. Upstream comparison mode copies an explicitly supplied DynamicGlacier checkout and never runs its installer.

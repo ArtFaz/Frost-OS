@@ -1,6 +1,6 @@
 use std::env;
 use std::fs;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
@@ -465,12 +465,17 @@ fn json_escape(value: &str) -> String {
 fn shell_data_command(args: &[String]) -> Result<(), CliError> {
     let [kind] = args else {
         return Err(CliError::Usage(
-            "usage: frost shell-data <brightness|clipboard|images|indicators|notifications|weather>"
+            "usage: frost shell-data <brightness|wifi|wifi-scan|power|battery-threshold|privacy|indicators|notifications|clipboard|images|weather>"
                 .to_owned(),
         ));
     };
     let json = match kind.as_str() {
         "brightness" => brightness_json()?,
+        "wifi" => wifi_json(false)?,
+        "wifi-scan" => wifi_json(true)?,
+        "power" => power_json()?,
+        "battery-threshold" => battery_threshold_json()?,
+        "privacy" => privacy_json(),
         "clipboard" => clipboard_json()?,
         "images" => images_json()?,
         "indicators" => indicators_json(),
@@ -504,19 +509,245 @@ fn capture(program: &str, args: &[&str]) -> Result<Vec<u8>, CliError> {
     Ok(output.stdout)
 }
 
+/// A backlight device name is a kernel object name, so it may only contain the
+/// characters the sysfs path is allowed to carry. Anything else is treated as
+/// no device rather than being interpolated into a path.
+fn valid_backlight_device(name: &str) -> bool {
+    !name.is_empty()
+        && name.len() <= 64
+        && name
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '.' | ':'))
+}
+
 fn brightness_json() -> Result<String, CliError> {
     let raw = capture("/usr/bin/brightnessctl", &["-m"])?;
     let text = String::from_utf8_lossy(&raw);
-    let percent = text
-        .trim()
+    let line = text.trim();
+    let percent = line
         .split(',')
         .nth(3)
         .and_then(|value| value.trim_end_matches('%').parse::<u8>().ok())
         .filter(|value| *value <= 100)
         .ok_or_else(|| CliError::Operational("invalid brightness response".to_owned()))?;
+    // The shell polls the sysfs attribute directly so the OSD reacts to any tool
+    // that changes brightness, not only to frost-osd. It cannot glob for the
+    // device, so the resolved path is reported here.
+    let device = line.split(',').next().unwrap_or("").trim();
+    let path = if valid_backlight_device(device) {
+        format!("/sys/class/backlight/{device}")
+    } else {
+        String::new()
+    };
     Ok(format!(
-        "{{\"schemaVersion\":1,\"available\":true,\"percent\":{percent}}}"
+        "{{\"schemaVersion\":1,\"available\":true,\"percent\":{percent},\"devicePath\":\"{path}\"}}"
     ))
+}
+
+fn split_nmcli_line(line: &str) -> Vec<String> {
+    let mut fields = Vec::new();
+    let mut field = String::new();
+    let mut escaped = false;
+    for character in line.chars() {
+        if escaped {
+            field.push(character);
+            escaped = false;
+        } else if character == '\\' {
+            escaped = true;
+        } else if character == ':' {
+            fields.push(field);
+            field = String::new();
+        } else {
+            field.push(character);
+        }
+    }
+    if escaped {
+        field.push('\\');
+    }
+    fields.push(field);
+    fields
+}
+
+fn wifi_json(rescan: bool) -> Result<String, CliError> {
+    let radio =
+        String::from_utf8_lossy(&capture("/usr/bin/nmcli", &["-t", "-f", "WIFI", "radio"])?)
+            .trim()
+            .to_owned();
+    let raw = capture(
+        "/usr/bin/nmcli",
+        &[
+            "-t",
+            "-f",
+            "active,ssid,signal,security",
+            "dev",
+            "wifi",
+            "list",
+            "--rescan",
+            if rescan { "yes" } else { "no" },
+        ],
+    )?;
+    let text = String::from_utf8_lossy(&raw);
+    let mut network_order = Vec::new();
+    let mut network_state = std::collections::HashMap::new();
+    let mut active_ssid = String::new();
+    let mut active_signal = 0_u8;
+    for line in text.lines().take(256) {
+        let parts = split_nmcli_line(line);
+        if parts.len() < 4 {
+            continue;
+        }
+        let ssid = parts[1].trim();
+        if ssid.is_empty() {
+            continue;
+        }
+        let active = parts[0] == "yes";
+        let signal = parts[2].parse::<u8>().unwrap_or(0).min(100);
+        let security = parts[3..].join(":");
+        let secured = !security.trim().is_empty() && security.trim() != "--";
+        if !network_state.contains_key(ssid) {
+            network_order.push(ssid.to_owned());
+        }
+        let state = network_state
+            .entry(ssid.to_owned())
+            .or_insert((0_u8, secured, false));
+        if active || signal > state.0 {
+            state.0 = signal;
+            state.1 = secured;
+        }
+        state.2 = state.2 || active;
+        if active {
+            active_ssid = ssid.to_owned();
+            active_signal = signal;
+        }
+    }
+    let networks = network_order
+        .iter()
+        .filter_map(|ssid| {
+            network_state.get(ssid).map(|(signal, secured, active)| {
+                format!(
+                    "{{\"ssid\":\"{}\",\"signal\":{},\"secured\":{},\"active\":{}}}",
+                    json_escape(ssid),
+                    signal,
+                    secured,
+                    active
+                )
+            })
+        })
+        .collect::<Vec<_>>();
+    Ok(format!(
+        "{{\"schemaVersion\":1,\"radioEnabled\":{},\"activeSsid\":\"{}\",\"activeSignal\":{},\"networks\":[{}]}}",
+        radio == "enabled",
+        json_escape(&active_ssid),
+        active_signal,
+        networks.join(",")
+    ))
+}
+
+fn power_json() -> Result<String, CliError> {
+    let active = String::from_utf8_lossy(&capture("/usr/bin/powerprofilesctl", &["get"])?)
+        .trim()
+        .to_owned();
+    let list_raw = capture("/usr/bin/powerprofilesctl", &["list"])?;
+    let list = String::from_utf8_lossy(&list_raw).into_owned();
+    let profiles = ["power-saver", "balanced", "performance"]
+        .into_iter()
+        .filter(|profile| list.contains(profile))
+        .map(|profile| format!("\"{profile}\""))
+        .collect::<Vec<_>>();
+    Ok(format!(
+        "{{\"schemaVersion\":1,\"available\":{},\"activeProfile\":\"{}\",\"profiles\":[{}]}}",
+        !profiles.is_empty()
+            && profiles
+                .iter()
+                .any(|profile| profile == &format!("\"{active}\"")),
+        json_escape(&active),
+        profiles.join(",")
+    ))
+}
+
+fn upower_battery_path() -> Result<Option<String>, CliError> {
+    let raw = capture("/usr/bin/upower", &["-e"])?;
+    Ok(String::from_utf8_lossy(&raw)
+        .lines()
+        .find(|line| line.contains("/battery_"))
+        .map(str::to_owned))
+}
+
+fn battery_threshold_json() -> Result<String, CliError> {
+    let Some(path) = upower_battery_path()? else {
+        return Ok(
+            "{\"schemaVersion\":1,\"supported\":false,\"enabled\":false,\"start\":-1,\"end\":-1}"
+                .to_owned(),
+        );
+    };
+    let output = Command::new("/usr/bin/busctl")
+        .args([
+            "get-property",
+            "org.freedesktop.UPower",
+            &path,
+            "org.freedesktop.UPower.Device",
+            "ChargeStartThreshold",
+            "ChargeEndThreshold",
+            "ChargeThresholdEnabled",
+            "ChargeThresholdSupported",
+        ])
+        .output()
+        .map_err(|error| {
+            CliError::Operational(format!("could not query battery threshold: {error}"))
+        })?;
+    if !output.status.success() {
+        return Ok(
+            "{\"schemaVersion\":1,\"supported\":false,\"enabled\":false,\"start\":-1,\"end\":-1}"
+                .to_owned(),
+        );
+    }
+    let values = String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .filter_map(|line| {
+            line.split_once(' ')
+                .map(|(_, value)| value.trim().to_owned())
+        })
+        .collect::<Vec<_>>();
+    if values.len() < 4 {
+        return Err(CliError::Operational(
+            "invalid battery threshold response".to_owned(),
+        ));
+    }
+    Ok(format!(
+        "{{\"schemaVersion\":1,\"supported\":{},\"enabled\":{},\"start\":{},\"end\":{}}}",
+        values[3] == "true",
+        values[2] == "true",
+        values[0].parse::<i16>().unwrap_or(-1),
+        values[1].parse::<i16>().unwrap_or(-1)
+    ))
+}
+
+fn privacy_json() -> String {
+    let mut camera = false;
+    if let Ok(processes) = fs::read_dir("/proc") {
+        'processes: for process in processes.flatten().take(32768) {
+            if !process
+                .file_name()
+                .to_string_lossy()
+                .bytes()
+                .all(|byte| byte.is_ascii_digit())
+            {
+                continue;
+            }
+            let Ok(descriptors) = fs::read_dir(process.path().join("fd")) else {
+                continue;
+            };
+            for descriptor in descriptors.flatten().take(4096) {
+                if fs::read_link(descriptor.path())
+                    .is_ok_and(|path| path.to_string_lossy().starts_with("/dev/video"))
+                {
+                    camera = true;
+                    break 'processes;
+                }
+            }
+        }
+    }
+    format!("{{\"schemaVersion\":1,\"camera\":{camera}}}")
 }
 
 fn clipboard_json() -> Result<String, CliError> {
@@ -629,11 +860,24 @@ fn json_value_or_empty(raw: Vec<u8>) -> String {
     }
 }
 
+/// Mako owns notifications; Frost only ever reads and acts through makoctl.
+/// A mode lookup that fails must not take the whole panel down with it, so the
+/// do-not-disturb flag degrades to false instead of erroring.
+fn mako_dnd_enabled() -> bool {
+    let Ok(raw) = capture("/usr/bin/makoctl", &["mode"]) else {
+        return false;
+    };
+    String::from_utf8_lossy(&raw)
+        .lines()
+        .any(|line| line.trim() == "dnd")
+}
+
 fn notifications_json() -> Result<String, CliError> {
     let active = json_value_or_empty(capture("/usr/bin/makoctl", &["list", "-j"])?);
     let history = json_value_or_empty(capture("/usr/bin/makoctl", &["history", "-j"])?);
+    let dnd = mako_dnd_enabled();
     Ok(format!(
-        "{{\"schemaVersion\":1,\"active\":{active},\"history\":{history}}}"
+        "{{\"schemaVersion\":1,\"dnd\":{dnd},\"active\":{active},\"history\":{history}}}"
     ))
 }
 
@@ -652,12 +896,18 @@ fn indicators_json() -> String {
     )
 }
 
-fn reminder_set(value: &str) -> Result<(), CliError> {
+fn reminder_set(value: &str, message: Option<&str>) -> Result<(), CliError> {
     let minutes = value
         .parse::<u16>()
         .ok()
         .filter(|minutes| (1..=1440).contains(minutes))
         .ok_or_else(|| CliError::Usage("reminder must be between 1 and 1440 minutes".to_owned()))?;
+    let message = message.unwrap_or("Your Frost reminder is due.").trim();
+    if !valid_reminder_message(message) {
+        return Err(CliError::Usage(
+            "reminder message must contain 1 to 120 printable characters".to_owned(),
+        ));
+    }
     if user_unit_active("frost-reminder.timer") {
         run_fixed(
             "/usr/bin/systemctl",
@@ -678,9 +928,14 @@ fn reminder_set(value: &str) -> Result<(), CliError> {
             "--app-name=Frost",
             "--icon=alarm-symbolic",
             "Frost reminder",
-            "Your reminder is due.",
+            message,
         ],
     )
+}
+
+fn valid_reminder_message(value: &str) -> bool {
+    let value = value.trim();
+    !value.is_empty() && value.chars().count() <= 120 && !value.chars().any(char::is_control)
 }
 
 fn stay_awake_toggle() -> Result<(), CliError> {
@@ -978,6 +1233,30 @@ fn shell_action_command(args: &[String]) -> Result<(), CliError> {
             "usage: frost shell-action ACTION [VALUE]".to_owned(),
         ));
     };
+    if env::var_os("FROST_PREVIEW").is_some_and(|value| value == "1")
+        && ["lock", "logout", "poweroff", "reboot", "suspend"].contains(&action)
+    {
+        return Err(CliError::Operational(format!(
+            "{action} is blocked during a Frost shell preview"
+        )));
+    }
+    if action == "reminder-set" {
+        return match args {
+            [_, value] => reminder_set(value, None),
+            [_, value, message] => reminder_set(value, Some(message)),
+            _ => Err(CliError::Usage(
+                "usage: frost shell-action reminder-set MINUTES [MESSAGE]".to_owned(),
+            )),
+        };
+    }
+    if action == "wifi-connect" {
+        let [_, ssid] = args else {
+            return Err(CliError::Usage(
+                "usage: frost shell-action wifi-connect SSID".to_owned(),
+            ));
+        };
+        return wifi_connect(ssid);
+    }
     let argument = args.get(1).map(String::as_str);
     if args.len() > 2 {
         return Err(CliError::Usage(
@@ -988,6 +1267,18 @@ fn shell_action_command(args: &[String]) -> Result<(), CliError> {
         ("brightness-down", None) => run_fixed("/usr/lib/frost/frost-osd", &["brightness-down"]),
         ("brightness-up", None) => run_fixed("/usr/lib/frost/frost-osd", &["brightness-up"]),
         ("brightness-set", Some(value)) => set_brightness(value),
+        ("wifi-radio", Some(value @ ("on" | "off"))) => {
+            run_fixed("/usr/bin/nmcli", &["radio", "wifi", value])
+        }
+        ("bluetooth-radio", Some("on")) => run_fixed("/usr/bin/rfkill", &["unblock", "bluetooth"]),
+        ("bluetooth-radio", Some("off")) => run_fixed("/usr/bin/rfkill", &["block", "bluetooth"]),
+        ("wifi-disconnect", Some(ssid)) if valid_ssid(ssid) => {
+            run_fixed("/usr/bin/nmcli", &["con", "down", "id", ssid])
+        }
+        ("power-profile", Some(profile @ ("power-saver" | "balanced" | "performance"))) => {
+            run_fixed("/usr/bin/powerprofilesctl", &["set", profile])
+        }
+        ("battery-threshold", Some(value @ ("on" | "off"))) => set_battery_threshold(value == "on"),
         ("clipboard-copy", Some(id)) => copy_clipboard_entry(id),
         ("image-copy", Some(path)) => copy_image(Path::new(path)),
         ("lock", None) => run_fixed(
@@ -995,12 +1286,17 @@ fn shell_action_command(args: &[String]) -> Result<(), CliError> {
             &["--user", "start", "frost-lock.service"],
         ),
         ("logout", None) => run_fixed("/usr/bin/uwsm", &["stop"]),
+        ("open-terminal", None) => spawn_fixed("/usr/bin/uwsm", &["app", "--", "/usr/bin/ghostty"]),
         ("notification-clear", None) => run_fixed("/usr/bin/makoctl", &["dismiss", "--all"]),
+        ("notification-dnd", Some("on")) => run_fixed("/usr/bin/makoctl", &["mode", "-a", "dnd"]),
+        ("notification-dnd", Some("off")) => run_fixed("/usr/bin/makoctl", &["mode", "-r", "dnd"]),
+        ("notification-dismiss", Some(id)) if valid_numeric(id, u32::MAX) => {
+            run_fixed("/usr/bin/makoctl", &["dismiss", "-n", id])
+        }
         ("notification-invoke", Some(id)) if valid_numeric(id, u32::MAX) => {
             run_fixed("/usr/bin/makoctl", &["invoke", "-n", id])
         }
         ("theme-set", Some(name)) => theme::activate_theme(name),
-        ("reminder-set", Some(value)) => reminder_set(value),
         ("reminder-clear", None) => run_fixed(
             "/usr/bin/systemctl",
             &["--user", "stop", "frost-reminder.timer"],
@@ -1013,6 +1309,75 @@ fn shell_action_command(args: &[String]) -> Result<(), CliError> {
             "unsupported or invalid shell action: {action}"
         ))),
     }
+}
+
+fn valid_ssid(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    !bytes.is_empty() && bytes.len() <= 32 && !value.chars().any(char::is_control)
+}
+
+fn valid_wifi_password(value: &str) -> bool {
+    value.is_empty()
+        || ((8..=63).contains(&value.as_bytes().len())
+            && value.is_ascii()
+            && !value.chars().any(char::is_control))
+}
+
+fn wifi_connect(ssid: &str) -> Result<(), CliError> {
+    if !valid_ssid(ssid) {
+        return Err(CliError::Usage("invalid Wi-Fi SSID".to_owned()));
+    }
+    let mut password = String::new();
+    std::io::stdin()
+        .take(128)
+        .read_to_string(&mut password)
+        .map_err(|error| CliError::Operational(format!("could not read Wi-Fi secret: {error}")))?;
+    let password = password.trim_end_matches(['\r', '\n']);
+    if !valid_wifi_password(password) {
+        return Err(CliError::Usage(
+            "Wi-Fi password must be empty or 8 to 63 printable ASCII bytes".to_owned(),
+        ));
+    }
+    if password.is_empty() {
+        return run_fixed("/usr/bin/nmcli", &["dev", "wifi", "connect", ssid]);
+    }
+    let mut child = Command::new("/usr/bin/nmcli")
+        .args(["--ask", "dev", "wifi", "connect", ssid])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .map_err(|error| CliError::Operational(format!("could not start nmcli: {error}")))?;
+    child
+        .stdin
+        .take()
+        .ok_or_else(|| CliError::Operational("nmcli stdin is unavailable".to_owned()))?
+        .write_all(format!("{password}\n").as_bytes())
+        .map_err(|error| CliError::Operational(format!("could not send Wi-Fi secret: {error}")))?;
+    if child.wait().is_ok_and(|status| status.success()) {
+        Ok(())
+    } else {
+        Err(CliError::Operational(
+            "nmcli could not connect to the network".to_owned(),
+        ))
+    }
+}
+
+fn set_battery_threshold(enabled: bool) -> Result<(), CliError> {
+    let path = upower_battery_path()?
+        .ok_or_else(|| CliError::Operational("battery is unavailable".to_owned()))?;
+    run_fixed(
+        "/usr/bin/busctl",
+        &[
+            "call",
+            "org.freedesktop.UPower",
+            &path,
+            "org.freedesktop.UPower.Device",
+            "EnableChargeThreshold",
+            "b",
+            if enabled { "true" } else { "false" },
+        ],
+    )
 }
 
 fn valid_numeric(value: &str, maximum: u32) -> bool {
@@ -1033,6 +1398,17 @@ fn run_fixed(program: &str, args: &[&str]) -> Result<(), CliError> {
             "{program} returned an error"
         )))
     }
+}
+
+fn spawn_fixed(program: &str, args: &[&str]) -> Result<(), CliError> {
+    Command::new(program)
+        .args(args)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .map(|_| ())
+        .map_err(|error| CliError::Operational(format!("could not start {program}: {error}")))
 }
 
 fn set_brightness(value: &str) -> Result<(), CliError> {
@@ -1170,6 +1546,28 @@ mod tests {
     }
 
     #[test]
+    fn parses_nmcli_escaped_fields() {
+        assert_eq!(
+            split_nmcli_line(r"yes:Cafe\: Office:87:WPA2"),
+            ["yes", "Cafe: Office", "87", "WPA2"]
+        );
+        assert_eq!(split_nmcli_line(r"no:Lab\\AP:41:--")[1], r"Lab\AP");
+    }
+
+    #[test]
+    fn validates_wifi_credentials_as_bounded_data() {
+        assert!(valid_ssid("Frost Lab"));
+        assert!(!valid_ssid(""));
+        assert!(!valid_ssid("network\n--ask"));
+        assert!(!valid_ssid(&"x".repeat(33)));
+        assert!(valid_wifi_password(""));
+        assert!(valid_wifi_password("ice-cold"));
+        assert!(!valid_wifi_password("short"));
+        assert!(!valid_wifi_password("password\ncommand"));
+        assert!(!valid_wifi_password("senha-com-acentuação"));
+    }
+
+    #[test]
     fn accepts_only_supported_image_types() {
         assert_eq!(image_extension(Path::new("image.png")), Some("image/png"));
         assert_eq!(image_extension(Path::new("photo.JPEG")), Some("image/jpeg"));
@@ -1193,6 +1591,14 @@ mod tests {
         assert!(!valid_weather_city("x"));
         assert!(!valid_weather_city("City\n--config"));
         assert!(!valid_weather_city("City\" --data"));
+    }
+
+    #[test]
+    fn validates_reminder_messages_as_bounded_data() {
+        assert!(valid_reminder_message("Take a break"));
+        assert!(!valid_reminder_message(""));
+        assert!(!valid_reminder_message("message\nsecond command"));
+        assert!(!valid_reminder_message(&"x".repeat(121)));
     }
 
     #[test]

@@ -1,0 +1,738 @@
+import QtQuick
+import QtQuick.Layouts
+import qs.Core
+
+Item {
+    id: root
+
+    property string mode: "idle"
+    property string appName: ""
+    property string title: ""
+    property string body: ""
+    property string artist: ""
+    property string artUrl: ""
+    property int volume: 0
+    property bool muted: false
+    property string volumeKind: "audio"
+    property bool playing: false
+    property bool canGoPrevious: false
+    property bool canTogglePlaying: false
+    property bool canGoNext: false
+    property bool canSeek: false
+    property bool shuffleActive: false
+    property bool shuffleSupported: false
+    property string loopStateText: "OFF"
+    property bool loopActive: false
+    property bool loopSupported: false
+    property real mediaPosition: 0
+    property real mediaLength: 0
+    property bool forceExpanded: false
+    property bool mediaAvailable: false
+    property bool mediaFaceAvailable: false
+    property int mediaPlayerCount: 0
+    property int mediaPlayerIndex: -1
+    property var notificationEntries: []
+    property bool notificationsDnd: false
+    property bool notificationsBusy: false
+    property string notificationsStatusText: ""
+    property int notificationsMaxPanelHeight: 440
+    property bool stayAwakeActive: false
+    property bool stayAwakeBusy: false
+    property string handleStyle: "bump"
+    property int idleWidth: 340
+    property int idleHeight: 132
+    property string batteryHoverText: ""
+    property bool batteryCharging: false
+    property int batteryLevel: 0
+    property bool wifiConnected: false
+    property string wifiSsid: ""
+    property int wifiSignal: 0
+    property bool btEnabled: false
+    property bool btConnected: false
+    property string btDeviceName: ""
+    property int btBattery: -1
+    property string timeText: ""
+    property string dateText: ""
+    property string fontFamily: Style.fontFamily
+
+    // Geometry the shell asks for. The surface owns the actual width/height so the
+    // morph between shapes can be expressed as States + Transitions.
+    property real targetW: 0
+    property real targetH: 0
+    property int wifiMaxPanelHeight: 420
+    property int btMaxPanelHeight: 420
+    property int audioMaxPanelHeight: 440
+
+    // 0 = island, 1 = Wi-Fi manager. Animated by the morph transition and shared
+    // with the content layer so shape and contents move as one.
+    property real wifiMorph: 0
+    readonly property real wifiPanelHeight: islandContent.wifiContentHeight
+
+    property real btMorph: 0
+    readonly property real btPanelHeight: islandContent.btContentHeight
+
+    property real batteryMorph: 0
+    readonly property real batteryPanelHeight: islandContent.batteryContentHeight
+
+    // Same idea for the audio mixer. Only one panel morph is ever non-zero,
+    // since the island can only be in one panel mode at a time.
+    property real audioMorph: 0
+    readonly property real audioPanelHeight: islandContent.audioContentHeight
+
+    property real notificationsMorph: 0
+    readonly property real notificationsPanelHeight: islandContent.notificationsContentHeight
+
+    // 0 = island, 1 = volume HUD. Same mechanism as the two panels above, so the
+    // pill grows out of the handle instead of being painted on top of it.
+    property real volumeMorph: 0
+
+    readonly property bool expanded: mode !== "idle" || forceExpanded
+    // The volume pill rounds all the way to a capsule as it morphs in; every other
+    // expanded shape keeps the softer island corner.
+    readonly property real expandedBottomRadius: {
+        const islandRadius = Math.min(height * 0.28, 24);
+
+        return islandRadius + (height / 2 - islandRadius) * root.volumeMorph;
+    }
+    readonly property real bottomRadius: Math.max(1, Math.min(height / 2, expanded ? expandedBottomRadius : Math.min(height * 0.42, 8)))
+    readonly property color surfaceColor: Theme.cardBackground
+
+    property bool wifiRadioEnabled: true
+    property var wifiNetworks: []
+    property string wifiExpandedSsid: ""
+    property string wifiPasswordDraft: ""
+    property string wifiStatusText: ""
+    property bool wifiConnecting: false
+
+    property bool btDiscovering: false
+    property var btDevices: []
+    property string btStatusText: ""
+
+    property bool batteryAvailable: false
+    property real batteryHealth: -1
+    property int batteryCycles: -1
+    property real batteryFullCapacityWh: -1
+    property real batteryDesignCapacityWh: -1
+    property real batteryVoltage: -1
+    property real batteryPower: -1
+    property string batteryStatus: ""
+    property string batteryModel: ""
+    property bool batteryThresholdSupported: false
+    property bool batteryThresholdEnabled: false
+    property bool batteryThresholdBusy: false
+    property int batteryThresholdStart: -1
+    property int batteryThresholdEnd: -1
+    property string batteryThresholdStatusText: ""
+    property bool powerProfilesAvailable: false
+    property var availablePowerProfiles: []
+    property string activePowerProfile: ""
+    property bool powerProfileBusy: false
+    property string powerProfileStatusText: ""
+    property string performanceDegraded: ""
+    property string performanceInhibited: ""
+
+
+    signal previousRequested
+    signal playPauseRequested
+    signal nextRequested
+    signal shuffleRequested
+    signal loopRequested
+    signal dismissRequested
+    signal mediaFaceRequested
+    signal nextPlayerRequested
+    signal playerRequested(int index)
+    signal stayAwakeRequested
+    signal notificationsRequested
+    signal notificationsCloseRequested
+    signal notificationsClearRequested
+    signal notificationsDndRequested
+    signal notificationDismissRequested(int id)
+    signal notificationInvokeRequested(int id)
+    signal wifiSettingsRequested
+    signal wifiCloseRequested
+    signal wifiToggleRadioRequested
+    signal wifiRowRequested(string ssid)
+    signal wifiConnectRequested(string ssid, bool secured)
+    signal wifiDisconnectRequested(string ssid)
+    signal wifiPasswordChanged(string text)
+    signal btCloseRequested
+    signal btToggleRadioRequested
+    signal btRefreshRequested
+    signal btDeviceRequested(var device)
+    signal batteryRequested
+    signal batteryCloseRequested
+    signal batteryToggleThresholdRequested
+    signal powerProfileRequested(string profile)
+    property int audioVolume: 0
+    property bool audioMuted: false
+    property int audioInputVolume: 0
+    property bool audioInputMuted: false
+    property var audioSinkNodes: []
+    property var audioStreamNodes: []
+    property string audioActiveSinkName: ""
+
+    signal audioCloseRequested
+    signal idleWidthRequested(int width)
+    signal idleHeightRequested(int height)
+    signal audioPanelRequested
+    signal audioVolumeRequested(int level)
+    signal audioMuteRequested
+    signal audioStepRequested(int steps)
+    signal audioInputVolumeRequested(int level)
+    signal audioInputMuteRequested
+    signal audioSinkRequested(var node)
+    signal audioStreamVolumeRequested(var node, int level)
+    signal audioStreamMuteRequested(var node)
+    signal btSettingsRequested
+    signal seekRequested(real position)
+
+    transformOrigin: Item.Top
+
+    Item {
+        id: bodyShape
+
+        anchors.fill: parent
+        clip: true
+
+        FrostGlassSurface {
+            z: 0
+            anchors.fill: parent
+            bottomRadius: root.bottomRadius
+            fallbackColor: Theme.cardBackground
+        }
+
+        IslandContent {
+            id: islandContent
+
+            z: 10
+            anchors.fill: parent
+            // Padding relaxes to zero as a panel takes over — panels bring their own.
+            anchors.margins: root.expanded ? (root.mode === "media" ? 10 : 12) * (1 - root.wifiMorph) * (1 - root.btMorph) * (1 - root.batteryMorph) * (1 - root.audioMorph) * (1 - root.notificationsMorph) * (1 - root.volumeMorph) : 0
+            wifiMorph: root.wifiMorph
+            wifiMaxPanelHeight: root.wifiMaxPanelHeight
+            btMorph: root.btMorph
+            btMaxPanelHeight: root.btMaxPanelHeight
+            batteryMorph: root.batteryMorph
+            audioMorph: root.audioMorph
+            audioMaxPanelHeight: root.audioMaxPanelHeight
+            notificationsMorph: root.notificationsMorph
+            notificationsMaxPanelHeight: root.notificationsMaxPanelHeight
+            notificationEntries: root.notificationEntries
+            notificationsDnd: root.notificationsDnd
+            notificationsBusy: root.notificationsBusy
+            notificationsStatusText: root.notificationsStatusText
+            audioVolume: root.audioVolume
+            audioMuted: root.audioMuted
+            audioInputVolume: root.audioInputVolume
+            audioInputMuted: root.audioInputMuted
+            audioSinkNodes: root.audioSinkNodes
+            audioStreamNodes: root.audioStreamNodes
+            audioActiveSinkName: root.audioActiveSinkName
+            volumeMorph: root.volumeMorph
+            volumeKind: root.volumeKind
+            mode: root.mode
+            handleStyle: root.handleStyle
+            idleWidth: root.idleWidth
+            idleHeight: root.idleHeight
+            forceExpanded: root.forceExpanded
+            appName: root.appName
+            title: root.title
+            body: root.body
+            artist: root.artist
+            artUrl: root.artUrl
+            volume: root.volume
+            muted: root.muted
+            playing: root.playing
+            canGoPrevious: root.canGoPrevious
+            canTogglePlaying: root.canTogglePlaying
+            canGoNext: root.canGoNext
+            canSeek: root.canSeek
+            shuffleActive: root.shuffleActive
+            shuffleSupported: root.shuffleSupported
+            loopStateText: root.loopStateText
+            loopActive: root.loopActive
+            loopSupported: root.loopSupported
+            mediaPosition: root.mediaPosition
+            mediaLength: root.mediaLength
+            mediaAvailable: root.mediaAvailable
+            mediaFaceAvailable: root.mediaFaceAvailable
+            mediaPlayerCount: root.mediaPlayerCount
+            mediaPlayerIndex: root.mediaPlayerIndex
+            stayAwakeActive: root.stayAwakeActive
+            stayAwakeBusy: root.stayAwakeBusy
+            fontFamily: root.fontFamily
+            batteryHoverText: root.batteryHoverText
+            batteryCharging: root.batteryCharging
+            batteryLevel: root.batteryLevel
+            batteryAvailable: root.batteryAvailable
+            batteryHealth: root.batteryHealth
+            batteryCycles: root.batteryCycles
+            batteryFullCapacityWh: root.batteryFullCapacityWh
+            batteryDesignCapacityWh: root.batteryDesignCapacityWh
+            batteryVoltage: root.batteryVoltage
+            batteryPower: root.batteryPower
+            batteryStatus: root.batteryStatus
+            batteryModel: root.batteryModel
+            batteryThresholdSupported: root.batteryThresholdSupported
+            batteryThresholdEnabled: root.batteryThresholdEnabled
+            batteryThresholdBusy: root.batteryThresholdBusy
+            batteryThresholdStart: root.batteryThresholdStart
+            batteryThresholdEnd: root.batteryThresholdEnd
+            batteryThresholdStatusText: root.batteryThresholdStatusText
+            powerProfilesAvailable: root.powerProfilesAvailable
+            availablePowerProfiles: root.availablePowerProfiles
+            activePowerProfile: root.activePowerProfile
+            powerProfileBusy: root.powerProfileBusy
+            powerProfileStatusText: root.powerProfileStatusText
+            performanceDegraded: root.performanceDegraded
+            performanceInhibited: root.performanceInhibited
+            wifiConnected: root.wifiConnected
+            wifiSsid: root.wifiSsid
+            wifiSignal: root.wifiSignal
+            btEnabled: root.btEnabled
+            btConnected: root.btConnected
+            btDeviceName: root.btDeviceName
+            btBattery: root.btBattery
+            btDiscovering: root.btDiscovering
+            btDevices: root.btDevices
+            btStatusText: root.btStatusText
+            timeText: root.timeText
+            dateText: root.dateText
+            wifiRadioEnabled: root.wifiRadioEnabled
+            wifiNetworks: root.wifiNetworks
+            wifiExpandedSsid: root.wifiExpandedSsid
+            wifiPasswordDraft: root.wifiPasswordDraft
+            wifiStatusText: root.wifiStatusText
+            wifiConnecting: root.wifiConnecting
+            onPreviousRequested: root.previousRequested()
+            onPlayPauseRequested: root.playPauseRequested()
+            onNextRequested: root.nextRequested()
+            onShuffleRequested: root.shuffleRequested()
+            onLoopRequested: root.loopRequested()
+            onDismissRequested: root.dismissRequested()
+            onMediaFaceRequested: root.mediaFaceRequested()
+            onNextPlayerRequested: root.nextPlayerRequested()
+            onPlayerRequested: index => root.playerRequested(index)
+            onStayAwakeRequested: root.stayAwakeRequested()
+            onNotificationsRequested: root.notificationsRequested()
+            onNotificationsCloseRequested: root.notificationsCloseRequested()
+            onNotificationsClearRequested: root.notificationsClearRequested()
+            onNotificationsDndRequested: root.notificationsDndRequested()
+            onNotificationDismissRequested: id => root.notificationDismissRequested(id)
+            onNotificationInvokeRequested: id => root.notificationInvokeRequested(id)
+            onWifiSettingsRequested: root.wifiSettingsRequested()
+            onWifiCloseRequested: root.wifiCloseRequested()
+            onWifiToggleRadioRequested: root.wifiToggleRadioRequested()
+            onWifiRowRequested: ssid => root.wifiRowRequested(ssid)
+            onWifiConnectRequested: (ssid, secured) => root.wifiConnectRequested(ssid, secured)
+            onWifiDisconnectRequested: ssid => root.wifiDisconnectRequested(ssid)
+            onWifiPasswordChanged: text => root.wifiPasswordChanged(text)
+            onBtCloseRequested: root.btCloseRequested()
+            onBtToggleRadioRequested: root.btToggleRadioRequested()
+            onBtRefreshRequested: root.btRefreshRequested()
+            onBtDeviceRequested: device => root.btDeviceRequested(device)
+            onBatteryRequested: root.batteryRequested()
+            onBatteryCloseRequested: root.batteryCloseRequested()
+            onBatteryToggleThresholdRequested: root.batteryToggleThresholdRequested()
+            onPowerProfileRequested: profile => root.powerProfileRequested(profile)
+            onAudioCloseRequested: root.audioCloseRequested()
+            onIdleWidthRequested: width => root.idleWidthRequested(width)
+            onIdleHeightRequested: height => root.idleHeightRequested(height)
+            onAudioPanelRequested: root.audioPanelRequested()
+            onAudioVolumeRequested: level => root.audioVolumeRequested(level)
+            onAudioMuteRequested: root.audioMuteRequested()
+            onAudioStepRequested: steps => root.audioStepRequested(steps)
+            onAudioInputVolumeRequested: level => root.audioInputVolumeRequested(level)
+            onAudioInputMuteRequested: root.audioInputMuteRequested()
+            onAudioSinkRequested: node => root.audioSinkRequested(node)
+            onAudioStreamVolumeRequested: (node, level) => root.audioStreamVolumeRequested(node, level)
+            onAudioStreamMuteRequested: node => root.audioStreamMuteRequested(node)
+            onBtSettingsRequested: root.btSettingsRequested()
+            onSeekRequested: position => root.seekRequested(position)
+        }
+    }
+
+    // Height is a plain binding, not part of the state, so it can re-target while
+    // the morph is still running — the network list usually lands mid-transition,
+    // and the app picker drawer opens long after the morph has settled.
+    height: root.mode === "wifi" ? Math.max(root.targetH, root.wifiPanelHeight) : (root.mode === "bluetooth" ? Math.max(root.targetH, root.btPanelHeight) : (root.mode === "battery" ? Math.max(root.targetH, root.batteryPanelHeight) : (root.mode === "audio" ? Math.max(root.targetH, root.audioPanelHeight) : (root.mode === "notifications" ? Math.max(root.targetH, root.notificationsPanelHeight) : root.targetH))))
+
+    state: root.mode !== "idle" ? root.mode : (root.forceExpanded ? "peek" : "collapsed")
+
+    states: [
+        State {
+            name: "collapsed"
+
+            PropertyChanges {
+                root.width: root.targetW
+                root.wifiMorph: 0
+                root.btMorph: 0
+                root.batteryMorph: 0
+                root.audioMorph: 0
+                root.notificationsMorph: 0
+                root.volumeMorph: 0
+            }
+        },
+        State {
+            name: "peek"
+
+            PropertyChanges {
+                root.width: root.targetW
+                root.wifiMorph: 0
+                root.btMorph: 0
+                root.batteryMorph: 0
+                root.audioMorph: 0
+                root.notificationsMorph: 0
+                root.volumeMorph: 0
+            }
+        },
+        State {
+            name: "media"
+
+            PropertyChanges {
+                root.width: root.targetW
+                root.wifiMorph: 0
+                root.btMorph: 0
+                root.batteryMorph: 0
+                root.audioMorph: 0
+                root.notificationsMorph: 0
+                root.volumeMorph: 0
+            }
+        },
+        State {
+            name: "volume"
+
+            PropertyChanges {
+                root.width: root.targetW
+                root.wifiMorph: 0
+                root.btMorph: 0
+                root.batteryMorph: 0
+                root.audioMorph: 0
+                root.notificationsMorph: 0
+                root.volumeMorph: 1
+            }
+        },
+        State {
+            name: "wifi"
+
+            PropertyChanges {
+                root.width: root.targetW
+                root.wifiMorph: 1
+                root.btMorph: 0
+                root.batteryMorph: 0
+                root.audioMorph: 0
+                root.notificationsMorph: 0
+                root.volumeMorph: 0
+            }
+        },
+        State {
+            name: "bluetooth"
+
+            PropertyChanges {
+                root.width: root.targetW
+                root.wifiMorph: 0
+                root.btMorph: 1
+                root.batteryMorph: 0
+                root.audioMorph: 0
+                root.notificationsMorph: 0
+                root.volumeMorph: 0
+            }
+        },
+        State {
+            name: "battery"
+
+            PropertyChanges {
+                root.width: root.targetW
+                root.wifiMorph: 0
+                root.btMorph: 0
+                root.batteryMorph: 1
+                root.audioMorph: 0
+                root.notificationsMorph: 0
+                root.volumeMorph: 0
+            }
+        },
+        State {
+            name: "notifications"
+
+            PropertyChanges {
+                root.width: root.targetW
+                root.wifiMorph: 0
+                root.btMorph: 0
+                root.batteryMorph: 0
+                root.audioMorph: 0
+                root.notificationsMorph: 1
+                root.volumeMorph: 0
+            }
+        },
+        State {
+            name: "audio"
+
+            PropertyChanges {
+                root.width: root.targetW
+                root.wifiMorph: 0
+                root.btMorph: 0
+                root.batteryMorph: 0
+                root.audioMorph: 1
+                root.volumeMorph: 0
+            }
+        }
+    ]
+
+    transitions: [
+        // Morph into the Wi-Fi manager: the shape widens first, then unfolds
+        // downward with a slight overshoot while the contents cross-fade.
+        Transition {
+            to: "wifi"
+
+            ParallelAnimation {
+                NumberAnimation {
+                    property: "width"
+                    duration: 340
+                    easing.type: Easing.OutBack
+                    easing.overshoot: 0.7
+                }
+
+                NumberAnimation {
+                    property: "wifiMorph"
+                    duration: 440
+                    easing.type: Easing.OutCubic
+                }
+            }
+        },
+        // Morph back: fold the height away first, then settle the width.
+        Transition {
+            from: "wifi"
+
+            ParallelAnimation {
+                NumberAnimation {
+                    property: "width"
+                    duration: 300
+                    easing.type: Easing.InOutCubic
+                }
+
+                NumberAnimation {
+                    property: "wifiMorph"
+                    duration: 260
+                    easing.type: Easing.OutCubic
+                }
+            }
+        },
+        Transition {
+            to: "bluetooth"
+
+            ParallelAnimation {
+                NumberAnimation {
+                    property: "width"
+                    duration: 340
+                    easing.type: Easing.OutBack
+                    easing.overshoot: 0.7
+                }
+
+                NumberAnimation {
+                    property: "btMorph"
+                    duration: 440
+                    easing.type: Easing.OutCubic
+                }
+            }
+        },
+        Transition {
+            from: "bluetooth"
+
+            ParallelAnimation {
+                NumberAnimation {
+                    property: "width"
+                    duration: 300
+                    easing.type: Easing.InOutCubic
+                }
+
+                NumberAnimation {
+                    property: "btMorph"
+                    duration: 260
+                    easing.type: Easing.OutCubic
+                }
+            }
+        },
+        Transition {
+            to: "battery"
+
+            ParallelAnimation {
+                NumberAnimation {
+                    property: "width"
+                    duration: 340
+                    easing.type: Easing.OutBack
+                    easing.overshoot: 0.7
+                }
+
+                NumberAnimation {
+                    property: "batteryMorph"
+                    duration: 440
+                    easing.type: Easing.OutCubic
+                }
+            }
+        },
+        Transition {
+            from: "battery"
+
+            ParallelAnimation {
+                NumberAnimation {
+                    property: "width"
+                    duration: 300
+                    easing.type: Easing.InOutCubic
+                }
+
+                NumberAnimation {
+                    property: "batteryMorph"
+                    duration: 260
+                    easing.type: Easing.OutCubic
+                }
+            }
+        },
+        Transition {
+            to: "notifications"
+
+            ParallelAnimation {
+                NumberAnimation {
+                    property: "width"
+                    duration: 340
+                    easing.type: Easing.OutBack
+                    easing.overshoot: 0.7
+                }
+
+                NumberAnimation {
+                    property: "notificationsMorph"
+                    duration: 440
+                    easing.type: Easing.OutCubic
+                }
+            }
+        },
+        Transition {
+            from: "notifications"
+
+            ParallelAnimation {
+                NumberAnimation {
+                    property: "width"
+                    duration: 300
+                    easing.type: Easing.InOutCubic
+                }
+
+                NumberAnimation {
+                    property: "notificationsMorph"
+                    duration: 260
+                    easing.type: Easing.OutCubic
+                }
+            }
+        },
+        Transition {
+            to: "audio"
+
+            ParallelAnimation {
+                NumberAnimation {
+                    property: "width"
+                    duration: 340
+                    easing.type: Easing.OutBack
+                    easing.overshoot: 0.7
+                }
+
+                NumberAnimation {
+                    property: "audioMorph"
+                    duration: 440
+                    easing.type: Easing.OutCubic
+                }
+            }
+        },
+        Transition {
+            from: "audio"
+
+            ParallelAnimation {
+                NumberAnimation {
+                    property: "width"
+                    duration: 300
+                    easing.type: Easing.InOutCubic
+                }
+
+                NumberAnimation {
+                    property: "audioMorph"
+                    duration: 260
+                    easing.type: Easing.OutCubic
+                }
+            }
+        },
+        // Volume HUD: the handle springs out sideways and the bar is already
+        // there by the time the width settles, so the pill reads as one gesture
+        // rather than a shape that fills in afterwards.
+        Transition {
+            to: "volume"
+
+            ParallelAnimation {
+                NumberAnimation {
+                    property: "width"
+                    duration: 400
+                    easing.type: Easing.OutBack
+                    easing.overshoot: 0.9
+                }
+
+                NumberAnimation {
+                    property: "volumeMorph"
+                    duration: 260
+                    easing.type: Easing.OutCubic
+                }
+            }
+        },
+        Transition {
+            from: "volume"
+
+            ParallelAnimation {
+                NumberAnimation {
+                    property: "width"
+                    duration: 300
+                    easing.type: Easing.InOutCubic
+                }
+
+                NumberAnimation {
+                    property: "volumeMorph"
+                    duration: 180
+                    easing.type: Easing.OutCubic
+                }
+            }
+        },
+        Transition {
+            NumberAnimation {
+                property: "width"
+                duration: 360
+                easing.type: Easing.OutCubic
+            }
+
+            NumberAnimation {
+                properties: "wifiMorph,btMorph,batteryMorph,audioMorph,notificationsMorph,volumeMorph"
+                duration: 200
+                easing.type: Easing.OutCubic
+            }
+        }
+    ]
+
+    // Height is never animated by a transition, so this Behavior owns every height
+    // change: the morph itself, networks arriving, and rows expanding.
+    Behavior on width {
+        NumberAnimation {
+            duration: 360
+            easing.type: Easing.OutCubic
+        }
+    }
+
+    Behavior on height {
+        NumberAnimation {
+            duration: 300
+            // Only the volume pill drops in with a bounce; panels stay damped so a
+            // network list arriving mid-morph doesn't wobble the whole surface.
+            easing.type: root.mode === "volume" ? Easing.OutBack : Easing.OutCubic
+            easing.overshoot: 0.9
+        }
+    }
+
+    Behavior on y {
+        NumberAnimation {
+            duration: 360
+            easing.type: Easing.OutCubic
+        }
+    }
+}
