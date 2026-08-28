@@ -586,6 +586,27 @@ fn wifi_json(rescan: bool) -> Result<String, CliError> {
             if rescan { "yes" } else { "no" },
         ],
     )?;
+    // Which SSIDs NetworkManager already holds a profile for. Without this the
+    // shell has to discover it by attempting a connection and watching it fail,
+    // which costs a real association attempt on every new secured network.
+    let saved_raw = capture(
+        "/usr/bin/nmcli",
+        &["-t", "-f", "NAME,TYPE", "connection", "show"],
+    )
+    .unwrap_or_default();
+    let saved_text = String::from_utf8_lossy(&saved_raw);
+    let mut saved_profiles = std::collections::HashSet::new();
+    for line in saved_text.lines().take(512) {
+        let parts = split_nmcli_line(line);
+        if parts.len() < 2 || parts[1].trim() != "802-11-wireless" {
+            continue;
+        }
+        let name = parts[0].trim();
+        if !name.is_empty() {
+            saved_profiles.insert(name.to_owned());
+        }
+    }
+
     let text = String::from_utf8_lossy(&raw);
     let mut network_order = Vec::new();
     let mut network_state = std::collections::HashMap::new();
@@ -625,11 +646,12 @@ fn wifi_json(rescan: bool) -> Result<String, CliError> {
         .filter_map(|ssid| {
             network_state.get(ssid).map(|(signal, secured, active)| {
                 format!(
-                    "{{\"ssid\":\"{}\",\"signal\":{},\"secured\":{},\"active\":{}}}",
+                    "{{\"ssid\":\"{}\",\"signal\":{},\"secured\":{},\"active\":{},\"saved\":{}}}",
                     json_escape(ssid),
                     signal,
                     secured,
-                    active
+                    active,
+                    saved_profiles.contains(ssid)
                 )
             })
         })
@@ -1274,6 +1296,9 @@ fn shell_action_command(args: &[String]) -> Result<(), CliError> {
         ("bluetooth-radio", Some("off")) => run_fixed("/usr/bin/rfkill", &["block", "bluetooth"]),
         ("wifi-disconnect", Some(ssid)) if valid_ssid(ssid) => {
             run_fixed("/usr/bin/nmcli", &["con", "down", "id", ssid])
+        }
+        ("wifi-forget", Some(ssid)) if valid_ssid(ssid) => {
+            run_fixed("/usr/bin/nmcli", &["con", "delete", "id", ssid])
         }
         ("power-profile", Some(profile @ ("power-saver" | "balanced" | "performance"))) => {
             run_fixed("/usr/bin/powerprofilesctl", &["set", profile])

@@ -154,11 +154,13 @@ Item {
     signal wifiRowRequested(string ssid)
     signal wifiConnectRequested(string ssid, bool secured)
     signal wifiDisconnectRequested(string ssid)
+    signal wifiForgetRequested(string ssid)
     signal wifiPasswordChanged(string text)
     signal btCloseRequested
     signal btToggleRadioRequested
     signal btRefreshRequested
     signal btDeviceRequested(var device)
+    signal btDeviceForgetRequested(var device)
     signal batteryRequested
     signal batteryCloseRequested
     signal batteryToggleThresholdRequested
@@ -326,11 +328,13 @@ Item {
             onWifiRowRequested: ssid => root.wifiRowRequested(ssid)
             onWifiConnectRequested: (ssid, secured) => root.wifiConnectRequested(ssid, secured)
             onWifiDisconnectRequested: ssid => root.wifiDisconnectRequested(ssid)
+            onWifiForgetRequested: ssid => root.wifiForgetRequested(ssid)
             onWifiPasswordChanged: text => root.wifiPasswordChanged(text)
             onBtCloseRequested: root.btCloseRequested()
             onBtToggleRadioRequested: root.btToggleRadioRequested()
             onBtRefreshRequested: root.btRefreshRequested()
             onBtDeviceRequested: device => root.btDeviceRequested(device)
+            onBtDeviceForgetRequested: device => root.btDeviceForgetRequested(device)
             onBatteryRequested: root.batteryRequested()
             onBatteryCloseRequested: root.batteryCloseRequested()
             onBatteryToggleThresholdRequested: root.batteryToggleThresholdRequested()

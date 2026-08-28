@@ -11,9 +11,9 @@ This inventory describes the single active shell composition after the DynamicGl
 | brightness | sysfs poll on the device path resolved once through frost shell-data | machines without a backlight leave the path empty, which disables the poll |
 | background applications | Quickshell SystemTray, rendered as a bare icon rail outside the glass | absent or passive items remain hidden; the rail collapses to nothing |
 | workspaces | Quickshell Hyprland, rendered as a bare dot rail outside the glass | falls back to the baseline set when no monitor can be resolved |
-| Bluetooth | Quickshell Bluetooth/BlueZ | reports unavailable or rfkill-blocked state |
+| Bluetooth | Quickshell Bluetooth/BlueZ, pairing and forgetting as distinct operations | reports unavailable or rfkill-blocked state; a device needing a passkey cannot complete pairing because no BlueZ agent is registered — see docs/security-boundaries.md |
 | battery | Quickshell UPower plus typed threshold/profile queries | metrics and controls disable independently when unsupported |
-| Wi-Fi | frost shell-data/action using fixed NetworkManager clients | unavailable state; enterprise authentication is not guessed |
+| Wi-Fi | frost shell-data/action using fixed NetworkManager clients, including which SSIDs already hold a saved profile | unavailable state; a secured network without a profile asks for its password before attempting; enterprise authentication and hidden SSIDs are not guessed |
 | privacy | Quickshell PipeWire for microphone use plus a typed bounded camera projection | indicators remain absent when state cannot be established |
 | idle inhibitor | frost shell-data indicators and shell-action stay-awake-toggle | the chip reports the last known state and refuses overlapping toggles |
 | notifications | Mako outside Quickshell, read and acted on through makoctl behind the typed CLI | the island never registers a notification server; when makoctl is unavailable the viewer shows an empty list and reports the failure |

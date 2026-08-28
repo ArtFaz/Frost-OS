@@ -22,6 +22,7 @@ Status: initial Phase 0 threat model and implementation contract.
 - Notifications: Mako only. Frost's viewer is a makoctl client behind the typed CLI boundary; it never registers `org.freedesktop.Notifications` and never acts on a notification hint, only on an id the user selected.
 - Lock and PAM: Hyprlock only.
 - Polkit: hyprpolkitagent only.
+- Bluetooth pairing: no agent is registered today. `Quickshell.Bluetooth` exposes `pair()`, `cancelPair()` and `forget()` but no way to answer a BlueZ passkey, PIN or authorization request, so only Just Works devices complete pairing. A pairing agent is a separate authority in the same sense hyprpolkitagent is for Polkit; it must not be implemented inside the shell process.
 - Session lifecycle: UWSM plus `frost-session.target`.
 - Package ownership: pacman with Arch and Frost keys.
 - Machine rollback: Btrfs, Snapper and Limine.

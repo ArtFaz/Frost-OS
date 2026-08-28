@@ -33,6 +33,7 @@ Item {
     signal toggleRadioRequested
     signal refreshRequested
     signal deviceRequested(var device)
+    signal deviceForgetRequested(var device)
 
     function deviceName(device) {
         return device?.name || device?.deviceName || device?.address || "Unknown device";
@@ -61,7 +62,7 @@ Item {
         if (device?.state === BluetoothDeviceState.Disconnecting)
             return "Disconnecting…";
 
-        let status = device?.connected ? "Connected" : (device?.paired ? "Paired" : "Available");
+        let status = device?.connected ? "Connected" : ((device?.paired || device?.bonded) ? "Paired" : "Not paired");
 
         if (device?.batteryAvailable)
             status += "  ·  " + Math.round(device.battery * 100) + "%";
@@ -203,8 +204,32 @@ Item {
                                 }
                             }
 
+                            Rectangle {
+                                Layout.preferredWidth: 22
+                                Layout.preferredHeight: 22
+                                radius: Style.controlRadius
+                                visible: (deviceRow.modelData.paired || deviceRow.modelData.bonded) && !deviceRow.busy && deviceMouse.containsMouse
+                                color: forgetMouse.containsMouse ? Theme.alpha(Theme.urgent, 0.14) : "transparent"
+
+                                MIcon {
+                                    anchors.centerIn: parent
+                                    name: "close"
+                                    size: 12
+                                    color: forgetMouse.containsMouse ? Theme.urgent : Theme.muted
+                                }
+
+                                MouseArea {
+                                    id: forgetMouse
+
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: root.deviceForgetRequested(deviceRow.modelData)
+                                }
+                            }
+
                             MIcon {
-                                name: deviceRow.busy ? "hourglass_top" : (deviceRow.modelData.connected ? "link_off" : "link")
+                                name: deviceRow.busy ? "hourglass_top" : (deviceRow.modelData.connected ? "link_off" : ((deviceRow.modelData.paired || deviceRow.modelData.bonded) ? "link" : "add"))
                                 size: 14
                                 color: deviceRow.modelData.connected ? Theme.foreground : Theme.muted
                             }

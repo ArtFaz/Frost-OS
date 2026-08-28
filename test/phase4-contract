@@ -20,8 +20,15 @@ jq -e '
 for mode in wifi bluetooth battery audio notifications media volume; do
   rg -Fq "\"$mode\"" "$shell/Island/DynamicGlacier.qml" || fail "island mode is missing: $mode"
 done
-for action in wifi-connect wifi-disconnect wifi-radio bluetooth-radio power-profile battery-threshold; do
-  rg -Fq "\"$action\"" "$shell/Core/ShellBackend.qml" "$root/cli/src/main.rs" || fail "typed island action is missing: $action"
+# Both sides must carry the action: the QML allowlist and the Rust validator.
+# Matching either file was enough before, which let one side drift silently.
+for action in wifi-connect wifi-disconnect wifi-forget wifi-radio bluetooth-radio \
+  power-profile battery-threshold notification-dnd notification-dismiss stay-awake-toggle; do
+  rg -Fq "\"$action\"" "$shell/Core/ShellBackend.qml" || fail "typed island action missing from the QML allowlist: $action"
+  rg -Fq "\"$action\"" "$root/cli/src/main.rs" || fail "typed island action missing from the Rust validator: $action"
+done
+for query in brightness indicators notifications power privacy wifi; do
+  rg -Fq "\"$query\"" "$shell/Core/ShellBackend.qml" || fail "typed island query missing from the QML allowlist: $query"
 done
 rg -Fq 'name = "frost-island-blur"' "$root/default/hypr/hyprland.lua" || fail 'Hyprland blur rule is missing'
 rg -Fq 'namespace = "^frost-island$"' "$root/default/hypr/hyprland.lua" || fail 'blur rule targets the wrong namespace'

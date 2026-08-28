@@ -148,6 +148,7 @@ Scope {
     // WiFi manager panel (morphs the island into mode "wifi")
     property bool wifiRadioEnabled: true
     property var wifiNetworks: []
+    property var savedWifiProfiles: []
     property string wifiExpandedSsid: ""
     property string wifiPasswordDraft: ""
     property string pendingWifiPassword: ""
@@ -1117,6 +1118,7 @@ Scope {
             const signal = parseInt(parts[2]) || 0;
             const security = parts.slice(3).join(":");
             const secured = security !== "" && security !== "--";
+            const saved = root.savedWifiProfiles.indexOf(ssid) !== -1;
 
             if (ssid === "" || seen[ssid])
                 continue;
@@ -1126,7 +1128,8 @@ Scope {
                 ssid: ssid,
                 signal: signal,
                 secured: secured,
-                active: active
+                active: active,
+                saved: saved
             });
         }
 
@@ -1165,6 +1168,11 @@ Scope {
         }
         root.pendingWifiPassword = "";
         root.wifiPasswordDraft = "";
+    }
+
+    function forgetWifiNetwork(ssid) {
+        root.wifiStatusText = "";
+        ShellBackend.action("wifi-forget", ssid);
     }
 
     function disconnectFromWifiNetwork(ssid) {
@@ -1255,10 +1263,32 @@ Scope {
 
         root.btStatusText = "";
 
-        if (device.connected)
+        if (device.pairing) {
+            device.cancelPair();
+            root.btStatusText = "Pairing cancelled";
+            return;
+        }
+
+        if (device.connected) {
             device.disconnect();
-        else
+            return;
+        }
+
+        // BlueZ pairs and connects as separate operations. Calling connect() on a
+        // device that was never bonded silently does the wrong thing on anything
+        // that needs a passkey, so an unpaired device is paired explicitly.
+        if (device.paired || device.bonded)
             device.connect();
+        else
+            device.pair();
+    }
+
+    function forgetBluetoothDevice(device) {
+        if (!device)
+            return;
+
+        root.btStatusText = "";
+        device.forget();
     }
 
     function refreshBatteryTelemetry() {
@@ -1687,7 +1717,9 @@ Scope {
                 root.wifiRadioEnabled = payload.radioEnabled === true;
                 root.wifiSsid = String(payload.activeSsid || "");
                 root.wifiSignal = Number(payload.activeSignal || 0);
-                root.wifiNetworks = Array.isArray(payload.networks) ? payload.networks.slice().sort((a, b) => Number(b.signal || 0) - Number(a.signal || 0)) : [];
+                const networks = Array.isArray(payload.networks) ? payload.networks.slice() : [];
+                root.savedWifiProfiles = networks.filter(network => network.saved === true).map(network => String(network.ssid));
+                root.wifiNetworks = networks.sort((a, b) => Number(b.signal || 0) - Number(a.signal || 0));
             } else if (kind === "power") {
                 root.powerProfilesAvailable = payload.available === true;
                 root.availablePowerProfiles = Array.isArray(payload.profiles) ? payload.profiles : [];
@@ -1730,7 +1762,11 @@ Scope {
                 root.refreshIndicators();
             }
 
-            if (action === "wifi-connect" || action === "wifi-disconnect") {
+            if (action === "wifi-forget") {
+                root.wifiExpandedSsid = "";
+                root.wifiStatusText = succeeded ? "" : "Could not forget network";
+                root.scanWifiNetworks();
+            } else if (action === "wifi-connect" || action === "wifi-disconnect") {
                 const secured = root.pendingWifiSecured;
                 const usedPassword = root.pendingWifiUsedPassword;
                 const attemptedSsid = root.pendingWifiSsid;
@@ -1973,11 +2009,13 @@ Scope {
                 onWifiRowRequested: ssid => root.requestWifiExpand(ssid)
                 onWifiConnectRequested: (ssid, secured) => root.connectToWifiNetwork(ssid, secured)
                 onWifiDisconnectRequested: ssid => root.disconnectFromWifiNetwork(ssid)
+                onWifiForgetRequested: ssid => root.forgetWifiNetwork(ssid)
                 onWifiPasswordChanged: text => root.wifiPasswordDraft = text
                 onBtCloseRequested: root.closePanelToWideIdle(root.btWidth)
                 onBtToggleRadioRequested: root.toggleBluetoothRadio()
                 onBtRefreshRequested: root.refreshBluetoothDevices()
                 onBtDeviceRequested: device => root.toggleBluetoothDevice(device)
+                onBtDeviceForgetRequested: device => root.forgetBluetoothDevice(device)
                 onBatteryRequested: root.toggleBatteryPanel()
                 onBatteryCloseRequested: root.closePanelToWideIdle(root.batteryWidth)
                 onBatteryToggleThresholdRequested: root.toggleBatteryThreshold()

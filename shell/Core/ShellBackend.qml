@@ -46,7 +46,7 @@ QtObject {
             argumentsList = [String(argument)];
         else if (name === "bluetooth-radio" && ["on", "off"].indexOf(String(argument || "")) >= 0)
             argumentsList = [String(argument)];
-        else if (name === "wifi-disconnect" && /^[^\u0000-\u001f\u007f]{1,32}$/.test(String(argument || "")))
+        else if (["wifi-disconnect", "wifi-forget"].indexOf(name) >= 0 && /^[^\u0000-\u001f\u007f]{1,32}$/.test(String(argument || "")))
             argumentsList = [String(argument)];
         else if (name === "power-profile" && ["power-saver", "balanced", "performance"].indexOf(String(argument || "")) >= 0)
             argumentsList = [String(argument)];

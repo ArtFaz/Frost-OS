@@ -189,11 +189,13 @@ Item {
     signal wifiRowRequested(string ssid)
     signal wifiConnectRequested(string ssid, bool secured)
     signal wifiDisconnectRequested(string ssid)
+    signal wifiForgetRequested(string ssid)
     signal wifiPasswordChanged(string text)
     signal btCloseRequested
     signal btToggleRadioRequested
     signal btRefreshRequested
     signal btDeviceRequested(var device)
+    signal btDeviceForgetRequested(var device)
     signal batteryRequested
     signal batteryCloseRequested
     signal batteryToggleThresholdRequested
@@ -816,7 +818,7 @@ Item {
                                     }
 
                                     Rectangle {
-                                        visible: !wifiRowItem.modelData.active && wifiRowItem.modelData.secured
+                                        visible: !wifiRowItem.modelData.active && wifiRowItem.modelData.secured && !wifiRowItem.modelData.saved
                                         Layout.fillWidth: true
                                         Layout.preferredHeight: 34
                                         radius: Style.controlRadius
@@ -893,6 +895,39 @@ Item {
                                             }
                                         }
 
+                                        // Only offered for a network NetworkManager
+                                        // actually holds a profile for.
+                                        Rectangle {
+                                            Layout.preferredWidth: wifiForgetLabel.width + 18
+                                            Layout.preferredHeight: 30
+                                            radius: Style.controlRadius
+                                            visible: wifiRowItem.modelData.saved === true
+                                            color: wifiForgetMouse.containsMouse ? Theme.alpha(Theme.urgent, 0.14) : Theme.controlNormal
+                                            border.width: 1
+                                            border.color: wifiForgetMouse.containsMouse ? Theme.urgent : Theme.border
+
+                                            Text {
+                                                id: wifiForgetLabel
+
+                                                anchors.centerIn: parent
+                                                text: "Esquecer"
+                                                color: wifiForgetMouse.containsMouse ? Theme.urgent : Theme.muted
+                                                font.family: root.fontFamily
+                                                font.pixelSize: 12
+                                                font.weight: Font.DemiBold
+                                            }
+
+                                            MouseArea {
+                                                id: wifiForgetMouse
+
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                enabled: !root.wifiConnecting
+                                                onClicked: root.wifiForgetRequested(wifiRowItem.modelData.ssid)
+                                            }
+                                        }
+
                                         Rectangle {
                                             Layout.fillWidth: true
                                             Layout.preferredHeight: 30
@@ -934,7 +969,11 @@ Item {
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: {
-                                    if (wifiRowItem.modelData.active || wifiRowItem.expanded)
+                                    // A secured network NetworkManager has no profile
+                                    // for needs its password before the attempt, not
+                                    // after a deliberate failure.
+                                    const needsPassword = wifiRowItem.modelData.secured && !wifiRowItem.modelData.saved;
+                                    if (wifiRowItem.modelData.active || wifiRowItem.expanded || needsPassword)
                                         root.wifiRowRequested(wifiRowItem.modelData.ssid);
                                     else
                                         root.wifiConnectRequested(wifiRowItem.modelData.ssid, wifiRowItem.modelData.secured);
@@ -978,6 +1017,7 @@ Item {
         onToggleRadioRequested: root.btToggleRadioRequested()
         onRefreshRequested: root.btRefreshRequested()
         onDeviceRequested: device => root.btDeviceRequested(device)
+        onDeviceForgetRequested: device => root.btDeviceForgetRequested(device)
     }
 
     BatteryPanel {
