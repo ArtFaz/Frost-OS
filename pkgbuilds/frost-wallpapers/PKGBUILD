@@ -1,0 +1,27 @@
+pkgname=frost-wallpapers
+pkgver=0.2.0
+pkgrel=1
+pkgdesc='Theme wallpapers for the Frost desktop'
+arch=('any')
+url='https://github.com/ArtFaz/Frost-OS'
+# The images carry no per-asset licence record, so this package is built for
+# private use and is not redistributable. docs/provenance/wallpapers.json in the
+# runtime repository records the origin and blocked status of every file.
+license=('LicenseRef-unresolved')
+depends=()
+options=('!debug' '!strip')
+_srcname=frost
+source=("${_srcname}-${pkgver}.tar.gz")
+sha256sums=('SKIP')
+
+package() {
+  cd "$srcdir/${_srcname}-${pkgver}"
+
+  install -d "$pkgdir/usr/share/frost/backgrounds"
+  cp -r backgrounds/. "$pkgdir/usr/share/frost/backgrounds/"
+  find "$pkgdir/usr/share/frost/backgrounds" -type d -exec chmod 0755 {} +
+  find "$pkgdir/usr/share/frost/backgrounds" -type f -exec chmod 0644 {} +
+
+  install -Dm644 docs/provenance/wallpapers.json \
+    "$pkgdir/usr/share/frost/backgrounds/provenance.json"
+}

@@ -5,6 +5,15 @@ set -euo pipefail
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 source_repo=${FROST_SOURCE:-$root/../frost}
 destination=${PKGDEST:-$root/repo/unsigned}
+package=${1:-frost}
+
+case $package in
+  frost|frost-wallpapers) ;;
+  *)
+    printf 'usage: build-frost-package [frost|frost-wallpapers]\n' >&2
+    exit 2
+    ;;
+esac
 
 if [[ ! -d $source_repo/.git ]]; then
   printf 'Frost source is not an independent Git repository: %s\n' "$source_repo" >&2
@@ -29,7 +38,7 @@ esac
 trap 'rm -rf -- "$build_dir"' EXIT
 
 mkdir -p "$build_dir/pkg" "$destination"
-cp "$root/pkgbuilds/frost/PKGBUILD" "$build_dir/pkg/PKGBUILD"
+cp "$root/pkgbuilds/$package/PKGBUILD" "$build_dir/pkg/PKGBUILD"
 git -C "$source_repo" archive \
   --format=tar.gz \
   --prefix="frost-${version}/" \
@@ -41,4 +50,4 @@ git -C "$source_repo" archive \
   PKGDEST="$destination" makepkg --cleanbuild --force --noconfirm --nodeps
 )
 
-find "$destination" -maxdepth 1 -type f -name 'frost-*.pkg.tar.*' -print
+find "$destination" -maxdepth 1 -type f -name "$package-*.pkg.tar.*" -print
