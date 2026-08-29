@@ -13,3 +13,10 @@ resize-overlay = never
 mouse-scroll-multiplier = 0.95
 # Hyprland-specific slowness with the default backend.
 async-backend = epoll
+
+# Super+C and Super+V send Ctrl+Insert and Shift+Insert to a terminal, because
+# Ctrl+C there is an interrupt. Ghostty binds neither by default, so without
+# these two lines the universal clipboard did nothing in a terminal and worked
+# everywhere else.
+keybind = shift+insert=paste_from_clipboard
+keybind = control+insert=copy_to_clipboard
