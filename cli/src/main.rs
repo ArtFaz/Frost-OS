@@ -1343,7 +1343,6 @@ fn shell_action_command(args: &[String]) -> Result<(), CliError> {
             &["--user", "start", "frost-lock.service"],
         ),
         ("logout", None) => schedule_session_action(&["/usr/bin/uwsm", "stop"]),
-        ("open-terminal", None) => spawn_fixed("/usr/bin/uwsm", &["app", "--", "/usr/bin/ghostty"]),
         ("notification-clear", None) => run_fixed("/usr/bin/makoctl", &["dismiss", "--all"]),
         ("notification-dnd", Some("on")) => run_fixed("/usr/bin/makoctl", &["mode", "-a", "dnd"]),
         ("notification-dnd", Some("off")) => run_fixed("/usr/bin/makoctl", &["mode", "-r", "dnd"]),

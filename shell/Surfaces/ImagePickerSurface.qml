@@ -3,9 +3,9 @@ import Qt5Compat.GraphicalEffects
 import qs.Core
 
 // Image browser on the donor carousel geometry: one preview flanked by two
-// slices per side. The donor uses this surface to set a wallpaper; Frost has no
-// wallpaper stack, so the action here is the one the CLI actually supports —
-// copying the selected image to the clipboard.
+// slices per side. It runs in two modes over the same geometry: browse and copy
+// from the picture directories, or set the desktop background from the packaged
+// theme wallpapers.
 Item {
     id: root
 
@@ -38,7 +38,10 @@ Item {
     width: Math.min(root.hostWidth - 80, root.previewWidth + 4 * root.itemStep + root.cardPadding * 2)
     height: Math.min(root.hostHeight - 80,
                      root.cardPadding * 2 + root.headerHeight + root.headerSpacing + root.previewHeight + root.footerHeight)
-    visible: root.active && root.visibleImages.length > 0
+    // The card stays up even with nothing to show. Hiding it left the scrim
+    // covering the screen with no surface on it, which reads as a broken
+    // shortcut rather than as an empty directory.
+    visible: root.active
     opacity: root.visible ? 1 : 0
     scale: root.visible ? 1 : 0.985
 
@@ -178,6 +181,32 @@ Item {
             border.width: Style.borderWidth
             border.color: Theme.border
 
+            Column {
+                anchors.centerIn: parent
+                spacing: 8
+                visible: root.visibleImages.length === 0
+
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: root.wallpaperMode ? "󰸉" : "󰋩"
+                    color: Theme.foreground
+                    opacity: 0.8
+                    font.family: Style.iconFontFamily
+                    font.pixelSize: Style.displayLarge
+                }
+
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: root.filterText !== "" ? "Nada encontrado para “" + root.filterText + "”"
+                          : root.wallpaperMode ? "Nenhum papel de parede instalado"
+                                               : "Nenhuma imagem em ~/Pictures ou ~/Imagens"
+                    color: Theme.foreground
+                    opacity: 0.7
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.title
+                }
+            }
+
             Item {
                 id: header
 
@@ -211,6 +240,8 @@ Item {
 
             Item {
                 id: carousel
+
+                visible: root.visibleImages.length > 0
 
                 readonly property real previewSpan: Math.min(root.previewWidth, carousel.width)
                 readonly property real previewX: (carousel.width - carousel.previewSpan) / 2
@@ -328,7 +359,8 @@ Item {
                 anchors.topMargin: 12
                 anchors.horizontalCenter: carousel.horizontalCenter
                 width: carousel.previewSpan
-                text: root.selectedImage ? String(root.selectedImage.name || "") : "No matches"
+                visible: root.visibleImages.length > 0
+                text: root.selectedImage ? String(root.selectedImage.name || "") : ""
                 color: Theme.foreground
                 elide: Text.ElideRight
                 horizontalAlignment: Text.AlignHCenter

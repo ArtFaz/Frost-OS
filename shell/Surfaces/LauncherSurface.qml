@@ -33,8 +33,14 @@ Item {
     readonly property int footerHeight: Style.footerHeight
 
     readonly property bool appsRoute: root.route === "apps"
-    readonly property var rows: root.appsRoute ? root.applicationRows() : root.menuRows()
-    readonly property int rowUnit: root.appsRoute ? Style.detailRowHeight : Style.rowHeight
+    // Typing at the root searches applications too. Reaching an application only
+    // by entering a submenu first made the field feel like a filter over five
+    // fixed rows rather than a launcher.
+    readonly property bool searchingRoot: root.route === "root" && root.filterText.trim() !== ""
+    readonly property var rows: root.appsRoute ? root.applicationRows()
+                                : root.searchingRoot ? root.menuRows().concat(root.applicationRows())
+                                                     : root.menuRows()
+    readonly property int rowUnit: root.appsRoute || root.searchingRoot ? Style.detailRowHeight : Style.rowHeight
 
     // Never end on a row boundary: fit whole rows, then add one spacing plus a
     // peek so the next row is visibly cut and the list reads as scrollable.

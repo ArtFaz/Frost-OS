@@ -105,7 +105,7 @@ PAM changes must use a dedicated Hyprlock service with no `nullok`, empty-passwo
 - Machine state: `/var/lib/frost`.
 - Logs: journal or `/var/log/frost`, never persistent state in `/tmp`.
 
-Every config includes `schemaVersion`. A theme contains exactly a name, dark/light mode and eight semantic colors. It cannot control geometry, opacity, blur, fonts, motion or commands. User, administrator and package themes are validated by the Rust boundary and normalized to mode-0600 runtime files. Mako and Hyprlock launch through fixed Frost subcommands that consume those files when safe and fall back to immutable package configs otherwise. Themes may contain only regular, non-executable files of explicitly allowed media/data types. Symlinks, FIFOs, device nodes, sockets, QML, JavaScript, shell, binaries and hooks are rejected.
+Every config includes `schemaVersion`. A theme contains a name, dark/light mode, eight required semantic colors and an optional ANSI palette. The semantic roles carry the contrast gates; palette entries are exempt, because an ANSI palette legitimately contains colours unreadable against the background, and anything a theme omits is derived from the nearest role. It cannot control geometry, opacity, blur, fonts, motion or commands. User, administrator and package themes are validated by the Rust boundary and normalized to mode-0600 runtime files. Mako and Hyprlock launch through fixed Frost subcommands that consume those files when safe and fall back to immutable package configs otherwise. Themes may contain only regular, non-executable files of explicitly allowed media/data types. Symlinks, FIFOs, device nodes, sockets, QML, JavaScript, shell, binaries and hooks are rejected.
 
 ## Update and rollback invariants
 

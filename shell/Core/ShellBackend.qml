@@ -54,7 +54,7 @@ QtObject {
     }
 
     function action(name, argument) {
-        const noArgument = ["brightness-down", "brightness-up", "lock", "logout", "notification-clear", "open-terminal", "poweroff", "reboot", "stay-awake-toggle", "suspend"];
+        const noArgument = ["brightness-down", "brightness-up", "lock", "logout", "notification-clear", "poweroff", "reboot", "stay-awake-toggle", "suspend"];
         const numericArgument = ["brightness-set", "clipboard-copy", "notification-dismiss", "notification-invoke"];
         const pathArgument = ["image-copy", "wallpaper-set"];
         const tokenArgument = ["theme-set"];

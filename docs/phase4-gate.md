@@ -34,6 +34,38 @@ over another compositor configuration and cannot exercise session lifecycle.
 6. Multi-monitor: the island follows the focused monitor, the reserved zone is correct on each, and hotplug does not duplicate or strand a surface.
 7. Wallpaper: selecting one paints it and it survives a shell restart.
 
+## Alignment audit before closing
+
+A sweep for capability that exists on one side of the boundary and nowhere on
+the other, since either direction is a defect: an unreachable feature, or an
+action surface nobody uses.
+
+Fixed here:
+
+- The image browser hid its whole card when nothing resolved, so choosing
+  "Papel de parede" with no wallpapers installed dimmed the screen and drew
+  nothing. It now keeps the card and says what is empty. The same silence would
+  have appeared for an empty picture directory.
+- Searching from the launcher root matched only the five fixed rows. Typing now
+  searches applications as well, which is what a launcher field is for; reaching
+  an application required entering a submenu first.
+- `open-terminal` existed as a shell action on both sides of the boundary with
+  no caller: the keybind starts `/usr/lib/frost/frost-terminal` directly, and the
+  action spawned Ghostty bare, skipping the theme-aware wrapper. Removed from the
+  QML allowlist and from the CLI.
+- `docs/security-boundaries.md` still described a theme as exactly eight colours,
+  which the ANSI palette made false.
+
+Recorded, not fixed, because each is a feature decision rather than a defect:
+
+- `shell-action reminder-set` and `reminder-clear` are implemented and validated
+  in Rust and reachable from no interface. `shell-data indicators` already
+  reports the reminder timer's state.
+- `shell-data weather` has no consumer either, though `frost weather` works as a
+  user command.
+- The wallpaper and image surfaces have no keybind; they are reached through the
+  launcher. Keybinds are Phase 5.1.
+
 ## Scope decision recorded during this gate
 
 The application installer left Phase 4. Its frontend was listed as a Phase 4
