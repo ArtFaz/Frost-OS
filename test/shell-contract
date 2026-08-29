@@ -33,7 +33,7 @@ rg -Fq 'WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive' "$shell/Surface
 rg -Fq '.entry.execute()' "$shell/Surfaces/LauncherSurface.qml" || fail 'launcher must execute desktop entries natively'
 rg -Fq 'WlrLayershell.namespace: "frost-island"' "$shell/Island/DynamicGlacier.qml" || fail 'stable island namespace is missing'
 rg -Fq 'exclusiveZone: root.reservedZone' "$shell/Island/DynamicGlacier.qml" || fail 'constant island exclusion zone is missing'
-rg -Fq 'WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand' "$shell/Island/DynamicGlacier.qml" || fail 'search inputs cannot receive controlled keyboard focus'
+rg -Fq 'WlrLayershell.keyboardFocus: root.wifiExpandedSsid !== "" ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None' "$shell/Island/DynamicGlacier.qml" || fail 'the island must hold the keyboard only while its password field is open'
 rg -Fq 'mask: Region' "$shell/Island/DynamicGlacier.qml" || fail 'island input mask is missing'
 for module in Quickshell.Bluetooth Quickshell.Hyprland Quickshell.Services.Mpris Quickshell.Services.Pipewire Quickshell.Services.UPower; do
   rg -Fq "import $module" "$shell/Island/DynamicGlacier.qml" || fail "native service missing: $module"

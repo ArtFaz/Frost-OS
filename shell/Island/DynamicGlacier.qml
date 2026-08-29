@@ -1856,10 +1856,14 @@ Scope {
         // Layer surfaces get no keyboard by default, so every TextInput in here
         // was inert: forceActiveFocus() moved Qt's internal focus (which is why
         // the field highlighted) but the compositor never routed a single key
-        // press to the surface. OnDemand hands us the keyboard while the pointer
-        // has clicked into the island and gives it straight back on click-away —
-        // Exclusive would hold it for as long as the bar is mapped, i.e. always.
-        WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
+        // press to the surface. OnDemand hands us the keyboard once the pointer
+        // clicks into the island — but it then keeps it until the user clicks
+        // somewhere else, so a window opened in the meantime became active
+        // without becoming typable. The reference bar is None for exactly that
+        // reason and puts its one text field in a surface of its own. Frost's
+        // field lives in the island, so the island asks for the keyboard only
+        // while that field is on screen and gives it up as soon as it closes.
+        WlrLayershell.keyboardFocus: root.wifiExpandedSsid !== "" ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
         anchors {
             top: true
