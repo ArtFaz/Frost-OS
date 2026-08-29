@@ -2179,7 +2179,12 @@ Scope {
                 }
             }
 
-            MouseArea {
+            // Handlers on a plain Item rather than a MouseArea. A MouseArea
+            // covering the island owns the cursor for everything beneath it, so
+            // the controls inside could never show their own pointing hand no
+            // matter what this area asked for. Handlers leave both the cursor
+            // and the events below them alone.
+            Item {
                 id: islandHitbox
 
                 readonly property bool wholeIslandClickable: !(root.visualMode === "media" || root.isPanelMode(root.visualMode) || root.interactionOpen)
@@ -2189,27 +2194,42 @@ Scope {
                 y: island.y
                 width: island.width
                 height: root.mode === "idle" && !root.interactionOpen ? Math.max(root.reservedZone, island.height) : island.height
-                hoverEnabled: true
-                acceptedButtons: islandHitbox.wholeIslandClickable ? Qt.LeftButton : Qt.NoButton
-                // The pointing hand belongs to the states where a click on the
-                // island itself does something. Once it opens into media or a
-                // panel the clickable things are the controls inside it, and a
-                // hand over the whole surface points at nothing.
-                cursorShape: islandHitbox.wholeIslandClickable ? Qt.PointingHandCursor : Qt.ArrowCursor
-                onEntered: root.keepInteractionOpen(true)
-                onWheel: wheel => {
-                    if (root.visualMode === "volume" && root.volumeKind === "audio")
-                        root.stepSinkVolume(wheel.angleDelta.y);
-                    else
-                        wheel.accepted = false;
+
+                HoverHandler {
+                    onHoveredChanged: {
+                        if (hovered)
+                            root.keepInteractionOpen(true);
+                        else
+                            root.scheduleInteractionClose();
+                    }
+                    onPointChanged: root.maybeFinishExitPreview(point.position.x, islandHitbox.width)
                 }
-                onPositionChanged: mouse => root.maybeFinishExitPreview(mouse.x, width)
-                onExited: root.scheduleInteractionClose()
-                onClicked: {
-                    if (root.mode === "idle")
-                        root.pinnedOpen = !root.pinnedOpen;
-                    else
-                        root.showIdle();
+
+                // The hand belongs to the states where a click on the island
+                // itself does something; otherwise this handler is disabled and
+                // sets no cursor at all, leaving the controls inside to say
+                // what they are.
+                HoverHandler {
+                    enabled: islandHitbox.wholeIslandClickable
+                    cursorShape: Qt.PointingHandCursor
+                }
+
+                // Enabled only while the wheel means volume, so the panels keep
+                // scrolling their own lists.
+                WheelHandler {
+                    enabled: root.visualMode === "volume" && root.volumeKind === "audio"
+                    onWheel: event => root.stepSinkVolume(event.angleDelta.y)
+                }
+
+                TapHandler {
+                    enabled: islandHitbox.wholeIslandClickable
+                    acceptedButtons: Qt.LeftButton
+                    onTapped: {
+                        if (root.mode === "idle")
+                            root.pinnedOpen = !root.pinnedOpen;
+                        else
+                            root.showIdle();
+                    }
                 }
             }
         }
