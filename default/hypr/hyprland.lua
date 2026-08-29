@@ -95,6 +95,13 @@ hl.config({
     misc = {
         disable_hyprland_logo = true,
         disable_splash_rendering = true,
+        -- The configuration is package-owned and only ever changes through a
+        -- pacman transaction, which replaces the file rather than editing it.
+        -- With the watcher on, Hyprland reloads during the instant the old file
+        -- is gone and the new one is not yet in place, and reports a missing
+        -- config every single upgrade. Reloading after an upgrade is an explicit
+        -- hyprctl reload instead.
+        disable_autoreload = true,
     },
     xwayland = {
         -- Without this every XWayland client renders blurry on a scaled output.
