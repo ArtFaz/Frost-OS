@@ -15,6 +15,7 @@ for relative_path in \
   Island/NotificationsPanel.qml Island/PanelHeader.qml Island/PanelSwitch.qml \
   Island/TrayRail.qml Island/WorkspaceRail.qml \
   Core/Surfaces.qml Surfaces/ClipboardSurface.qml Surfaces/EmojiSurface.qml \
+  Surfaces/ImagePickerSurface.qml \
   Surfaces/LauncherSurface.qml Surfaces/SurfaceHost.qml Surfaces/SurfaceSearchField.qml; do
   [[ -f $shell/$relative_path && ! -L $shell/$relative_path ]] || fail "missing Frost Island file: $relative_path"
 done
@@ -63,6 +64,7 @@ if command -v qmllint >/dev/null; then
     "$shell/Island/PanelSwitch.qml" \
     "$shell/Island/PeekStatusRow.qml" \
     "$shell/Surfaces/ClipboardSurface.qml" \
+    "$shell/Surfaces/ImagePickerSurface.qml" \
     "$shell/Surfaces/LauncherSurface.qml" \
     "$shell/Surfaces/SurfaceHost.qml" \
     "$shell/Surfaces/SurfaceSearchField.qml"

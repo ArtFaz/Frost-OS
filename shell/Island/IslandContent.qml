@@ -117,6 +117,8 @@ Item {
     property int notificationsMaxPanelHeight: 440
     property var notificationEntries: []
     property bool notificationsDnd: false
+    property bool microphoneMuted: false
+    property bool microphoneActive: false
     property bool notificationsBusy: false
     property string notificationsStatusText: ""
     readonly property real notificationsContentHeight: notificationsContent.contentHeight
@@ -178,6 +180,7 @@ Item {
     signal playerRequested(int index)
     signal stayAwakeRequested
     signal notificationsRequested
+    signal microphoneMuteRequested
     signal notificationsCloseRequested
     signal notificationsClearRequested
     signal notificationsDndRequested
@@ -433,6 +436,10 @@ Item {
                 fontFamily: root.fontFamily
                 showBattery: true
                 showNotifications: true
+                showMicrophone: true
+                microphoneMuted: root.microphoneMuted
+                microphoneActive: root.microphoneActive
+                onMicrophoneMuteRequested: root.microphoneMuteRequested()
                 notificationsDnd: root.notificationsDnd
                 notificationCount: root.notificationEntries.length
                 onNotificationsRequested: root.notificationsRequested()

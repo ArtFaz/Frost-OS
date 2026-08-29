@@ -8,7 +8,7 @@ pragma Singleton
 QtObject {
     id: root
 
-    readonly property var known: ["launcher", "clipboard", "emoji"]
+    readonly property var known: ["launcher", "clipboard", "emoji", "images"]
 
     property string active: ""
 

@@ -20,6 +20,7 @@ This inventory describes the single active shell composition after the DynamicGl
 | launcher | one shared overlay window, namespace frost-surfaces; desktop entries executed through the Quickshell API and typed frost shell-actions | an empty list when no entries resolve; no command discovery and no shell string is ever built |
 | clipboard | frost shell-data clipboard and shell-action clipboard-copy over cliphist | empty list when cliphist is unavailable |
 | emoji | package-owned catalog at config/data/emojis.json | empty grid when the catalog cannot be read |
+| images | frost shell-data images over ~/Pictures and ~/Imagens, copied with shell-action image-copy | the card stays hidden while nothing resolves; Frost has no wallpaper stack, so this browses and copies rather than setting a background |
 | lock and Polkit | Hyprlock/PAM and hyprpolkitagent | no shell fallback or duplicated authority |
 
 qs.Core.ShellBackend is the only QML component allowed to instantiate processes. It owns two serialized processes, a bounded action queue and one stdin channel reserved for a validated Wi-Fi password. Installed execution remains fixed to /usr/bin/frost; worktree path overrides are accepted only while FROST_PREVIEW=1.

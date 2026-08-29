@@ -1957,6 +1957,8 @@ Scope {
                 mediaPlayerIndex: root.mediaPlayerIndex
                 notificationEntries: root.notificationEntries
                 notificationsDnd: root.notificationsDnd
+                microphoneMuted: root.audioInputMuted
+                microphoneActive: root.microphoneActive
                 notificationsBusy: root.notificationsBusy
                 notificationsStatusText: root.notificationsStatusText
                 notificationsMaxPanelHeight: root.notificationsMaxPanelHeight
@@ -2044,6 +2046,7 @@ Scope {
                 onAudioPanelRequested: root.toggleAudioPanel()
                 onStayAwakeRequested: root.toggleStayAwake()
                 onNotificationsRequested: root.toggleNotificationsPanel()
+                onMicrophoneMuteRequested: root.toggleSourceMute()
                 onNotificationsCloseRequested: root.closePanelToWideIdle(root.notificationsWidth)
                 onNotificationsClearRequested: root.clearNotifications()
                 onNotificationsDndRequested: root.toggleNotificationsDnd()

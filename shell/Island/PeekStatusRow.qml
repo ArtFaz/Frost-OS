@@ -14,6 +14,9 @@ RowLayout {
     property string fontFamily: Style.fontFamily
     property bool showBattery: false
     property bool showNotifications: false
+    property bool showMicrophone: false
+    property bool microphoneMuted: false
+    property bool microphoneActive: false
     property bool notificationsDnd: false
     property int notificationCount: 0
     property bool compact: false
@@ -26,6 +29,7 @@ RowLayout {
     signal audioMuteRequested
     signal audioStepRequested(int steps)
     signal notificationsRequested
+    signal microphoneMuteRequested
 
     readonly property string volumeGlyph: root.muted || root.volume <= 0 ? "volume_off" : (root.volume < 50 ? "volume_down" : "volume_up")
 
@@ -77,6 +81,47 @@ RowLayout {
                     root.audioMuteRequested();
             }
             onWheel: wheel => root.audioStepRequested(wheel.angleDelta.y)
+        }
+    }
+
+    // Microphone: shown while something is capturing, or whenever it is muted so
+    // the state is never invisible. Writes go straight to PipeWire.
+    Item {
+        visible: root.showMicrophone && (root.microphoneActive || root.microphoneMuted)
+        Layout.preferredWidth: micRow.width
+        Layout.preferredHeight: parent.height
+
+        Row {
+            id: micRow
+
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 3
+
+            MIcon {
+                name: "mic"
+                size: root.compact ? 12 : 13
+                color: root.microphoneMuted ? Theme.muted : (root.microphoneActive ? Theme.warning : Theme.foreground)
+                anchors.verticalCenter: parent.verticalCenter
+            }
+
+            Rectangle {
+                width: 9
+                height: 1
+                radius: 0.5
+                rotation: -45
+                color: Theme.muted
+                visible: root.microphoneMuted
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.verticalCenterOffset: -5
+            }
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            anchors.margins: -4
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: root.microphoneMuteRequested()
         }
     }
 

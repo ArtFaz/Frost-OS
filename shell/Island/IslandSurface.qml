@@ -33,6 +33,8 @@ Item {
     property int mediaPlayerIndex: -1
     property var notificationEntries: []
     property bool notificationsDnd: false
+    property bool microphoneMuted: false
+    property bool microphoneActive: false
     property bool notificationsBusy: false
     property string notificationsStatusText: ""
     property int notificationsMaxPanelHeight: 440
@@ -143,6 +145,7 @@ Item {
     signal playerRequested(int index)
     signal stayAwakeRequested
     signal notificationsRequested
+    signal microphoneMuteRequested
     signal notificationsCloseRequested
     signal notificationsClearRequested
     signal notificationsDndRequested
@@ -221,6 +224,8 @@ Item {
             notificationsMaxPanelHeight: root.notificationsMaxPanelHeight
             notificationEntries: root.notificationEntries
             notificationsDnd: root.notificationsDnd
+            microphoneMuted: root.microphoneMuted
+            microphoneActive: root.microphoneActive
             notificationsBusy: root.notificationsBusy
             notificationsStatusText: root.notificationsStatusText
             audioVolume: root.audioVolume
@@ -317,6 +322,7 @@ Item {
             onPlayerRequested: index => root.playerRequested(index)
             onStayAwakeRequested: root.stayAwakeRequested()
             onNotificationsRequested: root.notificationsRequested()
+            onMicrophoneMuteRequested: root.microphoneMuteRequested()
             onNotificationsCloseRequested: root.notificationsCloseRequested()
             onNotificationsClearRequested: root.notificationsClearRequested()
             onNotificationsDndRequested: root.notificationsDndRequested()

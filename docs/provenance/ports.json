@@ -209,6 +209,15 @@
       "notice": "docs/provenance.md"
     },
     {
+      "destination": "shell/Surfaces/ImagePickerSurface.qml",
+      "originRepository": "staging",
+      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
+      "originPath": "config/omarchy/plugins/art.image-picker/ImagePicker.qml",
+      "transformation": "adapted",
+      "license": "pending-confirmation",
+      "notice": "docs/provenance.md"
+    },
+    {
       "destination": "shell/Surfaces/LauncherSurface.qml",
       "originRepository": "staging",
       "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",

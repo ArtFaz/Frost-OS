@@ -80,7 +80,8 @@ Item {
     function routeItems(value) {
         if (value === "trigger")
             return [{"icon": "󰅌", "label": "Clipboard", "detail": "Histórico de texto", "surface": "clipboard", "kind": "menu"},
-                    {"icon": "󰞅", "label": "Emoji", "detail": "Buscar e copiar", "surface": "emoji", "kind": "menu"}];
+                    {"icon": "󰞅", "label": "Emoji", "detail": "Buscar e copiar", "surface": "emoji", "kind": "menu"},
+                    {"icon": "󰋩", "label": "Imagens", "detail": "Copiar de ~/Pictures", "surface": "images", "kind": "menu"}];
         if (value === "setup")
             return [{"icon": "󰖩", "label": "Wi-Fi", "detail": "Redes e conexões", "island": "wifi", "kind": "menu"},
                     {"icon": "󰂯", "label": "Bluetooth", "detail": "Dispositivos", "island": "bluetooth", "kind": "menu"},

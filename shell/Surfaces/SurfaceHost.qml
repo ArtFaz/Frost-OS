@@ -67,6 +67,13 @@ Scope {
                 active: Surfaces.active === "clipboard"
             }
 
+            ImagePickerSurface {
+                anchors.centerIn: parent
+                hostWidth: panel.width
+                hostHeight: panel.height
+                active: Surfaces.active === "images"
+            }
+
             EmojiSurface {
                 anchors.centerIn: parent
                 hostWidth: panel.width
