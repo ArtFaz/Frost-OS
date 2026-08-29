@@ -465,7 +465,7 @@ fn json_escape(value: &str) -> String {
 fn shell_data_command(args: &[String]) -> Result<(), CliError> {
     let [kind] = args else {
         return Err(CliError::Usage(
-            "usage: frost shell-data <brightness|wifi|wifi-scan|power|battery-threshold|privacy|indicators|notifications|clipboard|images|weather>"
+            "usage: frost shell-data <brightness|wifi|wifi-scan|power|battery-threshold|privacy|indicators|notifications|clipboard|images|wallpapers|themes|weather>"
                 .to_owned(),
         ));
     };
@@ -479,6 +479,7 @@ fn shell_data_command(args: &[String]) -> Result<(), CliError> {
         "clipboard" => clipboard_json()?,
         "images" => images_json()?,
         "wallpapers" => wallpapers_json()?,
+        "themes" => theme::themes_json()?,
         "indicators" => indicators_json(),
         "notifications" => notifications_json()?,
         "weather" => weather_json()?,

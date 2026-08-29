@@ -1937,6 +1937,17 @@ Scope {
                 onDismissed: root.trayMenuItem = null
             }
 
+            // The island's input mask covers only the island itself, so a click
+            // anywhere else never reached this process and the menu stayed up
+            // until something inside it was pressed. While the grab is active
+            // input is routed to this window alone and the click-away is
+            // reported instead of being swallowed by whatever is underneath.
+            HyprlandFocusGrab {
+                active: trayMenu.visible
+                windows: [islandWindow]
+                onCleared: root.trayMenuItem = null
+            }
+
             IslandSurface {
                 id: island
 

@@ -26,7 +26,7 @@ QtObject {
     // some later isolated call happened to land. Queue instead, mirroring the
     // action queue below.
     function query(kind) {
-        const allowed = ["battery-threshold", "brightness", "clipboard", "images", "indicators", "wallpapers", "notifications", "power", "privacy", "wifi", "wifi-scan"];
+        const allowed = ["battery-threshold", "brightness", "clipboard", "images", "indicators", "notifications", "power", "privacy", "themes", "wallpapers", "wifi", "wifi-scan"];
         if (allowed.indexOf(kind) < 0)
             return false;
         if (pendingDataKind === kind || dataQueue.indexOf(kind) >= 0)

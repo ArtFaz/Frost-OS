@@ -561,8 +561,7 @@ pub(crate) fn current_theme() -> Option<Theme> {
         })
 }
 
-fn list_themes() -> Result<(), CliError> {
-    let current = selected_name().unwrap_or_else(|_| DEFAULT_THEME.to_owned());
+fn installed_names() -> Result<BTreeSet<String>, CliError> {
     let mut names = BTreeSet::new();
     for root in theme_roots()? {
         let Ok(entries) = fs::read_dir(root) else {
@@ -575,10 +574,37 @@ fn list_themes() -> Result<(), CliError> {
             }
         }
     }
-    for name in names {
+    Ok(names)
+}
+
+fn list_themes() -> Result<(), CliError> {
+    let current = selected_name().unwrap_or_else(|_| DEFAULT_THEME.to_owned());
+    for name in installed_names()? {
         println!("{}{}", if name == current { "* " } else { "  " }, name);
     }
     Ok(())
+}
+
+// The shell used to carry three hardcoded palette rows, so the other themes on
+// disk were unreachable from the launcher. A theme is data, and which themes
+// exist is a property of the filesystem, not of the interface.
+pub(crate) fn themes_json() -> Result<String, CliError> {
+    let current = selected_name().unwrap_or_else(|_| DEFAULT_THEME.to_owned());
+    let entries = installed_names()?
+        .into_iter()
+        .filter_map(|name| resolve_theme(&name).ok().map(|(theme, _)| (name, theme)))
+        .map(|(name, theme)| {
+            format!(
+                "{{\"name\":\"{}\",\"label\":\"{}\",\"mode\":\"{}\",\"current\":{}}}",
+                json_escape(&name),
+                json_escape(&theme.name),
+                json_escape(&theme.mode),
+                name == current
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    Ok(format!("{{\"schemaVersion\":1,\"items\":[{entries}]}}"))
 }
 
 fn validate_target(target: &str) -> Result<(), CliError> {

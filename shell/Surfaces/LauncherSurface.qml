@@ -23,6 +23,7 @@ Item {
     property string confirmAction: ""
     property string confirmLabel: ""
     property string confirmGlyph: ""
+    property var themeCatalog: []
 
     readonly property int cardPadding: Style.contentMargin
     readonly property int headerHeight: Style.headerHeight
@@ -100,14 +101,35 @@ Item {
                     {"icon": "󰜉", "label": "Reiniciar", "detail": "Reiniciar a máquina", "action": "reboot", "kind": "action"},
                     {"icon": "󰐥", "label": "Desligar", "detail": "Encerrar a máquina", "action": "poweroff", "kind": "action"}];
         if (value === "style")
-            return [{"icon": "󰏘", "label": "Frost Dark", "detail": "Paleta escura fria", "theme": "frost", "kind": "action"},
-                    {"icon": "󰏘", "label": "Frost Light", "detail": "Paleta clara neutra", "theme": "frost-light", "kind": "action"},
-                    {"icon": "󰏘", "label": "Gruvbox", "detail": "Paleta escura padrão", "theme": "gruvbox", "kind": "action"}];
+            return root.themeRows();
         return [{"icon": "󰀻", "label": "Aplicativos", "detail": "Buscar e abrir", "route": "apps", "kind": "menu"},
                 {"icon": "󱓥", "label": "Atalhos", "detail": "Área de transferência e emoji", "route": "trigger", "kind": "menu"},
                 {"icon": "󰏘", "label": "Aparência", "detail": "Paleta semântica", "route": "style", "kind": "menu"},
                 {"icon": "󰒓", "label": "Ajustes", "detail": "Rede, áudio e energia", "route": "setup", "kind": "menu"},
                 {"icon": "󰐥", "label": "Sistema", "detail": "Sessão e energia", "route": "system", "kind": "menu"}];
+    }
+
+    // Which palettes exist is a filesystem fact, so the rows come from
+    // shell-data rather than from a list held here.
+    function themeRows() {
+        const source = root.themeCatalog;
+        const matched = [];
+
+        for (let i = 0; i < source.length; i += 1) {
+            const item = source[i];
+            const name = String(item.name || "");
+            if (!/^[A-Za-z0-9_-]{1,64}$/.test(name))
+                continue;
+
+            matched.push({"icon": item.current ? "󰄬" : "󰏘",
+                          "label": String(item.label || name),
+                          "detail": (String(item.mode) === "light" ? "Paleta clara" : "Paleta escura")
+                                    + (item.current ? " · em uso" : ""),
+                          "theme": name,
+                          "kind": "action"});
+        }
+
+        return matched;
     }
 
     function routeTitle() {
@@ -120,6 +142,8 @@ Item {
     }
 
     function enterRoute(value, direction) {
+        if (value === "style")
+            ShellBackend.query("themes");
         root.navigationDirection = direction;
         root.route = value;
         root.filterText = "";
@@ -253,6 +277,22 @@ Item {
 
         Behavior on y {
             NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+        }
+    }
+
+    Connections {
+        target: ShellBackend
+
+        function onDataReady(kind, payload) {
+            if (kind !== "themes")
+                return;
+            root.themeCatalog = payload && Array.isArray(payload.items) ? payload.items : [];
+        }
+
+        function onActionFinished(name, succeeded) {
+            // The selection moved, so the "em uso" mark is stale.
+            if (name === "theme-set" && succeeded)
+                ShellBackend.query("themes");
         }
     }
 
