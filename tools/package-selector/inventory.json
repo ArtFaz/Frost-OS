@@ -1,6 +1,10 @@
 {
-  "inventoryVersion": "2026-08-29.1",
+  "inventoryVersion": "2026-08-29.2",
   "generatedFrom": [
+    {
+      "source": "arch extra/multilib",
+      "role": "Compatibility pass 2026-08-29.2: mesa, vulkan loader/drivers, VM guest agents, firmware, laptop sensors and fonts, each name verified against the live pacman sync database."
+    },
     {
       "source": "Definitive Frost-OS/omarchy",
       "commit": "0ae1694830b6",
@@ -97,8 +101,31 @@
       "default": false,
       "packages": [
         "moonlight-qt",
+        "lib32-mesa",
+        "lib32-vulkan-radeon",
+        "lib32-vulkan-intel",
         "lib32-nvidia-utils",
         "lib32-nvidia-580xx-utils"
+      ]
+    },
+    "scanning": {
+      "label": "Scanning",
+      "description": "Document scanner support, including driverless network and USB scanners.",
+      "default": false,
+      "packages": [
+        "sane",
+        "sane-airscan"
+      ]
+    },
+    "virtualisation-guest": {
+      "label": "Run as a VM guest",
+      "description": "Guest agents so Frost integrates with its host when it runs inside QEMU/KVM, SPICE, VMware or VirtualBox.",
+      "default": false,
+      "packages": [
+        "qemu-guest-agent",
+        "spice-vdagent",
+        "open-vm-tools",
+        "virtualbox-guest-utils"
       ]
     },
     "media-production": {
@@ -299,6 +326,13 @@
       "sizeKib": 43827
     },
     {
+      "name": "alsa-ucm-conf",
+      "source": "arch",
+      "category": "CORE",
+      "default": "recommended",
+      "reason": "Use-case profiles many modern laptop audio codecs need to route correctly"
+    },
+    {
       "name": "alsa-utils",
       "source": "arch",
       "category": "CORE",
@@ -375,6 +409,13 @@
       "category": "CORE",
       "default": "required",
       "reason": "Privileged Frost session integration; lands at cutover after an ownership audit"
+    },
+    {
+      "name": "fwupd",
+      "source": "arch",
+      "category": "CORE",
+      "default": "recommended",
+      "reason": "Firmware updates over LVFS for UEFI, SSDs, docks and peripherals"
     },
     {
       "name": "gawk",
@@ -513,6 +554,13 @@
       "sizeKib": 140
     },
     {
+      "name": "mesa",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "OpenGL and generic GPU driver for the whole session, and AMD/Intel VA-API video decode"
+    },
+    {
       "name": "networkmanager",
       "source": "arch",
       "category": "CORE",
@@ -543,6 +591,13 @@
       "default": "recommended",
       "reason": "Glue so .local names resolve through Avahi",
       "sizeKib": 107
+    },
+    {
+      "name": "nvme-cli",
+      "source": "arch",
+      "category": "CORE",
+      "default": "recommended",
+      "reason": "Management and health queries for NVMe SSDs"
     },
     {
       "name": "openssh",
@@ -616,6 +671,20 @@
       "sizeKib": 6184
     },
     {
+      "name": "reflector",
+      "source": "arch",
+      "category": "CORE",
+      "default": "recommended",
+      "reason": "Ranks and refreshes the pacman mirror list"
+    },
+    {
+      "name": "rsync",
+      "source": "arch",
+      "category": "CORE",
+      "default": "recommended",
+      "reason": "File sync and copy tool many scripts and backups rely on"
+    },
+    {
       "name": "sddm",
       "source": "arch",
       "category": "CORE",
@@ -630,6 +699,13 @@
       "default": "required",
       "reason": "Btrfs snapshot management for rollback",
       "sizeKib": 3696
+    },
+    {
+      "name": "sudo",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "Privilege escalation; Frost narrows the sudoers rules rather than dropping it"
     },
     {
       "name": "systemd",
@@ -688,6 +764,13 @@
       "sizeKib": 328
     },
     {
+      "name": "vulkan-icd-loader",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "Vulkan loader that every Vulkan driver and app goes through"
+    },
+    {
       "name": "wireless-regdb",
       "source": "arch",
       "category": "CORE",
@@ -712,6 +795,13 @@
       "sizeKib": 100
     },
     {
+      "name": "xdg-desktop-portal",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "Portal frontend the Hyprland and GTK backends plug into"
+    },
+    {
       "name": "xdg-desktop-portal-gtk",
       "source": "arch",
       "category": "CORE",
@@ -734,6 +824,28 @@
       "default": "recommended",
       "reason": "Resolves the preferred terminal for xdg-open",
       "sizeKib": 46
+    },
+    {
+      "name": "xdg-user-dirs",
+      "source": "arch",
+      "category": "CORE",
+      "default": "recommended",
+      "reason": "Standard home folders (Downloads, Pictures, ...)"
+    },
+    {
+      "name": "xdg-utils",
+      "source": "arch",
+      "category": "CORE",
+      "default": "recommended",
+      "reason": "xdg-open and the desktop helper scripts apps shell out to"
+    },
+    {
+      "name": "zram-generator",
+      "source": "arch",
+      "category": "CORE",
+      "default": "recommended",
+      "reason": "Compressed RAM swap, sized as a fraction of memory",
+      "sizeKib": 767
     },
     {
       "name": "bash-completion",
@@ -1097,6 +1209,13 @@
       "sizeKib": 431503
     },
     {
+      "name": "libva-utils",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "vainfo and VA-API diagnostics"
+    },
+    {
       "name": "libvips",
       "source": "arch",
       "category": "DESKTOP",
@@ -1170,6 +1289,20 @@
       "sizeKib": 305960
     },
     {
+      "name": "noto-fonts-extra",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Extended Noto coverage for less common scripts"
+    },
+    {
+      "name": "ntfs-3g",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Read and write NTFS drives from Windows machines"
+    },
+    {
       "name": "nvim",
       "source": "arch",
       "category": "DESKTOP",
@@ -1209,6 +1342,13 @@
       "default": "recommended",
       "reason": "CLI volume control used by scripts",
       "sizeKib": 271
+    },
+    {
+      "name": "pavucontrol",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Per-app volume and audio routing GUI"
     },
     {
       "name": "pinta",
@@ -1276,12 +1416,35 @@
       "sizeKib": 4392
     },
     {
+      "name": "sane",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Scanner access backend",
+      "feature": "scanning"
+    },
+    {
+      "name": "sane-airscan",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Driverless network and USB scanning (eSCL, WSD)",
+      "feature": "scanning"
+    },
+    {
       "name": "slurp",
       "source": "arch",
       "category": "DESKTOP",
       "default": "required",
       "reason": "Region select for screenshots",
       "sizeKib": 38
+    },
+    {
+      "name": "smartmontools",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "SMART disk health monitoring"
     },
     {
       "name": "socat",
@@ -1365,6 +1528,13 @@
       "sizeKib": 70
     },
     {
+      "name": "ttf-dejavu",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Broad Latin and symbol fallback font"
+    },
+    {
       "name": "ttf-ia-writer",
       "source": "arch",
       "category": "DESKTOP",
@@ -1379,6 +1549,13 @@
       "default": "optional",
       "reason": "JetBrains Mono with a reduced Nerd Font patch",
       "sizeKib": 9912
+    },
+    {
+      "name": "ttf-liberation",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Metric-compatible Arial and Times substitutes for documents and the web"
     },
     {
       "name": "tzupdate",
@@ -1405,6 +1582,13 @@
       "sizeKib": 308
     },
     {
+      "name": "vulkan-mesa-layers",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Optional Mesa Vulkan layers for debugging and overlays"
+    },
+    {
       "name": "webp-pixbuf-loader",
       "source": "arch",
       "category": "DESKTOP",
@@ -1418,6 +1602,13 @@
       "default": "optional",
       "reason": "Domain lookup",
       "sizeKib": 244
+    },
+    {
+      "name": "wireguard-tools",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "WireGuard VPN configuration tools"
     },
     {
       "name": "woff2-font-awesome",
@@ -1716,6 +1907,16 @@
       "reason": "Debug-symbols package, not part of a normal install"
     },
     {
+      "name": "acpid",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "ACPI event daemon for lid, power button and dock events",
+      "hardware": [
+        "acpi"
+      ]
+    },
+    {
       "name": "apple-bcm-firmware",
       "source": "arch",
       "category": "HARDWARE",
@@ -1819,6 +2020,26 @@
       ]
     },
     {
+      "name": "fprintd",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Fingerprint enrolment and authentication service",
+      "hardware": [
+        "fingerprint"
+      ]
+    },
+    {
+      "name": "iio-sensor-proxy",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Accelerometer, ambient light and auto-rotation",
+      "hardware": [
+        "sensors"
+      ]
+    },
+    {
       "name": "intel-ipu7-camera",
       "source": "arch",
       "category": "HARDWARE",
@@ -1860,6 +2081,17 @@
       "sizeKib": 2
     },
     {
+      "name": "lib32-mesa",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "32-bit OpenGL for Steam, Wine and Proton",
+      "hardware": [
+        "gpu",
+        "gaming"
+      ]
+    },
+    {
       "name": "lib32-nvidia-580xx-utils",
       "source": "arch",
       "category": "HARDWARE",
@@ -1881,6 +2113,38 @@
         "gaming"
       ],
       "sizeKib": 559175
+    },
+    {
+      "name": "lib32-vulkan-intel",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "32-bit Intel Vulkan driver for Steam and Wine",
+      "hardware": [
+        "gpu-intel",
+        "gaming"
+      ]
+    },
+    {
+      "name": "lib32-vulkan-radeon",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "32-bit AMD Vulkan driver for Steam and Wine",
+      "hardware": [
+        "gpu-amd",
+        "gaming"
+      ]
+    },
+    {
+      "name": "libfprint",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Driver library for fingerprint readers",
+      "hardware": [
+        "fingerprint"
+      ]
     },
     {
       "name": "libva-intel-driver",
@@ -1984,6 +2248,16 @@
       ]
     },
     {
+      "name": "modemmanager",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Cellular and LTE modem support for NetworkManager",
+      "hardware": [
+        "wwan"
+      ]
+    },
+    {
       "name": "nvidia-580xx-dkms",
       "source": "arch",
       "category": "HARDWARE",
@@ -2045,6 +2319,16 @@
       ]
     },
     {
+      "name": "sbctl",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Secure Boot key management for machines that enforce it",
+      "hardware": [
+        "secureboot"
+      ]
+    },
+    {
       "name": "t2fanrd",
       "source": "arch",
       "category": "HARDWARE",
@@ -2062,6 +2346,16 @@
       "reason": "Intel thermal management daemon",
       "hardware": [
         "cpu-intel"
+      ]
+    },
+    {
+      "name": "tlp",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Alternative laptop power management; use instead of power-profiles-daemon, not alongside",
+      "hardware": [
+        "laptop-tlp"
       ]
     },
     {
@@ -2105,6 +2399,16 @@
       ]
     },
     {
+      "name": "vulkan-nouveau",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Open-source NVIDIA Vulkan driver for the nouveau stack",
+      "hardware": [
+        "gpu-nvidia-nouveau"
+      ]
+    },
+    {
       "name": "vulkan-radeon",
       "source": "arch",
       "category": "HARDWARE",
@@ -2116,6 +2420,26 @@
       "sizeKib": 17981
     },
     {
+      "name": "vulkan-swrast",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Software Vulkan (lavapipe) for VMs, headless use and as a fallback",
+      "hardware": [
+        "gpu-virtual"
+      ]
+    },
+    {
+      "name": "vulkan-virtio",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Vulkan passthrough (Venus) for virtual machines",
+      "hardware": [
+        "gpu-virtual"
+      ]
+    },
+    {
       "name": "yt6801-dkms",
       "source": "arch",
       "category": "HARDWARE",
@@ -2124,6 +2448,14 @@
       "hardware": [
         "yt6801-nic"
       ]
+    },
+    {
+      "name": "open-vm-tools",
+      "source": "arch",
+      "category": "OPTIONAL",
+      "default": "optional",
+      "reason": "Guest integration inside VMware",
+      "feature": "virtualisation-guest"
     },
     {
       "name": "pacsea-bin",
@@ -2156,6 +2488,22 @@
       "recipeUrl": "https://aur.archlinux.org/parui.git"
     },
     {
+      "name": "qemu-guest-agent",
+      "source": "arch",
+      "category": "OPTIONAL",
+      "default": "optional",
+      "reason": "Host integration when Frost runs inside QEMU or KVM",
+      "feature": "virtualisation-guest"
+    },
+    {
+      "name": "spice-vdagent",
+      "source": "arch",
+      "category": "OPTIONAL",
+      "default": "optional",
+      "reason": "Clipboard and display resize inside SPICE virtual machines",
+      "feature": "virtualisation-guest"
+    },
+    {
       "name": "tailscale",
       "source": "arch",
       "category": "OPTIONAL",
@@ -2172,6 +2520,14 @@
       "reason": "Firewall rule helper for Docker published ports",
       "feature": "development",
       "sizeKib": 65
+    },
+    {
+      "name": "virtualbox-guest-utils",
+      "source": "arch",
+      "category": "OPTIONAL",
+      "default": "optional",
+      "reason": "Guest integration inside VirtualBox",
+      "feature": "virtualisation-guest"
     },
     {
       "name": "yay",

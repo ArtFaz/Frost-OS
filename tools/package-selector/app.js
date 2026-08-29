@@ -14,6 +14,7 @@ const state = {
   notes: {},                  // package -> text
   imported: null,             // last imported manifest (raw)
   selected: null,             // package name shown in the detail pane
+  collapsed: new Set(),       // category names whose group is collapsed
   filters: { search: '', source: '', category: '', hardware: '', state: '' },
 };
 
@@ -97,14 +98,20 @@ function overridden(p) {
   return !locked(p) && (state.include.has(p.name) || state.exclude.has(p.name));
 }
 
-function toggle(p) {
+function setSelected(p, want) {
   if (locked(p)) return;
   const base = baseSelected(p);
-  const eff = effectiveSelected(p);
   state.include.delete(p.name);
   state.exclude.delete(p.name);
-  const want = !eff;
   if (want !== base) (want ? state.include : state.exclude).add(p.name);
+}
+
+function toggle(p) { setSelected(p, !effectiveSelected(p)); render(); }
+
+function setGroup(category, want) {
+  for (const p of state.inv.packages) {
+    if (p.category === category && p.category !== 'DROP') setSelected(p, want);
+  }
   render();
 }
 
@@ -114,6 +121,7 @@ function resetDefaults() {
   state.exclude.clear();
   state.notes = {};
   state.imported = null;
+  state.selected = null;
   for (const [key, f] of Object.entries(state.inv.features)) state.features[key] = !!f.default;
   render();
 }
@@ -121,20 +129,11 @@ function resetDefaults() {
 /* ---------- derived sets ---------- */
 
 function effectiveSet(source) {
-  // source: 'now' | 'frost' | manifestObject
   if (source === 'now') {
     return new Set(state.inv.packages.filter(effectiveSelected).map((p) => p.name));
   }
-  if (source === 'frost') {
-    const saved = snapshot();
-    applyManifest(frostDefaultManifest(), { silent: true });
-    const set = new Set(state.inv.packages.filter(effectiveSelected).map((p) => p.name));
-    restore(saved);
-    return set;
-  }
-  // a manifest object
   const saved = snapshot();
-  applyManifest(source, { silent: true });
+  applyManifest(source === 'frost' ? frostDefaultManifest() : source, { silent: true });
   const set = new Set(state.inv.packages.filter(effectiveSelected).map((p) => p.name));
   restore(saved);
   return set;
@@ -156,8 +155,11 @@ function restore(s) {
 function frostDefaultManifest() {
   const feats = {};
   for (const [k, f] of Object.entries(state.inv.features)) feats[k] = !!f.default;
-  return { schemaVersion: SCHEMA_VERSION, inventoryVersion: state.inv.inventoryVersion,
-           profiles: ['desktop'], features: feats, packages: { include: [], exclude: [], aur: [] }, notes: {} };
+  return {
+    schemaVersion: SCHEMA_VERSION, inventoryVersion: state.inv.inventoryVersion,
+    profiles: ['desktop'], features: feats,
+    packages: { include: [], exclude: [], aur: [] }, notes: {},
+  };
 }
 
 /* ---------- import / export ---------- */
@@ -165,9 +167,7 @@ function frostDefaultManifest() {
 function applyManifest(m, opts = {}) {
   const silent = opts.silent;
   const problems = validateManifest(m);
-  if (problems.length && !silent) {
-    alert('Manifest problems:\n\n' + problems.join('\n'));
-  }
+  if (problems.length && !silent) alert('Manifest problems:\n\n' + problems.join('\n'));
   state.profiles = new Set((m.profiles || []).filter((k) => state.inv.profiles[k]));
   const feats = {};
   for (const [k, f] of Object.entries(state.inv.features)) {
@@ -176,7 +176,6 @@ function applyManifest(m, opts = {}) {
   state.features = feats;
   state.include = new Set((m.packages && m.packages.include) || []);
   state.exclude = new Set((m.packages && m.packages.exclude) || []);
-  // aur[] is advisory: it must already be reachable through include/feature.
   state.notes = { ...(m.notes || {}) };
   if (!silent) {
     state.imported = m;
@@ -210,9 +209,8 @@ function validateManifest(m) {
 }
 
 function buildExport() {
-  const packages = state.inv.packages;
   const inc = [], exc = [], aur = [];
-  for (const p of packages) {
+  for (const p of state.inv.packages) {
     const eff = effectiveSelected(p);
     const base = baseSelected(p);
     if (eff && !base && p.category !== 'DROP') inc.push(p.name);
@@ -256,71 +254,108 @@ function warnings() {
     for (const c of p.conflictsWith || []) {
       if (sel.has(c) && p.name < c) out.push({ level: 'bad', text: `${p.name} conflicts with ${c}` });
     }
+    if (p.category === 'DROP') out.push({ level: 'bad', text: `${p.name} is DROP but selected` });
+    if (p.source === 'aur' && ['BOOTSTRAP', 'CORE'].includes(p.category))
+      out.push({ level: 'bad', text: `${p.name}: AUR in ${p.category}` });
   }
   for (const [key, f] of Object.entries(state.inv.features)) {
     if (!state.features[key]) continue;
     const missing = (f.packages || []).filter((n) => pkgByName(n) && !sel.has(n));
-    if (missing.length) out.push({ level: 'warn', text: `feature "${f.label}" is on but excludes: ${missing.join(', ')}` });
-  }
-  for (const p of state.inv.packages) {
-    if (sel.has(p.name) && p.category === 'DROP')
-      out.push({ level: 'bad', text: `${p.name} is DROP but selected` });
-    if (sel.has(p.name) && p.source === 'aur' && ['BOOTSTRAP', 'CORE'].includes(p.category))
-      out.push({ level: 'bad', text: `${p.name}: AUR in ${p.category}` });
+    if (missing.length) out.push({ level: 'warn', text: `“${f.label}” is on but these are deselected: ${missing.join(', ')}` });
   }
   return out;
 }
 
-/* ---------- rendering ---------- */
+/* ---------- helpers ---------- */
+
+function fmtSize(kib) {
+  if (!kib) return '—';
+  if (kib < 1024) return `${kib} KiB`;
+  if (kib < 1024 * 1024) return `${(kib / 1024).toFixed(1)} MiB`;
+  return `${(kib / 1024 / 1024).toFixed(2)} GiB`;
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"]/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+function el(tag, cls, html) {
+  const node = document.createElement(tag);
+  if (cls) node.className = cls;
+  if (html != null) node.innerHTML = html;
+  return node;
+}
+
+/* ---------- controls ---------- */
 
 function buildControls() {
   const pf = $('#profiles');
   pf.innerHTML = '';
   for (const [key, pr] of Object.entries(state.inv.profiles)) {
-    pf.appendChild(toggleRow('profile', key, pr.label, pr.description, () => state.profiles.has(key), () => {
+    const card = el('button', 'profile');
+    card.type = 'button';
+    card.dataset.key = key;
+    card.innerHTML =
+      `<span class="dot"></span><span><span class="p-name">${escapeHtml(pr.label)}</span>` +
+      `<span class="p-desc">${escapeHtml(pr.description)}</span></span>`;
+    card.addEventListener('click', () => {
       if (state.profiles.has(key)) {
         state.profiles.delete(key);
       } else {
         state.profiles.add(key);
-        // Turning a profile on turns its features on too, so the exported
-        // manifest is self-contained. Turning it off leaves them for the user.
         (pr.features || []).forEach((f) => { if (f in state.features) state.features[f] = true; });
       }
-    }));
+      render();
+    });
+    pf.appendChild(card);
   }
+
   const ff = $('#features');
   ff.innerHTML = '';
   for (const [key, f] of Object.entries(state.inv.features)) {
-    ff.appendChild(toggleRow('feature', key, f.label, f.description, () => state.features[key], () => {
-      state.features[key] = !state.features[key];
-    }));
+    const row = el('label', 'switch');
+    row.dataset.key = key;
+    row.innerHTML =
+      `<input type="checkbox"><span class="track"></span>` +
+      `<span class="s-text"><span class="s-name">${escapeHtml(f.label)}</span>` +
+      `<span class="s-desc">${escapeHtml(f.description)}</span></span>`;
+    row.querySelector('input').addEventListener('change', (e) => {
+      state.features[key] = e.target.checked;
+      render();
+    });
+    ff.appendChild(row);
   }
+
   const cat = $('#f-category');
   for (const c of state.inv.categories) cat.add(new Option(c, c));
   const hw = new Set();
   state.inv.packages.forEach((p) => (p.hardware || []).forEach((h) => hw.add(h)));
-  const hwSel = $('#f-hardware');
-  [...hw].sort().forEach((h) => hwSel.add(new Option(h, h)));
+  [...hw].sort().forEach((h) => $('#f-hardware').add(new Option(h, h)));
 
-  $('#search').addEventListener('input', (e) => { state.filters.search = e.target.value.toLowerCase(); render(); });
+  $('#search').addEventListener('input', (e) => { state.filters.search = e.target.value.toLowerCase().trim(); renderGroups(); });
+  $('#search').addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.target.value = ''; state.filters.search = ''; renderGroups(); } });
   for (const [id, key] of [['#f-source', 'source'], ['#f-category', 'category'], ['#f-hardware', 'hardware'], ['#f-state', 'state']]) {
-    $(id).addEventListener('change', (e) => { state.filters[key] = e.target.value; render(); });
+    $(id).addEventListener('change', (e) => { state.filters[key] = e.target.value; renderGroups(); });
   }
+  $('#clear-filters').addEventListener('click', () => {
+    state.filters = { search: '', source: '', category: '', hardware: '', state: '' };
+    $('#search').value = '';
+    for (const id of ['#f-source', '#f-category', '#f-hardware', '#f-state']) $(id).value = '';
+    renderGroups();
+  });
 }
 
-function toggleRow(kind, key, label, sub, get, flip) {
-  const wrap = document.createElement('label');
-  wrap.className = 'toggle';
-  const box = document.createElement('input');
-  box.type = 'checkbox';
-  box.checked = get();
-  box.addEventListener('change', () => { flip(); render(); });
-  const span = document.createElement('span');
-  span.innerHTML = `${label}<span class="sub">${sub}</span>`;
-  wrap.append(box, span);
-  wrap.dataset.kind = kind; wrap.dataset.key = key;
-  return wrap;
+function syncControls() {
+  document.querySelectorAll('#profiles .profile').forEach((c) => {
+    c.setAttribute('aria-pressed', String(state.profiles.has(c.dataset.key)));
+  });
+  document.querySelectorAll('#features .switch').forEach((r) => {
+    r.querySelector('input').checked = !!state.features[r.dataset.key];
+  });
 }
+
+/* ---------- filtering ---------- */
 
 function matchesFilter(p) {
   const f = state.filters;
@@ -335,36 +370,21 @@ function matchesFilter(p) {
     if (f.state === 'locked' && !locked(p)) return false;
   }
   if (f.search) {
-    const hay = [p.name, p.reason, p.description, p.category, (p.tags || []).join(' '), p.feature || '']
+    const hay = [p.name, p.reason, p.category, (p.tags || []).join(' '), (p.hardware || []).join(' '), p.feature || '']
       .join(' ').toLowerCase();
     if (!hay.includes(f.search)) return false;
   }
   return true;
 }
 
-function fmtSize(kib) {
-  if (!kib) return '';
-  if (kib < 1024) return `${kib} KiB`;
-  if (kib < 1024 * 1024) return `${(kib / 1024).toFixed(1)} MiB`;
-  return `${(kib / 1024 / 1024).toFixed(2)} GiB`;
-}
+/* ---------- render ---------- */
 
 function render() {
-  syncControlBoxes();
+  syncControls();
   renderGroups();
-  renderTotals();
+  renderSummary();
   renderWarnings();
-  renderCompare();
   renderDetail();
-}
-
-function syncControlBoxes() {
-  document.querySelectorAll('#profiles .toggle').forEach((row) => {
-    row.querySelector('input').checked = state.profiles.has(row.dataset.key);
-  });
-  document.querySelectorAll('#features .toggle').forEach((row) => {
-    row.querySelector('input').checked = !!state.features[row.dataset.key];
-  });
 }
 
 function renderGroups() {
@@ -373,135 +393,188 @@ function renderGroups() {
   const order = state.inv.categories;
   const shown = state.inv.packages.filter(matchesFilter)
     .sort((a, b) => order.indexOf(a.category) - order.indexOf(b.category) || a.name.localeCompare(b.name));
-  let currentCat = null, groupEl = null, body = null;
-  for (const p of shown) {
-    if (p.category !== currentCat) {
-      currentCat = p.category;
-      groupEl = document.createElement('div');
-      groupEl.className = 'group';
-      const inCat = state.inv.packages.filter((x) => x.category === currentCat);
-      const selCount = inCat.filter(effectiveSelected).length;
-      const size = inCat.filter(effectiveSelected).reduce((s, x) => s + (x.sizeKib || 0), 0);
-      const h = document.createElement('h3');
-      h.innerHTML = `${currentCat}<span class="count">${selCount}/${inCat.length} selected · ${fmtSize(size)}</span>`;
-      groupEl.appendChild(h);
-      body = document.createElement('div');
-      groupEl.appendChild(body);
-      host.appendChild(groupEl);
-    }
-    body.appendChild(pkgRow(p));
+
+  if (!shown.length) {
+    host.appendChild(el('p', 'empty', 'Nothing matches the filter.'));
+    return;
   }
-  if (!shown.length) host.innerHTML = '<p class="muted">Nothing matches the filter.</p>';
+
+  const byCat = new Map();
+  for (const p of shown) {
+    if (!byCat.has(p.category)) byCat.set(p.category, []);
+    byCat.get(p.category).push(p);
+  }
+
+  for (const cat of order) {
+    const list = byCat.get(cat);
+    if (!list) continue;
+    const inCat = state.inv.packages.filter((x) => x.category === cat);
+    const selCount = inCat.filter(effectiveSelected).length;
+    const size = inCat.filter(effectiveSelected).reduce((s, x) => s + (x.sizeKib || 0), 0);
+    const pct = inCat.length ? Math.round((selCount / inCat.length) * 100) : 0;
+
+    const group = el('details', 'group');
+    group.open = !state.collapsed.has(cat);
+    group.addEventListener('toggle', () => {
+      if (group.open) state.collapsed.delete(cat); else state.collapsed.add(cat);
+    });
+
+    const summary = el('summary');
+    summary.innerHTML =
+      `<span class="g-name">${cat}</span>` +
+      `<span class="g-meta">${selCount}/${inCat.length} · ${fmtSize(size)}</span>` +
+      `<span class="g-actions"></span>`;
+    if (cat !== 'DROP') {
+      const all = el('button', null, 'all'); all.type = 'button';
+      const none = el('button', null, 'none'); none.type = 'button';
+      all.addEventListener('click', (e) => { e.preventDefault(); setGroup(cat, true); });
+      none.addEventListener('click', (e) => { e.preventDefault(); setGroup(cat, false); });
+      summary.querySelector('.g-actions').append(all, none);
+    }
+    group.appendChild(summary);
+    group.appendChild(el('div', 'g-bar', `<span style="width:${pct}%"></span>`));
+
+    const rows = el('div', 'rows');
+    for (const p of list) rows.appendChild(row(p));
+    group.appendChild(rows);
+    host.appendChild(group);
+  }
 }
 
-function pkgRow(p) {
-  const row = document.createElement('div');
-  row.className = `pkg cat-${p.category} src-wrap`;
-  if (locked(p)) row.classList.add('locked');
-  if (overridden(p)) row.classList.add('overridden');
+function row(p) {
+  const r = el('div', `row cat-${p.category}`);
+  if (effectiveSelected(p)) r.classList.add('is-selected');
+  if (locked(p)) r.classList.add('is-locked');
 
-  const box = document.createElement('input');
+  const box = el('input');
   box.type = 'checkbox';
   box.checked = effectiveSelected(p);
   box.disabled = locked(p);
-  box.title = locked(p) ? 'required — locked' : 'toggle';
+  box.title = locked(p) ? 'required — locked' : 'toggle selection';
   box.addEventListener('change', () => toggle(p));
 
-  const mid = document.createElement('div');
-  const variant = p.variantOf ? ` <span class="tag">${p.variantOf}</span>` : '';
-  const feat = p.feature ? ` <span class="tag">${p.feature}</span>` : '';
-  mid.innerHTML =
-    `<div class="name src-${p.source}">${p.name}<span class="tag">${p.source}</span>${feat}${variant}</div>` +
-    `<div class="reason">${escapeHtml(p.reason)}</div>`;
-  mid.querySelector('.name').addEventListener('click', () => { state.selected = p.name; renderDetail(); });
+  const main = el('div', 'r-main');
+  const nameBtn = el('button', 'r-name');
+  nameBtn.type = 'button';
+  nameBtn.textContent = p.name;
+  nameBtn.addEventListener('click', () => { state.selected = p.name; renderDetail(); });
+  const badges =
+    `<span class="badge src-${p.source}">${p.source}</span>` +
+    (p.feature ? `<span class="badge">${escapeHtml(p.feature)}</span>` : '') +
+    (overridden(p) ? `<span class="badge dot-changed">changed</span>` : '') +
+    (locked(p) ? `<span class="badge">locked</span>` : '');
+  const line1 = el('div');
+  line1.appendChild(nameBtn);
+  line1.insertAdjacentHTML('beforeend', badges);
+  main.appendChild(line1);
+  main.appendChild(el('div', 'r-reason', escapeHtml(p.reason)));
 
-  const meta = document.createElement('div');
-  meta.className = 'meta';
-  meta.innerHTML = `${p.default}<br>${fmtSize(p.sizeKib)}`;
+  const side = el('div', 'r-side', `${p.default}<br>${fmtSize(p.sizeKib)}`);
 
-  row.append(box, mid, meta);
-  return row;
+  r.append(box, main, side);
+  return r;
 }
 
-function renderTotals() {
+function renderSummary() {
   const sel = state.inv.packages.filter(effectiveSelected);
   const size = sel.reduce((s, p) => s + (p.sizeKib || 0), 0);
-  const bySource = { arch: 0, frost: 0, aur: 0 };
-  sel.forEach((p) => bySource[p.source]++);
+  const by = { arch: 0, frost: 0, aur: 0 };
+  sel.forEach((p) => by[p.source]++);
+  const total = sel.length || 1;
   const exp = buildExport();
-  const dl = $('#totals');
-  dl.innerHTML = `
-    <dt>selected</dt><dd>${sel.length}</dd>
-    <dt>arch / frost / aur</dt><dd>${bySource.arch} / ${bySource.frost} / ${bySource.aur}</dd>
-    <dt>est. size</dt><dd>${fmtSize(size)}</dd>
-    <dt>include[]</dt><dd>${exp.packages.include.length}</dd>
-    <dt>exclude[]</dt><dd>${exp.packages.exclude.length}</dd>
-    <dt>aur[]</dt><dd>${exp.packages.aur.length}</dd>`;
+
+  const now = effectiveSet('now');
+  const frost = effectiveSet('frost');
+  const imported = state.imported ? effectiveSet(state.imported) : null;
+  const plus = [...now].filter((n) => !frost.has(n)).length;
+  const minus = [...frost].filter((n) => !now.has(n)).length;
+  const impDelta = imported
+    ? [...now].filter((n) => !imported.has(n)).length + [...imported].filter((n) => !now.has(n)).length
+    : null;
+
+  $('#summary').innerHTML = `
+    <div class="s-top">
+      <span class="s-count">${sel.length}</span>
+      <span class="s-of">of ${state.inv.packages.length} packages</span>
+      <span class="s-size">${fmtSize(size)}</span>
+    </div>
+    <div class="s-split">
+      <i class="a" style="width:${(by.arch / total) * 100}%"></i>
+      <i class="f" style="width:${(by.frost / total) * 100}%"></i>
+      <i class="u" style="width:${(by.aur / total) * 100}%"></i>
+    </div>
+    <div class="s-legend">
+      <span><b>${by.arch}</b> arch</span><span><b>${by.frost}</b> frost</span><span><b>${by.aur}</b> aur</span>
+    </div>
+    <dl class="s-rows">
+      <dt>include[]</dt><dd>${exp.packages.include.length}</dd>
+      <dt>exclude[]</dt><dd>${exp.packages.exclude.length}</dd>
+      <dt>aur[]</dt><dd>${exp.packages.aur.length}</dd>
+      <dt>notes</dt><dd>${Object.keys(exp.notes).length}</dd>
+    </dl>
+    <div class="compare">
+      <div class="c-grid">
+        <div><div class="c-num">${now.size}</div><div class="c-lab">Now</div></div>
+        <div><div class="c-num">${frost.size}</div><div class="c-lab">Frost default</div>
+             <div class="c-delta">+${plus} / −${minus}</div></div>
+        <div><div class="c-num">${imported ? imported.size : '—'}</div><div class="c-lab">Imported</div>
+             <div class="c-delta">${impDelta == null ? '' : (impDelta === 0 ? 'match' : impDelta + ' diff')}</div></div>
+      </div>
+    </div>`;
 }
 
 function renderWarnings() {
   const ul = $('#warnings');
   const ws = warnings();
-  if (!ws.length) { ul.innerHTML = '<li class="muted">none</li>'; return; }
+  if (!ws.length) { ul.innerHTML = '<li class="empty">None</li>'; return; }
   ul.innerHTML = '';
   for (const w of ws) {
-    const li = document.createElement('li');
-    li.className = w.level === 'bad' ? 'w-bad' : 'w-warn';
-    li.textContent = w.text;
+    const li = el('li', w.level === 'bad' ? 'w-bad' : 'w-warn');
+    li.append(document.createTextNode(w.text));
     ul.appendChild(li);
   }
 }
 
-function renderCompare() {
-  const now = effectiveSet('now');
-  const frost = effectiveSet('frost');
-  const imported = state.imported ? effectiveSet(state.imported) : null;
-  const rows = [
-    ['total', now.size, frost.size, imported ? imported.size : '—'],
-    ['+ vs Frost default', [...now].filter((n) => !frost.has(n)).length, '—', imported ? [...imported].filter((n) => !frost.has(n)).length : '—'],
-    ['− vs Frost default', [...frost].filter((n) => !now.has(n)).length, '—', imported ? [...frost].filter((n) => !imported.has(n)).length : '—'],
-  ];
-  if (imported) {
-    rows.push(['changed vs imported',
-      [...now].filter((n) => !imported.has(n)).length + [...imported].filter((n) => !now.has(n)).length, '—', 0]);
-  }
-  $('#compare-body').innerHTML = rows.map((r) =>
-    `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('');
-}
-
 function renderDetail() {
-  const host = $('#package-detail');
+  const host = $('#detail-card');
   const p = state.selected && pkgByName(state.selected);
-  if (!p) { host.innerHTML = '<h2>Details</h2><p class="muted">Select a package.</p>'; return; }
+  if (!p) {
+    host.innerHTML = '<h2>Details</h2><p class="empty">Click a package name to inspect its dependencies, consumers and to leave a note.</p>';
+    return;
+  }
   const consumers = state.inv.packages.filter((x) => (x.dependsOn || []).includes(p.name)).map((x) => x.name);
-  const featConsumers = Object.entries(state.inv.features)
+  const inFeatures = Object.entries(state.inv.features)
     .filter(([, f]) => (f.packages || []).includes(p.name)).map(([k]) => k);
-  const chips = (arr) => arr.length ? arr.map((x) => `<span class="chip">${x}</span>`).join('') : '<span class="muted">none</span>';
+  const chips = (arr) => arr.length
+    ? `<span class="chips">${arr.map((x) => `<span class="chip">${escapeHtml(x)}</span>`).join('')}</span>`
+    : '<span class="empty">none</span>';
+
   host.innerHTML = `
-    <h2>${p.name}</h2>
+    <h2>Details</h2>
+    <div class="detail-badges">
+      <span class="badge src-${p.source}">${p.source}</span>
+      <span class="badge">${p.category}</span>
+      <span class="badge">${p.default}${locked(p) ? ' · locked' : ''}</span>
+      <span class="badge ${effectiveSelected(p) ? 'dot-changed' : ''}">${effectiveSelected(p) ? 'selected' : 'not selected'}</span>
+    </div>
+    <p style="font-family:var(--mono);font-weight:600;margin-bottom:8px">${escapeHtml(p.name)}</p>
     <dl class="kv">
-      <dt>source</dt><dd class="src-${p.source}">${p.source}${p.pkgbase ? ` (pkgbase ${p.pkgbase})` : ''}</dd>
-      <dt>category</dt><dd>${p.category}</dd>
-      <dt>default</dt><dd>${p.default}${locked(p) ? ' · locked' : ''}</dd>
-      <dt>state</dt><dd>${effectiveSelected(p) ? 'selected' : 'not selected'}${overridden(p) ? ' · changed from default' : ''}</dd>
-      <dt>size</dt><dd>${fmtSize(p.sizeKib) || 'unknown'}</dd>
       <dt>reason</dt><dd>${escapeHtml(p.reason)}</dd>
-      ${p.feature ? `<dt>feature</dt><dd>${p.feature}</dd>` : ''}
+      <dt>size</dt><dd>${fmtSize(p.sizeKib)}</dd>
+      ${p.feature ? `<dt>feature</dt><dd>${escapeHtml(p.feature)}</dd>` : ''}
       ${p.hardware ? `<dt>hardware</dt><dd>${chips(p.hardware)}</dd>` : ''}
-      ${p.recipeUrl ? `<dt>recipe</dt><dd>${p.recipeUrl}</dd>` : ''}
+      ${p.pkgbase ? `<dt>pkgbase</dt><dd>${escapeHtml(p.pkgbase)}</dd>` : ''}
+      ${p.recipeUrl ? `<dt>recipe</dt><dd style="word-break:break-all">${escapeHtml(p.recipeUrl)}</dd>` : ''}
       <dt>depends on</dt><dd>${chips(p.dependsOn || [])}</dd>
       <dt>consumers</dt><dd>${chips(consumers)}</dd>
-      <dt>in features</dt><dd>${chips(featConsumers)}</dd>
+      <dt>in features</dt><dd>${chips(inFeatures)}</dd>
       <dt>conflicts</dt><dd>${chips(p.conflictsWith || [])}</dd>
     </dl>
-    <h2>Note</h2>
-    <textarea id="note" placeholder="why this decision">${escapeHtml(state.notes[p.name] || '')}</textarea>`;
+    <div class="detail-note">
+      <h2>Note</h2>
+      <textarea id="note" placeholder="why this decision — saved into the manifest">${escapeHtml(state.notes[p.name] || '')}</textarea>
+    </div>`;
   $('#note').addEventListener('input', (e) => { state.notes[p.name] = e.target.value; });
-}
-
-function escapeHtml(s) {
-  return String(s == null ? '' : s).replace(/[&<>"]/g, (c) =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
 
 /* ---------- wiring ---------- */

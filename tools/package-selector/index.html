@@ -7,74 +7,82 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <h1>Frost package selector</h1>
-    <p id="version" class="muted">loading inventory…</p>
-    <div class="actions">
-      <button id="import" type="button">Import manifest…</button>
-      <button id="export" type="button">Export frost-packages.json</button>
-      <button id="reset" type="button" class="ghost">Restore defaults</button>
+  <header class="topbar">
+    <div class="brand">
+      <span class="mark" aria-hidden="true"></span>
+      <div>
+        <h1>Frost packages</h1>
+        <p id="version" class="sub">loading inventory…</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button id="import" type="button" class="btn btn-quiet">Import…</button>
+      <button id="reset" type="button" class="btn btn-quiet">Restore defaults</button>
+      <button id="export" type="button" class="btn btn-primary">Export frost-packages.json</button>
       <input id="file-manifest" type="file" accept="application/json,.json" hidden>
       <input id="file-inventory" type="file" accept="application/json,.json" hidden>
     </div>
   </header>
 
-  <div id="needs-inventory" class="panel hidden">
-    <p>This page could not load <code>inventory.json</code> automatically (a
-      <code>file://</code> browser restriction). Choose it to continue, or open
-      the standalone <code>package-selector.html</code>.</p>
-    <button id="pick-inventory" type="button">Choose inventory.json…</button>
+  <div id="needs-inventory" class="notice hidden">
+    <p><strong>Could not load <code>inventory.json</code>.</strong> A <code>file://</code>
+      browser restriction blocks it. Pick the file, or open the standalone
+      <code>package-selector.html</code> instead.</p>
+    <button id="pick-inventory" type="button" class="btn btn-primary">Choose inventory.json…</button>
   </div>
 
-  <main id="app" class="hidden">
-    <aside class="controls">
-      <section>
-        <h2>Profile</h2>
-        <div id="profiles"></div>
+  <main id="app" class="layout hidden">
+    <aside class="rail rail-left">
+      <section class="block">
+        <h2>Start from</h2>
+        <div id="profiles" class="profile-list"></div>
       </section>
-      <section>
+      <section class="block">
         <h2>Features</h2>
-        <div id="features"></div>
+        <div id="features" class="switch-list"></div>
       </section>
-      <section>
-        <h2>Filter</h2>
-        <input id="search" type="search" placeholder="name, description, tag">
-        <label>Source <select id="f-source"><option value="">any</option><option>arch</option><option>frost</option><option>aur</option></select></label>
-        <label>Category <select id="f-category"><option value="">any</option></select></label>
-        <label>Hardware <select id="f-hardware"><option value="">any</option></select></label>
-        <label>State <select id="f-state">
-          <option value="">any</option>
-          <option value="selected">selected</option>
-          <option value="deselected">not selected</option>
-          <option value="overridden">changed from default</option>
-          <option value="locked">locked</option>
-        </select></label>
-      </section>
-      <section>
-        <h2>Totals</h2>
-        <dl id="totals"></dl>
-      </section>
-      <section id="warnings-box">
-        <h2>Warnings</h2>
-        <ul id="warnings"><li class="muted">none</li></ul>
-      </section>
+      <details class="block" id="filter-block">
+        <summary><h2>Filter</h2></summary>
+        <div class="filters">
+          <input id="search" type="search" placeholder="Search name, reason, tag…" autocomplete="off">
+          <div class="filter-grid">
+            <label>Source
+              <select id="f-source"><option value="">Any</option><option>arch</option><option>frost</option><option>aur</option></select>
+            </label>
+            <label>Category
+              <select id="f-category"><option value="">Any</option></select>
+            </label>
+            <label>Hardware
+              <select id="f-hardware"><option value="">Any</option></select>
+            </label>
+            <label>State
+              <select id="f-state">
+                <option value="">Any</option>
+                <option value="selected">Selected</option>
+                <option value="deselected">Not selected</option>
+                <option value="overridden">Changed from default</option>
+                <option value="locked">Locked</option>
+              </select>
+            </label>
+          </div>
+          <button id="clear-filters" type="button" class="btn btn-quiet btn-sm">Clear filters</button>
+        </div>
+      </details>
     </aside>
 
-    <section class="list">
-      <div id="groups"></div>
+    <section class="center">
+      <div id="groups" class="groups"></div>
     </section>
 
-    <aside class="detail">
-      <section id="compare">
-        <h2>Compare</h2>
-        <table>
-          <thead><tr><th></th><th>Now</th><th>Frost default</th><th>Imported</th></tr></thead>
-          <tbody id="compare-body"></tbody>
-        </table>
+    <aside class="rail rail-right">
+      <section class="card summary" id="summary"></section>
+      <section class="card" id="warnings-card">
+        <h2>Warnings</h2>
+        <ul id="warnings" class="warnings"><li class="empty">None</li></ul>
       </section>
-      <section id="package-detail">
+      <section class="card" id="detail-card">
         <h2>Details</h2>
-        <p class="muted">Select a package to see dependencies, consumers and notes.</p>
+        <p class="empty">Click a package name to inspect its dependencies, consumers and to leave a note.</p>
       </section>
     </aside>
   </main>
