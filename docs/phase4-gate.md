@@ -21,18 +21,36 @@ with `9F8D63165ACC27A4FDCCED02FD40A38811EDD104`.
 
 `./test/all` passes: six contracts and 16 Rust tests.
 
-## Only a live Frost login can establish
+## Established in the live session
+
+Verified from inside a running Frost session on `0.2.0-25`:
+
+- `frost status` reports the Frost session, the package-owned Hyprland config,
+  and `frost-session.target`, shell, notifications, Polkit and idle all active
+  with lock correctly inactive.
+- `frost doctor` reports no failing check at all: every fixed executable, path
+  and authority resolves.
+- Do Not Disturb works end to end. `frost shell-action notification-dnd on`
+  moves `makoctl mode` to `default,dnd` and `off` moves it back, and
+  `frost shell-data notifications` reports `"dnd":true` in between. The switch
+  had appeared inert only where no Mako runs at all.
+- Opening a window now takes the keyboard with it; the island holds the keyboard
+  only while its password field is on screen.
+- The wallpaper survives a shell restart: the `frost-background` layer comes back
+  mapped at full size and the state pointer is unchanged.
+- Terminal opacity, per-window opacity, motion, cursor size and the pointing hand
+  inside the island were all confirmed by eye against the reference session.
+
+## Still to establish
+
+
 
 These need the Frost session itself, not the preview, because the preview runs
 over another compositor configuration and cannot exercise session lifecycle.
 
-1. Clean startup: no deprecated-config, direct-`Hyprland` or `XDG_CURRENT_DESKTOP` warning; `frost status` reports the Frost session and every `frost-*` unit in its expected state.
-2. Compositor appearance: per-window opacity with its opt-outs, Motion v2 on windows, workspaces and layers, cursor size, and XWayland scaling.
-3. Single authority under load: `frost doctor` clean, and no second notification, lock or Polkit owner while the desktop is in use.
-4. Do Not Disturb: the switch must move `makoctl mode` in and out of `dnd`. This could not be exercised anywhere else — the reference session no longer runs Mako at all, so `makoctl` has no daemon to talk to there and the switch appears inert for reasons that have nothing to do with Frost.
-5. Session actions: the confirmation card precedes poweroff, reboot and logout, the event OSD is drawn, and the action lands about two seconds later.
-6. Multi-monitor: the island follows the focused monitor, the reserved zone is correct on each, and hotplug does not duplicate or strand a surface.
-7. Wallpaper: selecting one paints it and it survives a shell restart.
+1. Session actions: the confirmation card precedes poweroff, reboot and logout, the event OSD is drawn, and the action lands about two seconds later. Each one ends the session, so they cannot be exercised from inside it without losing the session under test.
+2. Multi-monitor: the island follows the focused monitor, the reserved zone is correct on each, and hotplug neither duplicates nor strands a surface. The machine under test has one output, so this needs a second display.
+3. A clean login: the session has been running across several package upgrades rather than started fresh from the greeter on the current build.
 
 ## Alignment audit before closing
 
