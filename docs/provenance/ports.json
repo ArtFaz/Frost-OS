@@ -200,10 +200,28 @@
       "notice": "docs/provenance.md"
     },
     {
+      "destination": "shell/Surfaces/ConfirmCard.qml",
+      "originRepository": "staging",
+      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
+      "originPath": "config/omarchy/plugins/art.frosted-glass/GlassConfirmCard.qml",
+      "transformation": "adapted",
+      "license": "pending-confirmation",
+      "notice": "docs/provenance.md"
+    },
+    {
       "destination": "shell/Surfaces/EmojiSurface.qml",
       "originRepository": "staging",
       "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
       "originPath": "config/omarchy/plugins/art.emojis/Emojis.qml",
+      "transformation": "adapted",
+      "license": "pending-confirmation",
+      "notice": "docs/provenance.md"
+    },
+    {
+      "destination": "shell/Surfaces/EventOsd.qml",
+      "originRepository": "staging",
+      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
+      "originPath": "config/omarchy/plugins/art.osd/Osd.qml",
       "transformation": "adapted",
       "license": "pending-confirmation",
       "notice": "docs/provenance.md"

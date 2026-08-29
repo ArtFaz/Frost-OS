@@ -19,6 +19,10 @@ Item {
     // submenu move so it grows downward instead of re-centring under the pointer.
     property int frozenTop: -1
     property int navigationDirection: 1
+    property bool confirmOpen: false
+    property string confirmAction: ""
+    property string confirmLabel: ""
+    property string confirmGlyph: ""
 
     readonly property int cardPadding: Style.contentMargin
     readonly property int headerHeight: Style.headerHeight
@@ -136,6 +140,38 @@ Item {
             root.frozenTop = root.y;
     }
 
+    readonly property var sessionNotices: ({
+        "poweroff": {"glyph": "󰐥", "message": "Desligando"},
+        "reboot": {"glyph": "󰜉", "message": "Reiniciando"},
+        "logout": {"glyph": "󰍃", "message": "Encerrando sessão"}
+    })
+
+    function requestSessionAction(action, label, glyph) {
+        if (action === "lock") {
+            root.runSessionAction(action);
+            return;
+        }
+
+        root.confirmAction = action;
+        root.confirmLabel = label;
+        root.confirmGlyph = glyph;
+        root.confirmOpen = true;
+    }
+
+    function runSessionAction(action) {
+        const notice = root.sessionNotices[action];
+        if (notice)
+            Surfaces.notify(notice.glyph, notice.message, 5000);
+
+        ShellBackend.action(action);
+        Surfaces.close();
+    }
+
+    function cancelConfirm() {
+        root.confirmOpen = false;
+        root.confirmAction = "";
+    }
+
     function activate(item) {
         if (!item)
             return;
@@ -159,8 +195,7 @@ Item {
             return;
         }
         if (item.action) {
-            ShellBackend.action(item.action);
-            Surfaces.close();
+            root.requestSessionAction(item.action, item.label, item.icon);
             return;
         }
         if (item.theme)
@@ -240,6 +275,10 @@ Item {
         Keys.priority: Keys.BeforeItem
 
         Keys.onPressed: event => {
+            if (root.confirmOpen) {
+                event.accepted = confirmCard.handleKey(event);
+                return;
+            }
             if (event.key === Qt.Key_Escape) {
                 if (root.filterText !== "")
                     root.filterText = "";
@@ -511,10 +550,10 @@ Item {
                         spacing: 6
 
                         Repeater {
-                            model: [{"action": "poweroff", "glyph": "󰐥", "size": 20},
-                                    {"action": "lock", "glyph": "󰌾", "size": 16},
-                                    {"action": "reboot", "glyph": "󰜉", "size": 18},
-                                    {"action": "logout", "glyph": "󰍃", "size": 18}]
+                            model: [{"action": "poweroff", "glyph": "󰐥", "size": 20, "label": "Desligar"},
+                                    {"action": "lock", "glyph": "󰌾", "size": 16, "label": "Bloquear"},
+                                    {"action": "reboot", "glyph": "󰜉", "size": 18, "label": "Reiniciar"},
+                                    {"action": "logout", "glyph": "󰍃", "size": 18, "label": "Encerrar sessão"}]
 
                             Rectangle {
                                 id: footerButton
@@ -550,16 +589,54 @@ Item {
                                     anchors.fill: parent
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
-                                    onClicked: {
-                                        ShellBackend.action(footerButton.modelData.action);
-                                        Surfaces.close();
-                                    }
+                                    onClicked: root.requestSessionAction(footerButton.modelData.action,
+                                                                        footerButton.modelData.label,
+                                                                        footerButton.modelData.glyph)
                                 }
                             }
                         }
                     }
                 }
             }
+        }
+    }
+
+    Item {
+        anchors.fill: parent
+        z: 40
+        visible: root.confirmOpen || confirmCard.opacity > 0
+
+        MouseArea {
+            anchors.fill: parent
+            onClicked: root.cancelConfirm()
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            radius: Style.radius
+            color: Theme.scrim
+            opacity: root.confirmOpen ? 1 : 0
+
+            Behavior on opacity {
+                NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+            }
+        }
+
+        ConfirmCard {
+            id: confirmCard
+
+            x: (parent.width - width) / 2
+            y: parent.height + 12
+            width: Math.max(240, Math.min(parent.width, 370))
+            opened: root.confirmOpen
+            message: "Deseja " + root.confirmLabel.toLowerCase() + "?"
+            confirmLabel: root.confirmLabel
+            onConfirmed: {
+                const action = root.confirmAction;
+                root.cancelConfirm();
+                root.runSessionAction(action);
+            }
+            onCanceled: root.cancelConfirm()
         }
     }
 

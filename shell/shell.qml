@@ -10,4 +10,5 @@ import "Surfaces"
 ShellRoot {
     DynamicGlacier {}
     SurfaceHost {}
+    EventOsd {}
 }

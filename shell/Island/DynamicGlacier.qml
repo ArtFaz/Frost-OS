@@ -765,8 +765,11 @@ Scope {
 
     function toggleSourceMute() {
         const audio = root.audioSource?.audio ?? null;
-        if (audio)
-            audio.muted = !audio.muted;
+        if (!audio)
+            return;
+
+        audio.muted = !audio.muted;
+        Surfaces.notify(audio.muted ? "󰍭" : "󰍬", audio.muted ? "Microfone mudo" : "Microfone ligado", 1200);
     }
 
     function setPreferredSink(node) {

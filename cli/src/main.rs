@@ -520,6 +520,22 @@ fn valid_backlight_device(name: &str) -> bool {
             .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '.' | ':'))
 }
 
+/// Session actions are scheduled a couple of seconds out rather than run
+/// immediately, so the shell has time to draw its on-screen notice before the
+/// session goes away. The transient unit is what actually performs the action,
+/// which means it survives the shell exiting.
+fn schedule_session_action(command: &[&str]) -> Result<(), CliError> {
+    let mut arguments = vec![
+        "--user",
+        "--collect",
+        "--quiet",
+        "--on-active=2s",
+        "--timer-property=AccuracySec=100ms",
+    ];
+    arguments.extend_from_slice(command);
+    run_fixed("/usr/bin/systemd-run", &arguments)
+}
+
 fn brightness_json() -> Result<String, CliError> {
     let raw = capture("/usr/bin/brightnessctl", &["-m"])?;
     let text = String::from_utf8_lossy(&raw);
@@ -1310,7 +1326,7 @@ fn shell_action_command(args: &[String]) -> Result<(), CliError> {
             "/usr/bin/systemctl",
             &["--user", "start", "frost-lock.service"],
         ),
-        ("logout", None) => run_fixed("/usr/bin/uwsm", &["stop"]),
+        ("logout", None) => schedule_session_action(&["/usr/bin/uwsm", "stop"]),
         ("open-terminal", None) => spawn_fixed("/usr/bin/uwsm", &["app", "--", "/usr/bin/ghostty"]),
         ("notification-clear", None) => run_fixed("/usr/bin/makoctl", &["dismiss", "--all"]),
         ("notification-dnd", Some("on")) => run_fixed("/usr/bin/makoctl", &["mode", "-a", "dnd"]),
@@ -1327,8 +1343,8 @@ fn shell_action_command(args: &[String]) -> Result<(), CliError> {
             &["--user", "stop", "frost-reminder.timer"],
         ),
         ("stay-awake-toggle", None) => stay_awake_toggle(),
-        ("poweroff", None) => run_fixed("/usr/bin/systemctl", &["poweroff"]),
-        ("reboot", None) => run_fixed("/usr/bin/systemctl", &["reboot"]),
+        ("poweroff", None) => schedule_session_action(&["/usr/bin/systemctl", "poweroff"]),
+        ("reboot", None) => schedule_session_action(&["/usr/bin/systemctl", "reboot"]),
         ("suspend", None) => run_fixed("/usr/bin/systemctl", &["suspend"]),
         _ => Err(CliError::Usage(format!(
             "unsupported or invalid shell action: {action}"

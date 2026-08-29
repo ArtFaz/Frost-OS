@@ -16,6 +16,14 @@ QtObject {
     // routing through here avoids a cross-tree object reference.
     signal islandModeRequested(string mode)
 
+    // Message-only on-screen notices. Progress notices stay in the island's
+    // volume morph; see docs/phase4-parity-contract.md.
+    signal osdRequested(string glyph, string message, int duration)
+
+    function notify(glyph, message, duration) {
+        root.osdRequested(glyph, message, duration);
+    }
+
     function show(name) {
         if (root.known.indexOf(name) < 0)
             return false;
