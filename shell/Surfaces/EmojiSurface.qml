@@ -35,7 +35,7 @@ Item {
 
         for (let i = 0; i < source.length && matched.length < 1000; i += 1) {
             const item = source[i];
-            if (query === "" || String(item.k || "").indexOf(query) >= 0)
+            if (query === "" || String(item.keywords || "").indexOf(query) >= 0)
                 matched.push(item);
         }
 
@@ -56,7 +56,7 @@ Item {
         if (root.selectedIndex < 0 || root.selectedIndex >= root.visibleEmojis.length)
             return;
 
-        Quickshell.clipboardText = String(root.visibleEmojis[root.selectedIndex].e || "");
+        Quickshell.clipboardText = String(root.visibleEmojis[root.selectedIndex].emoji || "");
         Surfaces.close();
     }
 
@@ -93,7 +93,7 @@ Item {
         onLoaded: {
             try {
                 const parsed = JSON.parse(catalogFile.text());
-                root.catalog = Array.isArray(parsed) ? parsed : [];
+                root.catalog = Array.isArray(parsed?.items) ? parsed.items : [];
             } catch (error) {
                 root.catalog = [];
             }
@@ -219,7 +219,7 @@ Item {
 
                             Text {
                                 anchors.centerIn: parent
-                                text: String(emojiCell.modelData.e || "")
+                                text: String(emojiCell.modelData.emoji || "")
                                 font.family: Style.emojiFontFamily
                                 font.pixelSize: Style.display
                                 horizontalAlignment: Text.AlignHCenter
