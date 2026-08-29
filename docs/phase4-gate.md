@@ -34,11 +34,11 @@ over another compositor configuration and cannot exercise session lifecycle.
 6. Multi-monitor: the island follows the focused monitor, the reserved zone is correct on each, and hotplug does not duplicate or strand a surface.
 7. Wallpaper: selecting one paints it and it survives a shell restart.
 
-## Open and deliberately unmet
+## Scope decision recorded during this gate
 
-The installer frontend — a surface that renders the package inventory and a
-typed plan without calling pacman, makepkg or an AUR helper — does not exist.
-The master plan places it in Phase 4 and the package selection itself in Phase 5.
-Nothing in Phase 4 depends on it, and the plan it would render is the Phase 5
-artefact, so it is recorded here as an explicit deferral rather than passed over
-in silence. Gate 4 cannot be declared complete while this line is open.
+The application installer left Phase 4. Its frontend was listed as a Phase 4
+surface and its typed plan as a Phase 4 gate criterion, while the package
+selection that plan describes belongs to Phase 5 — so the frontend would have
+had nothing real to render. By explicit decision, Phase 4 is the shell and
+nothing else, and the installer enters Phase 5 whole, frontend and backend
+together. The criterion is removed from Gate 4 rather than carried as debt.
