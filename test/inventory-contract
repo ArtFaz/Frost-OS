@@ -1,0 +1,77 @@
+#!/bin/bash
+# Validates tools/package-selector/inventory.json without a browser and without a
+# JSON Schema engine: the selector is a decision aid, so its data source has to
+# hold together on its own. The schema file next to the inventory is the human
+# reference; these are the rules a machine enforces.
+
+set -euo pipefail
+
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+inv="$root/tools/package-selector/inventory.json"
+
+fail() {
+  printf 'inventory: %s\n' "$1" >&2
+  exit 1
+}
+
+check() {
+  # check "<message>" <jq filter that must return every offending line>
+  local message=$1 filter=$2 hits
+  hits=$(jq -r "$filter" "$inv")
+  if [[ -n $hits ]]; then
+    printf 'inventory: %s\n' "$message" >&2
+    printf '  %s\n' $hits >&2
+    exit 1
+  fi
+}
+
+[[ -f $inv ]] || fail "missing $inv"
+jq -e . "$inv" >/dev/null 2>&1 || fail 'not valid JSON'
+
+jq -e '.inventoryVersion | test("^[0-9]{4}-[0-9]{2}-[0-9]{2}\\.[0-9]+$")' "$inv" >/dev/null \
+  || fail 'inventoryVersion must be YYYY-MM-DD.N'
+jq -e '.categories == ["BOOTSTRAP","CORE","DESKTOP","HARDWARE","OPTIONAL","DEVELOPMENT","DROP"]' "$inv" >/dev/null \
+  || fail 'categories must be the seven fixed decision categories'
+jq -e '(.packages | type) == "array" and (.packages | length) > 0' "$inv" >/dev/null \
+  || fail 'packages must be a non-empty array'
+
+check 'bad package name' \
+  '.packages[] | select(.name | test("^[a-z0-9][a-z0-9@._+-]*$") | not) | .name'
+check 'bad source (want arch|frost|aur)' \
+  '.packages[] | .source as $v | select(["arch","frost","aur"] | index($v) | not) | .name'
+check 'bad category' \
+  '.packages[] | .category as $v | select(["BOOTSTRAP","CORE","DESKTOP","HARDWARE","OPTIONAL","DEVELOPMENT","DROP"] | index($v) | not) | .name'
+check 'bad default (want required|recommended|optional)' \
+  '.packages[] | .default as $v | select(["required","recommended","optional"] | index($v) | not) | .name'
+check 'reason too short' \
+  '.packages[] | select((.reason | type) != "string" or (.reason | length) < 3) | .name'
+check 'AUR item in BOOTSTRAP or CORE' \
+  '.packages[] | .category as $c | select(.source == "aur" and (["BOOTSTRAP","CORE"] | index($c))) | .name'
+check 'AUR item without pkgbase and recipeUrl' \
+  '.packages[] | select(.source == "aur" and ((.pkgbase | type) != "string" or (.recipeUrl | type) != "string")) | .name'
+check 'recipeUrl is not a canonical AUR git URL' \
+  '.packages[] | select(.recipeUrl and (.recipeUrl | test("^https://aur\\.archlinux\\.org/[A-Za-z0-9@._+-]+\\.git$") | not)) | .name'
+check 'BOOTSTRAP or CORE from AUR' \
+  '.packages[] | select((.category == "BOOTSTRAP" or .category == "CORE") and .source == "aur") | .name'
+check 'essential package (BOOTSTRAP/CORE) marked optional' \
+  '.packages[] | select((.category == "BOOTSTRAP" or .category == "CORE") and .default == "optional") | .name'
+check 'hardware tags must be non-empty strings' \
+  '.packages[] | select(.hardware and ([.hardware[] | select((type != "string") or (length == 0))] | length > 0)) | .name'
+check 'package feature is not defined in .features' \
+  '[.features | keys[]] as $f | .packages[] | .feature as $v | select($v and ($f | index($v) | not)) | "\(.name) -> \($v)"'
+check 'dependsOn target not in inventory' \
+  '[.packages[].name] as $n | .packages[] | . as $p | (.dependsOn // [])[] | select($n | index(.) | not) | "\($p.name) -> \(.)"'
+check 'conflictsWith target not in inventory' \
+  '[.packages[].name] as $n | .packages[] | . as $p | (.conflictsWith // [])[] | select($n | index(.) | not) | "\($p.name) -> \(.)"'
+check 'feature package not in inventory' \
+  '[.packages[].name] as $n | .features | to_entries[] | .key as $f | .value.packages[] | select($n | index(.) | not) | "\($f) -> \(.)"'
+check 'profile package not in inventory' \
+  '[.packages[].name] as $n | .profiles | to_entries[] | .key as $p | ((.value.includePackages // []) + (.value.excludePackages // []))[] | select($n | index(.) | not) | "\($p) -> \(.)"'
+check 'profile feature not defined' \
+  '[.features | keys[]] as $f | .profiles | to_entries[] | .key as $p | (.value.features // [])[] | select($f | index(.) | not) | "\($p) -> \(.)"'
+
+dupes=$(jq -r '.packages[].name' "$inv" | sort | uniq -d)
+[[ -z $dupes ]] || { printf 'inventory: duplicate package names\n' >&2; printf '  %s\n' $dupes >&2; exit 1; }
+
+count=$(jq '.packages | length' "$inv")
+printf 'inventory: ok (%s packages)\n' "$count"

@@ -17,10 +17,17 @@ if rg -n -i '(pkgs\.omarchy|github\.com/basecamp|omarchy\.org|omarchy\.manual)' 
 fi
 
 # A bare donor identity is forbidden in build source (PKGBUILD, .install, scripts,
-# keyring data). Markdown is documentation: provenance notes name the donor on
-# purpose, exactly as frost/docs/provenance.md does.
+# keyring data). Exemptions, none of which is a package build input:
+#   *.md                      documentation; provenance notes name the donor, as
+#                             frost/docs/provenance.md does.
+#   tools/package-selector/   the package decision aid. Its inventory records the
+#                             donor lists as evidence and classifies donor
+#                             package names (omarchy-keyring, omarchy-nvim) as
+#                             DROP. frost-meta consumes the exported manifest,
+#                             never this directory.
 if rg -n -i '(omarchy|omacom)' \
-  "$root/pkgbuilds" "$root/tools" --glob '!validate-package-config' --glob '!*.md'; then
+  "$root/pkgbuilds" "$root/tools" \
+  --glob '!validate-package-config' --glob '!*.md' --glob '!**/package-selector/**'; then
   fail 'donor identity found in package build source'
 fi
 

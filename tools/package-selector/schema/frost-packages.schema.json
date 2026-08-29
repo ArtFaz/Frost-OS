@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://frost.local/schema/frost-packages.schema.json",
+  "title": "Frost package manifest",
+  "description": "The human decision exported by the selector. Data only: versioned, deterministic, no executable content, independent of live pacman state.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "inventoryVersion", "profiles", "features", "packages"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "inventoryVersion": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}\\.[0-9]+$"
+    },
+    "profiles": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+      "uniqueItems": true
+    },
+    "features": {
+      "type": "object",
+      "additionalProperties": { "type": "boolean" },
+      "propertyNames": { "pattern": "^[a-z][a-z0-9-]*$" }
+    },
+    "packages": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["include", "exclude", "aur"],
+      "properties": {
+        "include": { "$ref": "#/definitions/nameList" },
+        "exclude": { "$ref": "#/definitions/nameList" },
+        "aur": { "$ref": "#/definitions/nameList" }
+      }
+    },
+    "notes": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "maxLength": 2000 },
+      "propertyNames": { "pattern": "^[a-z0-9][a-z0-9@._+-]*$" }
+    }
+  },
+  "definitions": {
+    "nameList": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9@._+-]*$",
+        "minLength": 1,
+        "maxLength": 128
+      }
+    }
+  }
+}

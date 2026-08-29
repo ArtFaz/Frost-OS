@@ -4,9 +4,15 @@ set -euo pipefail
 
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 
-for script in "$root"/tools/* "$root"/test/*; do
-  [[ -f $script ]] && bash -n "$script"
+for script in "$root"/tools/* "$root"/tools/package-selector/* "$root"/test/*; do
+  [[ -f $script ]] || continue
+  case $script in
+    *.json | *.html | *.css | *.js | *.md) continue ;;
+  esac
+  bash -n "$script"
 done
 "$root/tools/validate-package-config"
+"$root/test/inventory-contract"
+"$root/test/selector-static"
 "$root/test/package-build"
 "$root/test/signatures"

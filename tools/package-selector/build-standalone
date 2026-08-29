@@ -1,0 +1,39 @@
+#!/bin/bash
+# Emits a single self-contained package-selector.html with the stylesheet, the
+# script and inventory.json inlined, so the selector opens with no checkout and
+# no file picker. Output is deterministic. Read-only apart from the one file it
+# writes.
+
+set -euo pipefail
+
+here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+out=${1:-$here/package-selector.html}
+
+for f in index.html style.css app.js inventory.json; do
+  [[ -f $here/$f ]] || { printf 'missing %s\n' "$f" >&2; exit 1; }
+done
+
+jq -e . "$here/inventory.json" >/dev/null || { printf 'inventory.json is not valid JSON\n' >&2; exit 1; }
+inventory_min=$(jq -c -S . "$here/inventory.json")
+
+HERE=$here awk -v inv="$inventory_min" '
+  function emit_file(path,   line) {
+    fflush()
+    while ((getline line < path) > 0) print line
+    close(path)
+  }
+  /<link rel="stylesheet"/ {
+    print "  <style>"; emit_file(ENVIRON["HERE"] "/style.css"); print "  </style>"; next
+  }
+  /<script src="app.js">/ {
+    print "  <script>window.FROST_INVENTORY = " inv ";</" "script>"
+    print "  <script>"
+    emit_file(ENVIRON["HERE"] "/app.js")
+    print "  </" "script>"
+    next
+  }
+  { print }
+' "$here/index.html" > "$out.tmp"
+
+mv -- "$out.tmp" "$out"
+printf 'wrote %s (%s bytes)\n' "$out" "$(wc -c < "$out")"
