@@ -15,7 +15,23 @@ Status: initial Phase 0 threat model and implementation contract.
 | Package transaction | Arch and Frost signed repositories | Modify package-owned paths and create `.pacnew` where applicable | Fetch donor code, overwrite foreign package files, execute user migrations as root |
 | Update orchestrator | Package plan, Snapper health, migration manifests | Snapshot, pacman transaction, idempotent migration, verify | Starting a transaction without a valid snapshot or continuing after incompatible failure |
 | Theme/config loader | Regular files below permitted roots | Parse data matching a versioned schema; materialize private runtime configs for the external UI authorities | Symlinks, executable bits, QML/JS/hooks, path escape, unknown fields, theme-controlled geometry or commands |
-| ISO installer | Local signed media/repositories and validated installer model | Partition/mount/install only the explicitly selected target | Network donor fallback, ambiguous disk target, silent destructive default |
+| Bootstrap | Signed CachyOS/Arch and Frost repositories, signed installation media, and a validated bootstrap model | Take a Snapper snapshot, run one pacman transaction over Frost's own packages, enable SDDM and the Frost session entry | Change the root password, create a privileged group, enable autologin, install passwordless sudo, overwrite personal configuration, add a third-party repository other than Frost's own, touch the kernel or bootloader, enable a unit in `default.target` |
+
+### Bootstrap trust zone
+
+Frost is installed onto an already-installed CachyOS Minimal system, so it never
+holds partition or mount authority and no Frost tool destroys a disk. The
+bootstrap has three verbs. `plan` is pure: it reads the system, prints the exact
+transaction, and writes nothing at all — it is safe to run on any machine at any
+time. `apply` creates and verifies a Snapper snapshot before it acts, then
+performs only what `plan` printed. `rollback` restores the recorded snapshot.
+
+The forbidden list in the table above is the substance of the zone. Every entry
+is a change the donor installer makes and Frost does not: it will not weaken
+authentication, will not grant standing privilege, will not overwrite anything
+the user owns, and will not add an upstream beyond the declared base and Frost's
+own signed repository. A base is upstream; a donor is not, and the bootstrap may
+not reach a donor endpoint under any circumstance.
 
 ## Security authorities
 
@@ -55,10 +71,10 @@ the normal session sources its own UWSM environment again.
 | Direct pacman bypasses migration | Donor blocks pacman globally | Pacman stays available; hook only marks pending; doctor/login notify | Direct pacman integration fixture |
 | Update proceeds without recovery | Best-effort or coupled update flows | Snapshot is mandatory and recorded before transaction | Injected Snapper failure |
 | Donor supply-chain dependency returns | PKGBUILDs and ISO reference donor Git/repos/mirrors | Source-contract rejects donor endpoints outside notices; builds run with donors unavailable | Offline build and forbidden-string tests |
-| AUR code enters trusted base or runs with privilege | Donor helper installs AUR | Bootstrap/core remain Arch/Frost; optional AUR is explicit, pinned and later built unprivileged in isolation | Dependency/source/lock audit |
+| AUR code enters trusted base or runs with privilege | Donor helper installs AUR | Bootstrap/core remain base-repository and Frost; optional AUR is explicit, pinned and later built unprivileged in isolation | Dependency/source/lock audit |
 | Path traversal or symlink escape | Donor refresh helper accepts `..`; themes are mutable trees | Canonicalize, constrain roots, use no-follow checks | Traversal/symlink tests |
 | Root hook executes user action | Donor package hooks and scriptlets mix lifecycle work | Root hooks only mark machine state; user migrations run as the user | Hook fixture and UID assertions |
-| ISO destroys wrong disk | Installer has full partition/mount authority | Explicit resolved target, protected-mode verification, displayed plan and confirmation | Disposable-disk tests only |
+| Bootstrap makes an unrecoverable change | Donor installer holds full partition/mount authority | Frost installs onto an already-installed base and never partitions; `plan` is pure and writes nothing, `apply` runs only the printed transaction after a verified snapshot, `rollback` restores it | Plan-purity test, snapshot-failure injection, disposable-VM apply |
 
 ## Privileged path policy
 

@@ -4,7 +4,13 @@ Frost is an independent Arch Linux desktop built around UWSM, Hyprland, a static
 
 This repository is the Frost runtime and user-facing CLI. It has a new history and no operational dependency on any donor distribution or repository.
 
-Current status: private implementation, Phase 3 static-shell development. Gate 2 is closed after two consecutive graphical Frost cycles; the minimal package-owned Quickshell composition is implemented in source and awaits package/live Gate 3 testing. Publication is blocked until every reused source and asset has complete provenance and redistribution terms.
+Current status: private implementation, Phase 4 shell development. Gate 2 is closed after two consecutive graphical Frost cycles, and Gate 3 has been validated from an installed, signed package in a live session. The island, its surfaces, the theme system and the session dialogs are implemented; Phase 6 (the privileged settings package) and the bootstrap have not started. Publication is blocked until every reused source and asset has complete provenance and redistribution terms.
+
+## Base
+
+Frost is a desktop, not a distribution. The official base is CachyOS Minimal with Btrfs, Snapper and Limine; Arch Linux becomes a secondary supported base later. The base owns the kernel, drivers, repositories, bootloader and filesystem layout; Frost installs only the desktop experience on top of it and never patches the kernel, touches the bootloader, or replaces a base repository. Frost builds no installation image — it is installed onto an already-installed base by a `bootstrap-cachyos` script whose `plan` verb writes nothing and whose `apply` verb snapshots first. See `docs/architecture.md` and the Bootstrap trust zone in `docs/security-boundaries.md`.
+
+A base and a donor are different categories. A base is a declared, permitted upstream. A donor is an audit reference and can never become one.
 
 ## Repository boundaries
 

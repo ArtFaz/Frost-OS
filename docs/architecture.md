@@ -1,5 +1,17 @@
 # Frost Arch foundation
 
+## Base
+
+Frost is a desktop, not a distribution. The official base is **CachyOS Minimal** installed with Btrfs, Snapper and Limine; Arch Linux itself becomes a secondary supported base later, once the desktop no longer assumes anything the base provides.
+
+The split of responsibility is total. CachyOS owns the kernel, hardware and firmware support, drivers, the package repositories and their keys, the bootloader, and the snapshot-capable filesystem layout. Frost installs only the desktop experience on top of that: the session, the compositor configuration, the shell, the notification/lock/Polkit authorities, themes and its own CLI. Frost never patches the kernel, never touches the bootloader, and never replaces a base repository.
+
+This introduces a category the project did not previously have. A **base** is a declared, permitted upstream: Frost depends on it at runtime, tracks its updates, and expects its packages to be present. A **donor** is an audit reference only and can never become an upstream — the existing rule that donor checkouts are not build inputs, submodules, remotes, update channels or runtime fallbacks is unchanged. Without naming the two categories separately the rule would be violated by definition the moment Frost declares any base at all.
+
+Installation onto a CachyOS Minimal system is a `bootstrap-cachyos` script with three verbs: `plan` is pure and writes nothing, printing the exact transaction it would perform; `apply` takes a Snapper snapshot first and then performs only that transaction; `rollback` restores the recorded snapshot. Its permitted and forbidden effects are enumerated in `docs/security-boundaries.md` under the Bootstrap trust zone. The bootstrap is sequenced after Phase 6: `plan` can be written and run before then, but `apply` has nothing to install until `frost-settings` and `frost-meta` exist.
+
+Two facts must be established before the bootstrap is written, because both change what it has to do: what CachyOS Minimal ships by default — specifically whether it brings a display manager, a compositor, or defaults that would contest Frost's notification, lock or Polkit authorities — and which Hyprland version its repositories carry, since the Frost configuration is Lua against a recent API while the PKGBUILD currently declares `'hyprland'` with no lower bound. The dependency gains a minimum version and `plan` verifies it.
+
 Frost is split into a coexistable user/session package and a later privileged settings package. The runtime repository owns the CLI, static shell, data-only defaults, themes, user services, and migrations. The sibling package repository owns PKGBUILDs, signing and local pacman repository tooling.
 
 The initial public paths are `/usr/share/frost`, `/usr/bin/frost`, `/etc/frost`, `~/.config/frost`, `~/.local/state/frost`, `${XDG_RUNTIME_DIR}/frost`, and `/var/lib/frost`.

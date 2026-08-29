@@ -26,7 +26,7 @@ The authoritative machine-readable record is `audit/generated/source-snapshots.t
 | `staging` | `824831e75171` | Functional and visual shell authority | Clean |
 | `Definitive Frost-OS/omarchy` | `0ae1694830b6` | Arch runtime donor | Clean |
 | `Definitive Frost-OS/omarchy-pkgs` | `5a73fd899940` | PKGBUILD and ownership donor | Clean; obtained for this audit |
-| `Definitive Frost-OS/omarchy-iso` | `268bac16d351` | Installer and ISO donor | Clean |
+| `Definitive Frost-OS/omarchy-iso` | `268bac16d351` | Historical installer reference; no longer a planned donor | Clean |
 | `omanix` | `4af5e88b6346` | Historical Nix structure donor | Clean |
 | `nixarchy` | `74802f4aa707` | Historical extraction donor | Clean |
 | `frosted-os` | filesystem snapshot, no Git history | Earlier sanitized extraction and attribution record | Reference only |
@@ -92,7 +92,7 @@ No unknown privileged path remains in the audited core topology. Third-party pac
 | Pacman update flow | Guard hook, Git/channel update, AUR and migrations | `REWRITE`; allow direct pacman and require snapshot only in `frost update` |
 | Boot and recovery | Btrfs, Snapper, Limine and two helper packages | `KEEP-CONCEPT`; depend on direct upstream/Arch sources and test rollback |
 | Hardware install scripts | Broad multi-vendor package and config mutations | `DROP` except detected hardware requirements |
-| ISO orchestrator | Archinstall, offline repo, target finalizers, recovery | `PORT` selectively in Phase 9 only |
+| ISO orchestrator | Archinstall, offline repo, target finalizers, recovery | `DROP`; Frost installs onto CachyOS Minimal and builds no ISO |
 | Local signed repository tooling | Build, sign and repo database workflow | `KEEP-CONCEPT`; new Frost implementation and key |
 | Omarchy repository/mirror/channel endpoints | Donor operational infrastructure | `DROP` absolutely |
 
@@ -128,18 +128,22 @@ Classification values are the plan's `KEEP-CONCEPT`, `PORT`, `REWRITE`, and `DRO
 | `pkgbuilds/limine-*` | `KEEP-CONCEPT` | Recovery stack; source directly and audit upstream |
 | all other `pkgbuilds` | `DROP` by default | Only enter Frost after Gate 5 selection and a fresh audit |
 
-### ISO donor: `omarchy-iso`
+### Former ISO donor: `omarchy-iso`
+
+Frost no longer builds an installation image. The base is CachyOS Minimal, which
+already owns partitioning, the bootloader and the snapshot layout, and Frost is
+installed onto it by the `bootstrap-cachyos` script described in
+`docs/architecture.md`. Nothing in this tree is a planned port any more.
 
 | Area | Class | Reason |
 |---|---|---|
-| `.github` | `DROP` | Donor publishing infrastructure |
-| `archiso` | `KEEP-CONCEPT` | Frozen upstream integration reference |
-| `bin` | `REWRITE` | Donor names, remotes and live-system assumptions |
-| `builder` | `PORT` | Offline mirror and package-build concepts, Phase 9 only |
-| `configs` | `PORT` | Selected Archiso and orchestrator implementation, Phase 9 only |
-| `manifests` | `KEEP-CONCEPT` | Test oracle and inventory evidence |
+| entire repository | `DROP` | Installer authority belongs to the base; Frost holds no partition or bootloader authority |
+| `manifests` | `KEEP-CONCEPT` | Inventory evidence only, for comparing package sets |
 | `plans` | `KEEP-CONCEPT` | Historical design rationale |
-| `test` | `PORT` | Relevant unit/integration/acceptance coverage |
+
+Dropping this donor is the largest single reduction in publication debt
+available: the ISO tree carried the only planned ports that would have required
+auditing an installer's privileged behaviour file by file.
 
 ### Frost authorities and historical Nix trees
 
