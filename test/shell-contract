@@ -13,9 +13,10 @@ for relative_path in \
   Island/DynamicGlacier.qml Island/FrostGlassSurface.qml Island/IslandContent.qml \
   Island/IslandSurface.qml Island/MIcon.qml Island/PeekStatusRow.qml \
   Island/NotificationsPanel.qml Island/PanelHeader.qml Island/PanelSwitch.qml \
-  Island/TrayRail.qml Island/WorkspaceRail.qml \
+  Island/TrayMenu.qml Island/TrayRail.qml Island/WorkspaceRail.qml \
   Core/Surfaces.qml Surfaces/ClipboardSurface.qml Surfaces/EmojiSurface.qml \
-  Surfaces/ConfirmCard.qml Surfaces/EventOsd.qml Surfaces/ImagePickerSurface.qml \
+  Surfaces/BackgroundSurface.qml Surfaces/ConfirmCard.qml Surfaces/EventOsd.qml \
+  Surfaces/ImagePickerSurface.qml \
   Surfaces/LauncherSurface.qml Surfaces/SurfaceHost.qml Surfaces/SurfaceSearchField.qml; do
   [[ -f $shell/$relative_path && ! -L $shell/$relative_path ]] || fail "missing Frost Island file: $relative_path"
 done

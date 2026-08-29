@@ -56,6 +56,7 @@ Scope {
     property bool lastBatteryPluggedIn: false
     property int lastBrightnessLevel: -1
     property int demoStep: 0
+    property var trayMenuItem: null
     property var notificationEntries: []
     property bool notificationsDnd: false
     property bool notificationsBusy: false
@@ -428,6 +429,8 @@ Scope {
 
     function showIdle(preserveExitPreview) {
         const keepExitPreview = preserveExitPreview === true;
+
+        root.trayMenuItem = null;
 
         if (root.mode === "bluetooth" && root.btAdapter?.discovering)
             root.btAdapter.discovering = false;
@@ -1883,9 +1886,12 @@ Scope {
                 readonly property bool railsVisible: root.railsVisible && workspaceRail.opacity > 0
                 readonly property real workspaceRailEdge: railsVisible && workspaceRail.width > 0 ? workspaceRail.x : island.x
                 readonly property real trayRailEdge: railsVisible && trayRail.width > 0 ? trayRail.x + trayRail.width : islandRightEdge
+                readonly property bool trayMenuVisible: trayMenu.visible
+                readonly property real trayMenuRightEdge: trayMenuVisible ? trayMenu.x + trayMenu.width : islandRightEdge
+                readonly property real trayMenuBottomEdge: trayMenuVisible ? trayMenu.y + trayMenu.height : islandBottomEdge
                 readonly property real leftEdge: Math.min(island.x, workspaceRailEdge, privacyVisible ? privacyIndicators.x : island.x)
-                readonly property real rightEdge: Math.max(islandRightEdge, privacyRightEdge, trayRailEdge)
-                readonly property real bottomEdge: Math.max(islandBottomEdge, privacyBottomEdge)
+                readonly property real rightEdge: Math.max(islandRightEdge, privacyRightEdge, trayRailEdge, trayMenuRightEdge)
+                readonly property real bottomEdge: Math.max(islandBottomEdge, privacyBottomEdge, trayMenuBottomEdge)
 
                 x: Math.max(0, leftEdge - maskPadding)
                 y: Math.max(0, island.y - maskPadding)
@@ -1915,9 +1921,20 @@ Scope {
 
                 fade: root.railsVisible ? 1 : 0
                 visible: opacity > 0.001
+                onMenuRequested: (item, anchorX) => root.trayMenuItem = item
                 x: (parent.width + root.handleWidth) / 2 + gap
                 y: Math.max(0, (root.bumpHeight - height) / 2)
                 z: 25
+            }
+
+            TrayMenu {
+                id: trayMenu
+
+                trayItem: root.trayMenuItem
+                x: Math.min(parent.width - width - 8, trayRail.x)
+                y: trayRail.y + trayRail.height + 8
+                z: 40
+                onDismissed: root.trayMenuItem = null
             }
 
             IslandSurface {

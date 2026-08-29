@@ -478,6 +478,7 @@ fn shell_data_command(args: &[String]) -> Result<(), CliError> {
         "privacy" => privacy_json(),
         "clipboard" => clipboard_json()?,
         "images" => images_json()?,
+        "wallpapers" => wallpapers_json()?,
         "indicators" => indicators_json(),
         "notifications" => notifications_json()?,
         "weather" => weather_json()?,
@@ -1322,6 +1323,7 @@ fn shell_action_command(args: &[String]) -> Result<(), CliError> {
         ("battery-threshold", Some(value @ ("on" | "off"))) => set_battery_threshold(value == "on"),
         ("clipboard-copy", Some(id)) => copy_clipboard_entry(id),
         ("image-copy", Some(path)) => copy_image(Path::new(path)),
+        ("wallpaper-set", Some(path)) => set_wallpaper(Path::new(path)),
         ("lock", None) => run_fixed(
             "/usr/bin/systemctl",
             &["--user", "start", "frost-lock.service"],
@@ -1468,6 +1470,87 @@ fn copy_clipboard_entry(id: &str) -> Result<(), CliError> {
     }
     let decoded = capture("/usr/bin/cliphist", &["decode", id])?;
     write_to_clipboard(&decoded, None)
+}
+
+/// Roots a wallpaper may come from. Wider than the clipboard's picture roots
+/// because the packaged theme backgrounds live under /usr/share.
+fn wallpaper_roots() -> Vec<PathBuf> {
+    let mut roots = picture_roots();
+    roots.push(PathBuf::from("/usr/share/frost/backgrounds"));
+    roots
+}
+
+fn wallpapers_json() -> Result<String, CliError> {
+    let mut images = Vec::new();
+    collect_images(
+        &PathBuf::from("/usr/share/frost/backgrounds"),
+        0,
+        &mut images,
+    );
+    if let Some(source) = env::var_os("FROST_SOURCE_ROOT").map(PathBuf::from) {
+        collect_images(&source.join("backgrounds"), 0, &mut images);
+    }
+    images.sort_by(|left, right| left.1.cmp(&right.1));
+    let entries = images
+        .into_iter()
+        .take(200)
+        .map(|(_, path)| {
+            let name = path
+                .file_stem()
+                .and_then(|value| value.to_str())
+                .unwrap_or("Wallpaper");
+            format!(
+                "{{\"path\":\"{}\",\"name\":\"{}\"}}",
+                json_escape(&path.display().to_string()),
+                json_escape(name)
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    Ok(format!("{{\"schemaVersion\":1,\"items\":[{entries}]}}"))
+}
+
+fn set_wallpaper(path: &Path) -> Result<(), CliError> {
+    let canonical = path
+        .canonicalize()
+        .map_err(|_| CliError::Usage("wallpaper path does not exist".to_owned()))?;
+    if !wallpaper_roots()
+        .iter()
+        .any(|root| canonical.starts_with(root))
+    {
+        return Err(CliError::Usage(
+            "wallpaper path is outside the permitted roots".to_owned(),
+        ));
+    }
+    if image_extension(&canonical).is_none() {
+        return Err(CliError::Usage("unsupported image type".to_owned()));
+    }
+    let metadata = fs::symlink_metadata(&canonical)
+        .map_err(|_| CliError::Usage("wallpaper path is not readable".to_owned()))?;
+    if !metadata.is_file() || metadata.mode() & 0o111 != 0 {
+        return Err(CliError::Usage(
+            "wallpaper is not a safe regular file".to_owned(),
+        ));
+    }
+
+    let home = env::var_os("HOME")
+        .map(PathBuf::from)
+        .ok_or_else(|| CliError::Operational("HOME is unavailable".to_owned()))?;
+    let state = home.join(".local/state/frost");
+    fs::create_dir_all(&state).map_err(|error| {
+        CliError::Operational(format!("could not create state directory: {error}"))
+    })?;
+    // A JSON pointer rather than the donor's symlink: the shell reads state as
+    // validated data everywhere else, and the contracts reject symlinks.
+    let body = format!(
+        "{{\"schemaVersion\":1,\"path\":\"{}\"}}\n",
+        json_escape(&canonical.display().to_string())
+    );
+    let temporary = state.join("background.json.tmp");
+    fs::write(&temporary, body)
+        .map_err(|error| CliError::Operational(format!("could not write selection: {error}")))?;
+    fs::rename(&temporary, state.join("background.json"))
+        .map_err(|error| CliError::Operational(format!("could not publish selection: {error}")))
 }
 
 fn copy_image(path: &Path) -> Result<(), CliError> {

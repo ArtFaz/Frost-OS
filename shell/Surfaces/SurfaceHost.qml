@@ -71,7 +71,8 @@ Scope {
                 anchors.centerIn: parent
                 hostWidth: panel.width
                 hostHeight: panel.height
-                active: Surfaces.active === "images"
+                active: Surfaces.active === "images" || Surfaces.active === "wallpaper"
+                wallpaperMode: Surfaces.active === "wallpaper"
             }
 
             EmojiSurface {

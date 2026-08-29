@@ -173,6 +173,15 @@
       "notice": "docs/licenses/DynamicGlacier-MIT.txt"
     },
     {
+      "destination": "shell/Island/TrayMenu.qml",
+      "originRepository": "staging",
+      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
+      "originPath": "config/omarchy/plugins/art.bar/widgets/Tray.qml",
+      "transformation": "rewritten-from-concept",
+      "license": "pending-confirmation",
+      "notice": "docs/provenance.md"
+    },
+    {
       "destination": "shell/Island/TrayRail.qml",
       "originRepository": "staging",
       "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
@@ -186,6 +195,15 @@
       "originRepository": "staging",
       "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
       "originPath": "config/omarchy/plugins/art.workspaces/Workspaces.qml",
+      "transformation": "rewritten-from-concept",
+      "license": "pending-confirmation",
+      "notice": "docs/provenance.md"
+    },
+    {
+      "destination": "shell/Surfaces/BackgroundSurface.qml",
+      "originRepository": "staging",
+      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
+      "originPath": "config/omarchy/plugins/art.frosted-glass/Glass.qml",
       "transformation": "rewritten-from-concept",
       "license": "pending-confirmation",
       "notice": "docs/provenance.md"

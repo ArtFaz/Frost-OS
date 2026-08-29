@@ -14,6 +14,9 @@ Item {
     property int hostHeight: 0
 
     property var images: []
+    // Two modes over one carousel: browse-and-copy from Pictures, or set the
+    // desktop background from the packaged theme wallpapers.
+    property bool wallpaperMode: false
     property string filterText: ""
     property int selectedIndex: 0
 
@@ -64,7 +67,7 @@ Item {
     }
 
     function refresh() {
-        ShellBackend.query("images");
+        ShellBackend.query(root.wallpaperMode ? "wallpapers" : "images");
     }
 
     function selectAdjacent(delta) {
@@ -79,7 +82,7 @@ Item {
         if (!root.selectedImage)
             return;
 
-        ShellBackend.action("image-copy", String(root.selectedImage.path));
+        ShellBackend.action(root.wallpaperMode ? "wallpaper-set" : "image-copy", String(root.selectedImage.path));
         Surfaces.close();
     }
 
@@ -111,7 +114,7 @@ Item {
         target: ShellBackend
 
         function onDataReady(kind, payload) {
-            if (kind !== "images" || !payload)
+            if (kind !== (root.wallpaperMode ? "wallpapers" : "images") || !payload)
                 return;
 
             root.images = Array.isArray(payload.items) ? payload.items : [];
@@ -187,7 +190,7 @@ Item {
                 Text {
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
-                    text: "Imagens"
+                    text: root.wallpaperMode ? "Papel de parede" : "Imagens"
                     color: Theme.foreground
                     font.family: Style.fontFamily
                     font.pixelSize: Style.title

@@ -8,6 +8,7 @@ import "Island"
 import "Surfaces"
 
 ShellRoot {
+    BackgroundSurface {}
     DynamicGlacier {}
     SurfaceHost {}
     EventOsd {}

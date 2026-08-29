@@ -9,6 +9,8 @@ Row {
     id: root
 
     property real fade: 1
+
+    signal menuRequested(var item, real anchorX)
     readonly property int iconSize: 15
     readonly property int maxItems: 6
     readonly property var items: (SystemTray.items?.values ?? []).slice(0, root.maxItems)
@@ -59,8 +61,13 @@ Row {
                 anchors.margins: -3
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                onClicked: {
-                    if (entry.modelData)
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                onClicked: mouse => {
+                    if (!entry.modelData)
+                        return;
+                    if (mouse.button === Qt.RightButton && entry.modelData.hasMenu)
+                        root.menuRequested(entry.modelData, entry.x + entry.width / 2);
+                    else
                         entry.modelData.activate();
                 }
             }
