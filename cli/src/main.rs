@@ -149,7 +149,7 @@ fn print_help() {
         "Frost control and diagnostics\n\n\
 Usage:\n  frost status [--json]\n  frost doctor [--json]\n  \
 frost verify [--json]\n  frost theme <list|current|validate|set|sync>\n  frost weather <current|set CITY|clear>\n  frost version\n\nInternal typed shell interface:\n  \
-frost shell-data <brightness|clipboard|images|indicators|notifications|weather>\n  \
+frost shell-data <brightness|clipboard|images|indicators|notifications|themes|wallpapers|weather>\n  \
 frost shell-action ACTION [VALUE]"
     );
 }
@@ -325,6 +325,19 @@ fn collect_checks(strict: bool) -> Vec<Check> {
         "cliphist",
         "systemctl",
         "systemd-inhibit",
+        // Every fixed executable the typed boundary can reach is checked here,
+        // so the inventory of runtime dependencies is the program itself rather
+        // than a list in a document that drifts.
+        "systemd-run",
+        "makoctl",
+        "nmcli",
+        "powerprofilesctl",
+        "rfkill",
+        "upower",
+        "busctl",
+        "wl-copy",
+        "awk",
+        "start-hyprland",
     ] {
         checks.push(Check {
             name: format!("command:{command}"),

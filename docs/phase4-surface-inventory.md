@@ -20,7 +20,44 @@ This inventory describes the single active shell composition after the DynamicGl
 | launcher | one shared overlay window, namespace frost-surfaces; desktop entries executed through the Quickshell API and typed frost shell-actions | an empty list when no entries resolve; no command discovery and no shell string is ever built |
 | clipboard | frost shell-data clipboard and shell-action clipboard-copy over cliphist | empty list when cliphist is unavailable |
 | emoji | package-owned catalog at config/data/emojis.json | empty grid when the catalog cannot be read |
-| images | frost shell-data images over ~/Pictures and ~/Imagens, copied with shell-action image-copy | the card stays hidden while nothing resolves; Frost has no wallpaper stack, so this browses and copies rather than setting a background |
+| images | frost shell-data images over ~/Pictures and ~/Imagens, copied with shell-action image-copy | the card stays hidden while nothing resolves |
+| wallpaper | frost shell-data wallpapers over the package background root, applied with shell-action wallpaper-set; the selection is a validated JSON pointer in ~/.local/state/frost/background.json | the background layer is absent until a wallpaper is selected, so nothing paints over whatever else owns the desktop; the carousel is empty while no packaged wallpaper is installed |
+| themes | frost shell-data themes enumerating every validated palette below the theme roots, applied with shell-action theme-set | the appearance route lists nothing when no palette validates; the shell keeps the last materialised palette |
+| tray menu | the item's own DBus menu, opened through QsMenuOpener inside the island window | items without a menu are activated instead; a Hyprland focus grab held only while the menu is open dismisses it on click-away |
+| session confirmation | presentation only, inside the launcher card; poweroff, reboot and logout require it, lock does not | cancelling is the default path; no process is started by the card itself |
+| event OSD | messages emitted by the shell for logout, reboot, shutdown and microphone mute | the window carries an empty input region and no keyboard focus, so a stuck OSD can never capture the pointer; session actions are scheduled with a two-second delay so the message is drawn before the action lands |
 | lock and Polkit | Hyprlock/PAM and hyprpolkitagent | no shell fallback or duplicated authority |
+
+## Runtime dependency inventory
+
+Every executable the shell can reach is fixed and absolute, and `frost doctor`
+checks each one by name, so the inventory is the program rather than this table.
+
+| Executable | Owning package | Reached by |
+|---|---|---|
+| Hyprland, start-hyprland | hyprland | session wrapper |
+| uwsm | uwsm | session lifecycle and application launch |
+| quickshell | quickshell | the shell itself |
+| mako, makoctl | mako | notification authority and its typed viewer |
+| hyprlock | hyprlock | lock authority |
+| hypridle | hypridle | idle authority |
+| hyprpolkitagent | hyprpolkitagent | Polkit authority |
+| ghostty | ghostty | terminal launch |
+| wpctl | wireplumber | audio device fallbacks |
+| brightnessctl | brightnessctl | backlight |
+| nmcli | networkmanager | Wi-Fi data and actions |
+| powerprofilesctl | power-profiles-daemon | power profile |
+| upower | upower | battery data |
+| rfkill | util-linux | radio state |
+| cliphist, wl-copy, wl-paste | cliphist, wl-clipboard | clipboard history and copy |
+| curl, jq | curl, jq | weather |
+| notify-send | libnotify | user-visible failures |
+| busctl, systemctl, systemd-run, systemd-inhibit | systemd | services, scheduled session actions, idle inhibition |
+| awk | gawk | wrapper scripts |
+| sleep | coreutils | wrapper scripts |
+
+Bluetooth, MPRIS, PipeWire, the system tray, UPower's live properties and
+Hyprland workspaces are native Quickshell integrations and cross no process
+boundary at all.
 
 qs.Core.ShellBackend is the only QML component allowed to instantiate processes. It owns two serialized processes, a bounded action queue and one stdin channel reserved for a validated Wi-Fi password. Installed execution remains fixed to /usr/bin/frost; worktree path overrides are accepted only while FROST_PREVIEW=1.
