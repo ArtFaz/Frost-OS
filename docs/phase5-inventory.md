@@ -22,7 +22,7 @@ dropped by decision on 2026-08-29; subsequent installs go through the terminal.
 
 ## Reconciliation
 
-`inventory.json` (version `2026-08-29.1`, 236 packages) was built from:
+`inventory.json` (version `2026-08-29.2`, 276 packages) was built from:
 
 - `Definitive Frost-OS/omarchy/install/omarchy-base.packages` — `0ae1694830b6`
 - `Definitive Frost-OS/omarchy/install/omarchy-other.packages` — `0ae1694830b6`
@@ -56,6 +56,24 @@ justification Frost shares: `omarchy-keyring` (replaced by `frost-keyring`),
 The terminal package browsers `pacsea-bin` and `parui`, with `paru` as their
 backend, enter as `aur` `OPTIONAL` under the `aur` feature. The hardened AUR
 build flow is Phase 6; Phase 5 only lists the tools.
+
+### Compatibility pass (`2026-08-29.2`)
+
+Frost is built for one machine but should install cleanly on others. This pass
+added, with every name verified against the live pacman database:
+
+- graphics: explicit `mesa` and `vulkan-icd-loader` in `CORE`; `vulkan-nouveau`,
+  `vulkan-swrast`, `vulkan-virtio`, `lib32-mesa`/`lib32-vulkan-*` in `HARDWARE`;
+  `libva-utils` and `vulkan-mesa-layers` in `DESKTOP`. (`mesa` now carries the
+  AMD/Intel VA-API drivers itself, so no separate `libva-mesa-driver`.)
+- base system: `sudo`, `xdg-desktop-portal`, `xdg-user-dirs`, `xdg-utils`,
+  `fwupd`, `rsync`, `reflector`, `zram-generator`, `nvme-cli`, `alsa-ucm-conf`.
+- laptop hardware (`HARDWARE`, off by default): `modemmanager`,
+  `iio-sensor-proxy`, `fprintd`/`libfprint`, `sbctl`, `tlp`, `acpid`.
+- new features: `virtualisation-guest` (QEMU/SPICE/VMware/VirtualBox guest
+  agents), `scanning` (`sane`, `sane-airscan`).
+- fonts: `ttf-liberation`, `ttf-dejavu`, `noto-fonts-extra`; plus `pavucontrol`,
+  `ntfs-3g`, `smartmontools`, `wireguard-tools`.
 
 ## Resolver
 
