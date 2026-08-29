@@ -1,11 +1,15 @@
 background = 101a28
 foreground = e8f1ff
-background-opacity = 0.90
-background-blur-radius = 20
 cursor-color = 9ed8ff
 selection-background = 27435f
 selection-foreground = f5fbff
 window-decoration = false
-window-padding-x = 12
-window-padding-y = 10
+window-padding-x = 14
+window-padding-y = 14
 confirm-close-surface = false
+# Ghostty draws a cell-count overlay while a window is being resized. It is on
+# by default and reads as a stray "80x24" in the middle of a new window.
+resize-overlay = never
+mouse-scroll-multiplier = 0.95
+# Hyprland-specific slowness with the default backend.
+async-backend = epoll

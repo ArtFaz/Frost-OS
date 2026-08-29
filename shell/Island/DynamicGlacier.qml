@@ -2179,8 +2179,10 @@ Scope {
                 }
             }
 
+            // Hover bookkeeping and the volume wheel cover the whole island in
+            // every mode, and deliberately carry no cursor of their own.
             MouseArea {
-                id: islandHitbox
+                id: islandHover
 
                 z: 20
                 anchors.horizontalCenter: island.horizontalCenter
@@ -2188,8 +2190,7 @@ Scope {
                 width: island.width
                 height: root.mode === "idle" && !root.interactionOpen ? Math.max(root.reservedZone, island.height) : island.height
                 hoverEnabled: true
-                acceptedButtons: root.visualMode === "media" || root.isPanelMode(root.visualMode) || root.interactionOpen ? Qt.NoButton : Qt.LeftButton
-                cursorShape: Qt.PointingHandCursor
+                acceptedButtons: Qt.NoButton
                 onEntered: root.keepInteractionOpen(true)
                 onWheel: wheel => {
                     if (root.visualMode === "volume" && root.volumeKind === "audio")
@@ -2199,6 +2200,23 @@ Scope {
                 }
                 onPositionChanged: mouse => root.maybeFinishExitPreview(mouse.x, width)
                 onExited: root.scheduleInteractionClose()
+            }
+
+            // The click target exists only while the island as a whole is the
+            // thing being clicked. Once it opens into media or a panel, the
+            // clickable things are the controls inside it, so this area — and
+            // with it the pointing hand over the entire surface — goes away.
+            MouseArea {
+                id: islandHitbox
+
+                z: 21
+                anchors.horizontalCenter: island.horizontalCenter
+                y: islandHover.y
+                width: islandHover.width
+                height: islandHover.height
+                visible: !(root.visualMode === "media" || root.isPanelMode(root.visualMode) || root.interactionOpen)
+                acceptedButtons: Qt.LeftButton
+                cursorShape: Qt.PointingHandCursor
                 onClicked: {
                     if (root.mode === "idle")
                         root.pinnedOpen = !root.pinnedOpen;
