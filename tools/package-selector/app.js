@@ -278,7 +278,14 @@ function buildControls() {
   pf.innerHTML = '';
   for (const [key, pr] of Object.entries(state.inv.profiles)) {
     pf.appendChild(toggleRow('profile', key, pr.label, pr.description, () => state.profiles.has(key), () => {
-      state.profiles.has(key) ? state.profiles.delete(key) : state.profiles.add(key);
+      if (state.profiles.has(key)) {
+        state.profiles.delete(key);
+      } else {
+        state.profiles.add(key);
+        // Turning a profile on turns its features on too, so the exported
+        // manifest is self-contained. Turning it off leaves them for the user.
+        (pr.features || []).forEach((f) => { if (f in state.features) state.features[f] = true; });
+      }
     }));
   }
   const ff = $('#features');
