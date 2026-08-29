@@ -1,0 +1,20 @@
+font=JetBrains Mono 11
+background-color=#{{background_strip}}{{surface_alpha}}
+text-color=#{{foreground_strip}}ff
+border-color=#{{foreground_strip}}{{border_alpha}}
+border-size=1
+border-radius=14
+default-timeout=5000
+ignore-timeout=0
+anchor=top-right
+layer=overlay
+margin=12
+padding=14
+width=390
+height=140
+max-visible=5
+icons=1
+max-icon-size=48
+
+[mode=dnd]
+invisible=1

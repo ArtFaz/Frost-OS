@@ -7,6 +7,8 @@ use std::path::{Path, PathBuf};
 
 const DEFAULT_THEME: &str = "gruvbox";
 const MAX_THEME_BYTES: u64 = 64 * 1024;
+/// Semantic roles the shell binds to. Every theme must define all of them, and
+/// they carry the contrast guarantees.
 const COLOR_KEYS: [&str; 8] = [
     "background",
     "foreground",
@@ -16,6 +18,32 @@ const COLOR_KEYS: [&str; 8] = [
     "highlight",
     "success",
     "warning",
+];
+
+/// Palette entries a theme may also supply. They exist so terminals, btop and
+/// the compositor can be themed from the same file; the shell does not bind to
+/// them and they are exempt from the contrast gates, because an ANSI palette
+/// legitimately contains colours that are unreadable against the background.
+const PALETTE_KEYS: [&str; 19] = [
+    "selection",
+    "dark_background",
+    "darker_background",
+    "lighter_background",
+    "dark_foreground",
+    "light_foreground",
+    "bright_foreground",
+    "red",
+    "yellow",
+    "orange",
+    "green",
+    "cyan",
+    "blue",
+    "magenta",
+    "brown",
+    "bright_red",
+    "bright_yellow",
+    "bright_green",
+    "bright_blue",
 ];
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -51,12 +79,16 @@ fn effective_dir() -> Result<PathBuf, CliError> {
     Ok(runtime_dir()?.join("frost/theme"))
 }
 
-fn theme_roots() -> Result<[PathBuf; 3], CliError> {
-    Ok([
-        config_home()?.join("frost/themes"),
-        PathBuf::from("/etc/frost/themes"),
-        PathBuf::from("/usr/share/frost/themes"),
-    ])
+fn theme_roots() -> Result<Vec<PathBuf>, CliError> {
+    let mut roots = vec![config_home()?.join("frost/themes")];
+    // Set only by the worktree preview, so a developer sees the tree's themes
+    // rather than whichever set happens to be installed.
+    if let Some(source) = env::var_os("FROST_SOURCE_ROOT").map(PathBuf::from) {
+        roots.push(source.join("themes"));
+    }
+    roots.push(PathBuf::from("/etc/frost/themes"));
+    roots.push(PathBuf::from("/usr/share/frost/themes"));
+    Ok(roots)
 }
 
 fn valid_name(value: &str) -> bool {
@@ -179,16 +211,28 @@ pub(crate) fn parse_theme(raw: &str) -> Result<Theme, CliError> {
         .ok_or_else(|| CliError::Usage("theme mode must be dark or light".to_owned()))?;
 
     let actual_colors = colors.keys().map(String::as_str).collect::<BTreeSet<_>>();
-    let expected_colors = COLOR_KEYS.into_iter().collect::<BTreeSet<_>>();
-    if actual_colors != expected_colors {
+    let required_colors = COLOR_KEYS.into_iter().collect::<BTreeSet<_>>();
+    if !required_colors.is_subset(&actual_colors) {
         return Err(CliError::Usage(format!(
-            "theme colors must contain exactly {}",
+            "theme colors must contain at least {}",
             COLOR_KEYS.join(", ")
         )));
     }
+    let allowed_colors = COLOR_KEYS
+        .into_iter()
+        .chain(PALETTE_KEYS)
+        .collect::<BTreeSet<_>>();
+    if let Some(unknown) = actual_colors.difference(&allowed_colors).next() {
+        return Err(CliError::Usage(format!(
+            "unsupported theme color: {unknown}"
+        )));
+    }
     let mut normalized = BTreeMap::new();
-    for key in COLOR_KEYS {
-        let value = unquote(colors.get(key).expect("checked color"))
+    for key in COLOR_KEYS.into_iter().chain(PALETTE_KEYS) {
+        let Some(raw) = colors.get(key) else {
+            continue;
+        };
+        let value = unquote(raw)
             .filter(|value| parse_hex(value).is_some())
             .ok_or_else(|| CliError::Usage(format!("invalid color: {key}")))?;
         normalized.insert(key.to_owned(), value.to_ascii_lowercase());
@@ -325,6 +369,113 @@ fn rgba(theme: &Theme, role: &str, alpha: &str) -> String {
     )
 }
 
+/// Package-owned templates only. There is no user template directory on
+/// purpose: a rendered template becomes a config another program reads, so an
+/// extension point here would be an extension point into those programs.
+fn template_source(name: &str) -> Option<PathBuf> {
+    if let Some(root) = env::var_os("FROST_SOURCE_ROOT").map(PathBuf::from) {
+        let candidate = root.join("default/templates").join(name);
+        if candidate.is_file() {
+            return Some(candidate);
+        }
+    }
+    [
+        PathBuf::from("/etc/frost/templates"),
+        PathBuf::from("/usr/share/frost/templates"),
+    ]
+    .into_iter()
+    .map(|root| root.join(name))
+    .find(|candidate| candidate.is_file())
+}
+
+/// Substitution only — no conditionals, no loops, no shelling out. An unknown
+/// token is left untouched rather than erroring, so a template naming a palette
+/// entry a theme omits degrades to a literal instead of failing the whole sync.
+fn render_template(source: &str, theme: &Theme) -> String {
+    let mut values: BTreeMap<String, String> = BTreeMap::new();
+    values.insert("name".to_owned(), theme.name.clone());
+    values.insert("mode".to_owned(), theme.mode.clone());
+    let light = theme.mode == "light";
+    values.insert(
+        "surface_alpha".to_owned(),
+        if light { "e0" } else { "cc" }.to_owned(),
+    );
+    values.insert(
+        "border_alpha".to_owned(),
+        if light { "24" } else { "33" }.to_owned(),
+    );
+    // A theme only has to define the eight semantic roles. Palette entries it
+    // omits fall back to the nearest role so a template always resolves — an
+    // unresolved token would land in a config file another program then rejects.
+    let mut resolved: BTreeMap<&str, String> = BTreeMap::new();
+    for (key, value) in &theme.colors {
+        resolved.insert(key.as_str(), value.clone());
+    }
+    let role = |name: &str| -> String {
+        theme
+            .colors
+            .get(name)
+            .cloned()
+            .unwrap_or_else(|| "#000000".to_owned())
+    };
+    for (key, fallback) in [
+        ("selection", "accent"),
+        ("dark_background", "background"),
+        ("darker_background", "background"),
+        ("lighter_background", "muted"),
+        ("dark_foreground", "muted"),
+        ("light_foreground", "foreground"),
+        ("bright_foreground", "foreground"),
+        ("red", "urgent"),
+        ("yellow", "warning"),
+        ("orange", "warning"),
+        ("green", "success"),
+        ("cyan", "accent"),
+        ("blue", "accent"),
+        ("magenta", "highlight"),
+        ("brown", "muted"),
+        ("bright_red", "urgent"),
+        ("bright_yellow", "highlight"),
+        ("bright_green", "success"),
+        ("bright_blue", "accent"),
+    ] {
+        resolved.entry(key).or_insert_with(|| role(fallback));
+    }
+
+    for (key, value) in resolved {
+        values.insert(
+            format!("{key}_strip"),
+            value.trim_start_matches('#').to_owned(),
+        );
+        if let Some((red, green, blue)) = parse_hex(&value) {
+            values.insert(format!("{key}_rgb"), format!("{red},{green},{blue}"));
+        }
+        values.insert(key.to_owned(), value);
+    }
+
+    let mut rendered = String::with_capacity(source.len());
+    let mut rest = source;
+    while let Some(start) = rest.find("{{") {
+        rendered.push_str(&rest[..start]);
+        let after = &rest[start + 2..];
+        let Some(end) = after.find("}}") else {
+            rendered.push_str(&rest[start..]);
+            return rendered;
+        };
+        match values.get(after[..end].trim()) {
+            Some(value) => rendered.push_str(value),
+            None => {
+                rendered.push_str("{{");
+                rendered.push_str(&after[..end]);
+                rendered.push_str("}}");
+            }
+        }
+        rest = &after[end + 2..];
+    }
+    rendered.push_str(rest);
+    rendered
+}
+
 fn mako_config(theme: &Theme) -> String {
     let light = theme.mode == "light";
     format!(
@@ -359,7 +510,28 @@ fn sync_theme() -> Result<(Theme, PathBuf), CliError> {
     let (theme, source) = resolve_theme(&selected).or_else(|_| resolve_theme(DEFAULT_THEME))?;
     let output = effective_dir()?;
     atomic_write(&output.join("theme.toml"), &normalized_theme(&theme), 0o600)?;
-    atomic_write(&output.join("mako.conf"), &mako_config(&theme), 0o600)?;
+    // The built-in string stays as the fallback for a machine whose template
+    // tree is missing, so a broken install still gets a themed notifier.
+    let mako = match template_source("mako.conf.tpl") {
+        Some(path) => fs::read_to_string(path)
+            .map(|source| render_template(&source, &theme))
+            .unwrap_or_else(|_| mako_config(&theme)),
+        None => mako_config(&theme),
+    };
+    atomic_write(&output.join("mako.conf"), &mako, 0o600)?;
+    for (template, destination) in [("ghostty.conf.tpl", "ghostty.conf")] {
+        let Some(path) = template_source(template) else {
+            continue;
+        };
+        let Ok(source) = fs::read_to_string(path) else {
+            continue;
+        };
+        atomic_write(
+            &output.join(destination),
+            &render_template(&source, &theme),
+            0o600,
+        )?;
+    }
     atomic_write(
         &output.join("hyprlock.conf"),
         &hyprlock_config(&theme),

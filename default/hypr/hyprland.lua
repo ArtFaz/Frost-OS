@@ -50,6 +50,8 @@ hl.config({
             rounding_power = 2.0,
             gradient_rounding = 6,
             gradient_rounding_power = 2.0,
+            -- Colours are overwritten at runtime by the generated
+            -- hyprland-colors.conf; these are the pre-theme fallback.
             text_color = "rgba(d4be98ff)",
             text_color_inactive = "rgba(d4be989e)",
             gaps_in = 4,
@@ -180,6 +182,47 @@ hl.env("QT_QPA_PLATFORMTHEME", "gtk3")
 hl.env("MOZ_ENABLE_WAYLAND", "1")
 hl.env("ELECTRON_OZONE_PLATFORM_HINT", "wayland")
 hl.env("OZONE_PLATFORM", "wayland")
+
+local function theme_foreground()
+    local runtime = os.getenv("XDG_RUNTIME_DIR")
+    if not runtime then
+        return nil
+    end
+    local handle = io.open(runtime .. "/frost/theme/theme.toml", "r")
+    if not handle then
+        return nil
+    end
+    local value = nil
+    for line in handle:lines() do
+        local hex = line:match('^%s*foreground%s*=%s*"(#%x%x%x%x%x%x)"%s*$')
+        if hex then
+            value = hex:sub(2)
+            break
+        end
+    end
+    handle:close()
+    return value
+end
+
+-- The group colours track the active theme instead of freezing one palette
+-- while the shell follows another.
+local foreground = theme_foreground()
+if foreground then
+    hl.config({
+        group = {
+            groupbar = {
+                text_color = "rgba(" .. foreground .. "ff)",
+                text_color_inactive = "rgba(" .. foreground .. "9e)",
+                col = {
+                    active = "rgba(" .. foreground .. "1f)",
+                    inactive = "rgba(" .. foreground .. "0a)",
+                    locked_active = "rgba(" .. foreground .. "1f)",
+                    locked_inactive = "rgba(" .. foreground .. "0a)",
+                },
+            },
+        },
+    })
+end
 
 hl.on("hyprland.start", function()
     hl.exec_cmd("systemctl --user start --no-block frost-session.target")

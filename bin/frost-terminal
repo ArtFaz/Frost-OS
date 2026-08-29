@@ -2,7 +2,16 @@
 
 set -euo pipefail
 
+# The generated palette is layered over the shipped defaults when a theme has
+# been synced. Resolved here rather than in the config file because Ghostty does
+# not expand the runtime directory itself.
+declare -a frost_terminal_config=(--config-file=/usr/share/frost/default/ghostty/config)
+frost_terminal_theme=${XDG_RUNTIME_DIR:-}/frost/theme/ghostty.conf
+if [[ -n ${XDG_RUNTIME_DIR:-} && -f $frost_terminal_theme && ! -L $frost_terminal_theme ]]; then
+  frost_terminal_config+=(--config-file="$frost_terminal_theme")
+fi
+
 exec /usr/bin/ghostty \
   --config-default-files=false \
-  --config-file=/usr/share/frost/default/ghostty/config \
+  "${frost_terminal_config[@]}" \
   "$@"
