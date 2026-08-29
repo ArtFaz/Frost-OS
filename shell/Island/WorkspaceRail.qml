@@ -87,7 +87,7 @@ Row {
                 width: dot.focused ? 10 : 6
                 height: width
                 radius: width / 2
-                color: dot.focused ? Theme.accent : (dot.occupied ? Theme.foreground : Theme.muted)
+                color: dot.focused ? Theme.accent : (dot.occupied ? Theme.foreground : Theme.secondaryText)
                 opacity: dot.focused || dot.occupied ? 1 : 0.45
                 scale: dotMouse.containsMouse ? 1.25 : 1
 

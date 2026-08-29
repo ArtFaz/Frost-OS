@@ -88,7 +88,7 @@ Item {
                 width: parent.width * Math.max(0, Math.min(100, slider.value)) / 100
                 height: parent.height
                 radius: parent.radius
-                color: slider.dimmed ? Theme.muted : Theme.accent
+                color: slider.dimmed ? Theme.secondaryText : Theme.accent
 
                 Behavior on width {
                     NumberAnimation { duration: 120; easing.type: Easing.OutCubic }
@@ -138,7 +138,7 @@ Item {
             MIcon {
                 name: root.outputMuted ? "volume_off" : (root.outputVolume < 50 ? "volume_down" : "volume_up")
                 size: 14
-                color: root.outputMuted ? Theme.muted : root.primaryText
+                color: root.outputMuted ? Theme.secondaryText : root.primaryText
 
                 MouseArea {
                     anchors.fill: parent
@@ -158,7 +158,7 @@ Item {
             Text {
                 Layout.preferredWidth: 34
                 text: root.outputVolume + "%"
-                color: root.outputMuted ? Theme.muted : root.primaryText
+                color: root.outputMuted ? Theme.secondaryText : root.primaryText
                 horizontalAlignment: Text.AlignRight
                 font.family: root.fontFamily
                 font.pixelSize: 11
@@ -174,7 +174,7 @@ Item {
             MIcon {
                 name: "mic"
                 size: 14
-                color: root.inputMuted ? Theme.muted : root.primaryText
+                color: root.inputMuted ? Theme.secondaryText : root.primaryText
 
                 MouseArea {
                     anchors.fill: parent
@@ -194,7 +194,7 @@ Item {
             Text {
                 Layout.preferredWidth: 34
                 text: root.inputVolume + "%"
-                color: root.inputMuted ? Theme.muted : root.primaryText
+                color: root.inputMuted ? Theme.secondaryText : root.primaryText
                 horizontalAlignment: Text.AlignRight
                 font.family: root.fontFamily
                 font.pixelSize: 11
@@ -209,7 +209,7 @@ Item {
 
             Text {
                 text: "Saída"
-                color: Theme.muted
+                color: Theme.secondaryText
                 font.family: root.fontFamily
                 font.pixelSize: 10
                 font.weight: Font.Bold
@@ -239,7 +239,7 @@ Item {
                         MIcon {
                             name: "headphones"
                             size: 12
-                            color: parent.parent.current ? Theme.accent : Theme.muted
+                            color: parent.parent.current ? Theme.accent : Theme.secondaryText
                         }
 
                         Text {
@@ -279,7 +279,7 @@ Item {
 
             Text {
                 text: "Por aplicativo"
-                color: Theme.muted
+                color: Theme.secondaryText
                 font.family: root.fontFamily
                 font.pixelSize: 10
                 font.weight: Font.Bold
@@ -298,7 +298,7 @@ Item {
                     MIcon {
                         name: modelData?.audio?.muted ? "volume_off" : "volume_up"
                         size: 12
-                        color: modelData?.audio?.muted ? Theme.muted : Theme.foreground
+                        color: modelData?.audio?.muted ? Theme.secondaryText : Theme.foreground
 
                         MouseArea {
                             anchors.fill: parent

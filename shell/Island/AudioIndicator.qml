@@ -10,7 +10,7 @@ Item {
     property bool playing: false
     property bool interactive: true
     property color barColor: Theme.accent
-    property color idleColor: Theme.muted
+    property color idleColor: Theme.secondaryText
     property real barWidth: 3
     property real maxBarHeight: 14
 

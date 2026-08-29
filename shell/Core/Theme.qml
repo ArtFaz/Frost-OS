@@ -42,6 +42,13 @@ QtObject {
     readonly property color border: alpha(foreground, light ? 0.14 : 0.20)
     readonly property color focus: accent
     readonly property color muted: mutedBase
+    // Secondary text is derived from the text colour rather than painted with
+    // the theme's muted role. A palette is free to put muted anywhere — gruvbox
+    // lands at 2.26:1 against its own background and matte-black at 1.48:1,
+    // which is not readable at any size — while a fixed fraction of the
+    // foreground keeps the same relationship in every theme. 0.62 is the
+    // fraction the reference session uses for inactive text.
+    readonly property color secondaryText: alpha(foreground, 0.62)
     readonly property color controlNormal: alpha(foreground, 0.04)
     readonly property color controlHover: alpha(foreground, 0.08)
     readonly property color controlPressed: alpha(foreground, 0.18)

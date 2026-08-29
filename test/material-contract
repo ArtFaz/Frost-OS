@@ -27,6 +27,11 @@ rg -Fq 'readonly property color controlHover: alpha(foreground, 0.08)' "$theme" 
   fail 'hover must use a neutral foreground fill'
 rg -Fq 'readonly property color selected: alpha(accent, 0.14)' "$theme" ||
   fail 'selection must use the semantic accent'
+rg -Fq 'readonly property color secondaryText: alpha(foreground, 0.62)' "$theme" ||
+  fail 'secondary text must be derived from the foreground, not from the muted role'
+if rg -n 'Theme\.muted' "$root/shell"; then
+  fail 'the muted palette role is not readable enough to paint text or marks'
+fi
 
 rg -Fq 'readonly property real glassAmount: 1' "$glass" ||
   fail 'Frost glass is not the single permanent material'

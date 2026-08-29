@@ -57,7 +57,7 @@ Item {
 
             Text {
                 text: "DND"
-                color: root.dnd ? Theme.accent : Theme.muted
+                color: root.dnd ? Theme.accent : Theme.secondaryText
                 font.family: root.fontFamily
                 font.pixelSize: 10
                 font.weight: Font.Bold
@@ -85,7 +85,7 @@ Item {
 
                     anchors.centerIn: parent
                     text: "Limpar"
-                    color: clearMouse.containsMouse ? Theme.foreground : Theme.muted
+                    color: clearMouse.containsMouse ? Theme.foreground : Theme.secondaryText
                     font.family: root.fontFamily
                     font.pixelSize: 10
                     font.weight: Font.Bold
@@ -112,7 +112,7 @@ Item {
                 Layout.preferredHeight: root.placeholderHeight
                 visible: root.entries.length === 0
                 text: root.dnd ? "Não perturbe está ativo." : "Nada por aqui."
-                color: Theme.muted
+                color: Theme.secondaryText
                 verticalAlignment: Text.AlignVCenter
                 font.family: root.fontFamily
                 font.pixelSize: 12
@@ -157,7 +157,7 @@ Item {
                             Text {
                                 Layout.fillWidth: true
                                 text: row.modelData.body !== "" ? row.modelData.body : row.modelData.appName
-                                color: Theme.muted
+                                color: Theme.secondaryText
                                 elide: Text.ElideRight
                                 maximumLineCount: 1
                                 font.family: root.fontFamily
@@ -175,7 +175,7 @@ Item {
                                 anchors.centerIn: parent
                                 name: "close"
                                 size: 11
-                                color: Theme.muted
+                                color: Theme.secondaryText
                             }
 
                             MouseArea {

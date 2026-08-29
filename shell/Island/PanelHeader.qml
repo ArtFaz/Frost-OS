@@ -35,7 +35,7 @@ RowLayout {
             anchors.centerIn: parent
             name: "chevron_left"
             size: 13
-            color: backMouse.containsMouse ? Theme.foreground : Theme.muted
+            color: backMouse.containsMouse ? Theme.foreground : Theme.secondaryText
         }
 
         MouseArea {
@@ -57,7 +57,7 @@ RowLayout {
         Layout.alignment: Qt.AlignVCenter
         name: root.icon
         size: 16
-        color: root.iconDimmed ? Theme.muted : Theme.foreground
+        color: root.iconDimmed ? Theme.secondaryText : Theme.foreground
     }
 
     ColumnLayout {
@@ -80,7 +80,7 @@ RowLayout {
             // panel cannot already show in its body.
             text: root.statusText !== "" ? root.statusText : root.subtitle
             visible: text !== ""
-            color: root.statusText !== "" ? Theme.urgent : (root.subtitleHighlighted ? Theme.foreground : Theme.muted)
+            color: root.statusText !== "" ? Theme.urgent : (root.subtitleHighlighted ? Theme.foreground : Theme.secondaryText)
             elide: Text.ElideRight
             font.family: root.fontFamily
             font.pixelSize: 11

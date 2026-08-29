@@ -52,13 +52,13 @@ RowLayout {
             MIcon {
                 name: root.volumeGlyph
                 size: root.compact ? 12 : 13
-                color: root.muted ? Theme.muted : (audioMouse.containsMouse ? Theme.highlight : Theme.foreground)
+                color: root.muted ? Theme.secondaryText : (audioMouse.containsMouse ? Theme.highlight : Theme.foreground)
                 anchors.verticalCenter: parent.verticalCenter
             }
 
             Text {
                 text: root.muted ? "Mudo" : root.volume + "%"
-                color: root.muted ? Theme.muted : Theme.foreground
+                color: root.muted ? Theme.secondaryText : Theme.foreground
                 font.family: root.fontFamily
                 font.pixelSize: root.compact ? 10 : 11
                 font.weight: Font.Bold
@@ -100,7 +100,7 @@ RowLayout {
             MIcon {
                 name: "mic"
                 size: root.compact ? 12 : 13
-                color: root.microphoneMuted ? Theme.muted : (root.microphoneActive ? Theme.warning : Theme.foreground)
+                color: root.microphoneMuted ? Theme.secondaryText : (root.microphoneActive ? Theme.warning : Theme.foreground)
                 anchors.verticalCenter: parent.verticalCenter
             }
 
@@ -109,7 +109,7 @@ RowLayout {
                 height: 1
                 radius: 0.5
                 rotation: -45
-                color: Theme.muted
+                color: Theme.secondaryText
                 visible: root.microphoneMuted
                 anchors.verticalCenter: parent.verticalCenter
                 anchors.verticalCenterOffset: -5
@@ -140,7 +140,7 @@ RowLayout {
             MIcon {
                 name: root.notificationsDnd ? "notifications_off" : "notifications"
                 size: root.compact ? 12 : 13
-                color: root.notificationsDnd ? Theme.muted : (notificationsMouse.containsMouse ? Theme.highlight : Theme.foreground)
+                color: root.notificationsDnd ? Theme.secondaryText : (notificationsMouse.containsMouse ? Theme.highlight : Theme.foreground)
                 anchors.verticalCenter: parent.verticalCenter
             }
 
@@ -175,7 +175,7 @@ RowLayout {
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
             text: root.statusText
-            color: Theme.muted
+            color: Theme.secondaryText
             visible: root.statusText !== ""
             horizontalAlignment: Text.AlignRight
             elide: Text.ElideRight

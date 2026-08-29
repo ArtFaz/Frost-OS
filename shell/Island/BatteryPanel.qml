@@ -33,7 +33,7 @@ Item {
     property real morph: 0
 
     readonly property color primaryText: Theme.foreground
-    readonly property color secondaryText: Theme.muted
+    readonly property color secondaryText: Theme.secondaryText
     readonly property int panelPadding: 16
     readonly property int headerHeight: 32
     readonly property int overviewHeight: 70
@@ -55,7 +55,7 @@ Item {
 
     function healthColor() {
         if (root.health < 0)
-            return Theme.muted;
+            return Theme.secondaryText;
         if (root.health >= 85)
             return Theme.success;
         if (root.health >= 70)
@@ -274,7 +274,7 @@ Item {
                         MIcon {
                             name: modelData.icon
                             size: 15
-                            color: modelData.action === "threshold" && root.thresholdEnabled ? Theme.success : Theme.muted
+                            color: modelData.action === "threshold" && root.thresholdEnabled ? Theme.success : Theme.secondaryText
                         }
 
                         ColumnLayout {
@@ -333,7 +333,7 @@ Item {
                 MIcon {
                     name: "speed"
                     size: 16
-                    color: root.activeProfile === "performance" ? Theme.warning : Theme.muted
+                    color: root.activeProfile === "performance" ? Theme.warning : Theme.secondaryText
                 }
 
                 ColumnLayout {
@@ -355,7 +355,7 @@ Item {
                     Text {
                         Layout.fillWidth: true
                         text: root.profileSubtitle()
-                        color: root.profileStatusText.indexOf("Could not") === 0 ? Theme.urgent : Theme.muted
+                        color: root.profileStatusText.indexOf("Could not") === 0 ? Theme.urgent : Theme.secondaryText
                         elide: Text.ElideRight
                         font.family: root.fontFamily
                         font.pixelSize: 9
@@ -395,7 +395,7 @@ Item {
                 Layout.fillWidth: true
                 text: root.thresholdStatusText !== "" ? root.thresholdStatusText : (root.designCapacityWh > 0 ? "Factory capacity " + root.designCapacityWh.toFixed(1) + " Wh" : "")
                 visible: text !== ""
-                color: root.thresholdStatusText !== "" ? Theme.accent : Theme.muted
+                color: root.thresholdStatusText !== "" ? Theme.accent : Theme.secondaryText
                 elide: Text.ElideRight
                 font.family: root.fontFamily
                 font.pixelSize: 9
@@ -405,7 +405,7 @@ Item {
             Text {
                 text: root.power >= 0.05 ? root.power.toFixed(1) + " W" : ""
                 visible: text !== ""
-                color: Theme.muted
+                color: Theme.secondaryText
                 font.family: root.fontFamily
                 font.pixelSize: 9
                 font.weight: Font.DemiBold

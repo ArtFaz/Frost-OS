@@ -75,7 +75,7 @@ Item {
     property string dateText: ""
     property string fontFamily: Style.fontFamily
     readonly property color primaryText: Theme.foreground
-    readonly property color secondaryText: Theme.muted
+    readonly property color secondaryText: Theme.secondaryText
     readonly property color accent: Theme.accent
     readonly property int mediaHorizontalPadding: 24
     readonly property real normalizedMediaPosition: root.normalizedSeconds(mediaPosition)
@@ -304,7 +304,7 @@ Item {
                         width: 2
                         height: root.playing ? (5 + index * 2) : 4
                         radius: 1
-                        color: root.playing ? Theme.foreground : Theme.muted
+                        color: root.playing ? Theme.foreground : Theme.secondaryText
 
                         // Gate on the bars' own effective visibility, not just the
                         // container's. `visible` folds in every ancestor, so this
@@ -353,7 +353,7 @@ Item {
                 width: root.playing ? parent.width : 6
                 height: parent.height
                 radius: parent.radius
-                color: root.playing ? Theme.foreground : Theme.muted
+                color: root.playing ? Theme.foreground : Theme.secondaryText
 
                 Behavior on width {
                     NumberAnimation {
@@ -513,13 +513,13 @@ Item {
                             MIcon {
                                 name: root.wifiConnected ? (root.wifiSignal >= 70 ? "wifi" : root.wifiSignal >= 40 ? "wifi_2_bar" : "wifi_1_bar") : "wifi_off"
                                 size: 13
-                                color: root.wifiConnected ? Theme.foreground : Theme.muted
+                                color: root.wifiConnected ? Theme.foreground : Theme.secondaryText
                                 anchors.verticalCenter: parent.verticalCenter
                             }
 
                             Text {
                                 text: root.wifiConnected ? root.wifiSsid : "Off"
-                                color: root.wifiConnected ? Theme.foreground : Theme.muted
+                                color: root.wifiConnected ? Theme.foreground : Theme.secondaryText
                                 font.family: root.fontFamily
                                 font.pixelSize: 11
                                 font.weight: Font.DemiBold
@@ -549,13 +549,13 @@ Item {
                             MIcon {
                                 name: "bluetooth"
                                 size: 13
-                                color: root.btConnected ? Theme.accent : (root.btEnabled ? Theme.foreground : Theme.muted)
+                                color: root.btConnected ? Theme.accent : (root.btEnabled ? Theme.foreground : Theme.secondaryText)
                                 anchors.verticalCenter: parent.verticalCenter
                             }
 
                             Text {
                                 text: root.btConnected ? (root.btBattery >= 0 ? root.btDeviceName + " " + root.btBattery + "%" : root.btDeviceName) : (root.btEnabled ? "On" : "Off")
-                                color: root.btConnected ? Theme.foreground : Theme.muted
+                                color: root.btConnected ? Theme.foreground : Theme.secondaryText
                                 font.family: root.fontFamily
                                 font.pixelSize: 11
                                 font.weight: Font.DemiBold
@@ -587,13 +587,13 @@ Item {
                             MIcon {
                                 name: "hourglass_top"
                                 size: 13
-                                color: root.stayAwakeActive ? Theme.warning : Theme.muted
+                                color: root.stayAwakeActive ? Theme.warning : Theme.secondaryText
                                 anchors.verticalCenter: parent.verticalCenter
                             }
 
                             Text {
                                 text: root.stayAwakeActive ? "Acordado" : "Idle"
-                                color: root.stayAwakeActive ? Theme.foreground : Theme.muted
+                                color: root.stayAwakeActive ? Theme.foreground : Theme.secondaryText
                                 font.family: root.fontFamily
                                 font.pixelSize: 11
                                 font.weight: Font.DemiBold
@@ -627,13 +627,13 @@ Item {
                             MIcon {
                                 name: "chevron_left"
                                 size: 13
-                                color: mediaFaceMouse.containsMouse ? Theme.highlight : Theme.muted
+                                color: mediaFaceMouse.containsMouse ? Theme.highlight : Theme.secondaryText
                                 anchors.verticalCenter: parent.verticalCenter
                             }
 
                             Text {
                                 text: "Tocando"
-                                color: mediaFaceMouse.containsMouse ? Theme.foreground : Theme.muted
+                                color: mediaFaceMouse.containsMouse ? Theme.foreground : Theme.secondaryText
                                 font.family: root.fontFamily
                                 font.pixelSize: 11
                                 font.weight: Font.DemiBold
@@ -787,7 +787,7 @@ Item {
                                             anchors.centerIn: parent
                                             name: "lock"
                                             size: 11
-                                            color: Theme.muted
+                                            color: Theme.secondaryText
                                             visible: wifiRowItem.modelData.secured
                                         }
                                     }
@@ -852,7 +852,7 @@ Item {
                                             Text {
                                                 anchors.verticalCenter: parent.verticalCenter
                                                 text: "Password"
-                                                color: Theme.muted
+                                                color: Theme.secondaryText
                                                 visible: wifiPasswordInput.text === ""
                                                 font.family: root.fontFamily
                                                 font.pixelSize: 12
@@ -918,7 +918,7 @@ Item {
 
                                                 anchors.centerIn: parent
                                                 text: "Esquecer"
-                                                color: wifiForgetMouse.containsMouse ? Theme.urgent : Theme.muted
+                                                color: wifiForgetMouse.containsMouse ? Theme.urgent : Theme.secondaryText
                                                 font.family: root.fontFamily
                                                 font.pixelSize: 12
                                                 font.weight: Font.DemiBold
@@ -1140,7 +1140,7 @@ Item {
                 name: root.volumeGlyph
                 size: 15
                 filled: true
-                color: Theme.muted
+                color: Theme.secondaryText
             }
 
             // Clip container, so the fill keeps the capsule's rounded caps instead
@@ -1244,7 +1244,7 @@ Item {
                             width: playerDot.current ? 7 : 5
                             height: width
                             radius: width / 2
-                            color: playerDot.current ? Theme.accent : Theme.muted
+                            color: playerDot.current ? Theme.accent : Theme.secondaryText
                             opacity: playerDot.current ? 1 : 0.5
                             scale: playerDotMouse.containsMouse ? 1.25 : 1
 
@@ -1293,7 +1293,7 @@ Item {
                     anchors.centerIn: parent
                     name: "chevron_right"
                     size: 12
-                    color: dismissMouse.containsMouse ? Theme.foreground : Theme.muted
+                    color: dismissMouse.containsMouse ? Theme.foreground : Theme.secondaryText
                 }
 
                 MouseArea {
@@ -1361,7 +1361,7 @@ Item {
                             width: 4
                             height: root.playing ? (12 + index * 5) : 10
                             radius: 2
-                            color: root.playing ? root.accent : Theme.muted
+                            color: root.playing ? root.accent : Theme.secondaryText
 
                             // Same reasoning as the collapsed equalizer: these bars are
                             // hidden whenever there is cover art to show, so keying off
@@ -1419,7 +1419,7 @@ Item {
 
                     Text {
                         text: root.formatTime(root.mediaPosition)
-                        color: Theme.muted
+                        color: Theme.secondaryText
                         font.family: root.fontFamily
                         font.pixelSize: 10
                         font.weight: Font.DemiBold
@@ -1469,7 +1469,7 @@ Item {
 
                     Text {
                         text: root.formatTime(root.mediaLength)
-                        color: Theme.muted
+                        color: Theme.secondaryText
                         font.family: root.fontFamily
                         font.pixelSize: 10
                         font.weight: Font.DemiBold

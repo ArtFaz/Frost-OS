@@ -105,7 +105,7 @@ Item {
                     anchors.centerIn: parent
                     name: "refresh"
                     size: 12
-                    color: root.discovering ? Theme.accent : Theme.muted
+                    color: root.discovering ? Theme.accent : Theme.secondaryText
                 }
 
                 MouseArea {
@@ -196,7 +196,7 @@ Item {
                                 Text {
                                     Layout.fillWidth: true
                                     text: root.deviceStatus(deviceRow.modelData)
-                                    color: deviceRow.modelData.connected ? Theme.accent : Theme.muted
+                                    color: deviceRow.modelData.connected ? Theme.accent : Theme.secondaryText
                                     elide: Text.ElideRight
                                     font.family: root.fontFamily
                                     font.pixelSize: 10
@@ -215,7 +215,7 @@ Item {
                                     anchors.centerIn: parent
                                     name: "close"
                                     size: 12
-                                    color: forgetMouse.containsMouse ? Theme.urgent : Theme.muted
+                                    color: forgetMouse.containsMouse ? Theme.urgent : Theme.secondaryText
                                 }
 
                                 MouseArea {
@@ -231,7 +231,7 @@ Item {
                             MIcon {
                                 name: deviceRow.busy ? "hourglass_top" : (deviceRow.modelData.connected ? "link_off" : ((deviceRow.modelData.paired || deviceRow.modelData.bonded) ? "link" : "add"))
                                 size: 14
-                                color: deviceRow.modelData.connected ? Theme.foreground : Theme.muted
+                                color: deviceRow.modelData.connected ? Theme.foreground : Theme.secondaryText
                             }
                         }
 
@@ -262,13 +262,13 @@ Item {
                     anchors.horizontalCenter: parent.horizontalCenter
                     name: root.radioEnabled ? "bluetooth_searching" : "bluetooth_disabled"
                     size: 20
-                    color: Theme.muted
+                    color: Theme.secondaryText
                 }
 
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: !root.radioEnabled ? "Bluetooth is off" : (root.discovering ? "Looking for devices…" : "No devices found")
-                    color: Theme.muted
+                    color: Theme.secondaryText
                     font.family: root.fontFamily
                     font.pixelSize: 11
                     font.weight: Font.DemiBold
