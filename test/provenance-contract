@@ -5,6 +5,7 @@ set -euo pipefail
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 ledger=$root/docs/provenance/ports.json
 data_ledger=$root/docs/provenance/data.json
+wallpaper_ledger=$root/docs/provenance/wallpapers.json
 
 fail() {
   printf 'provenance contract: %s\n' "$1" >&2
@@ -103,5 +104,41 @@ missing_data=$(comm -23 \
   <(find "$root/config/data" -type f -printf '%P\n' | sed 's|^|config/data/|' | sort) \
   <(jq -r '.entries[].destination' "$data_ledger" | sort))
 [[ -z $missing_data ]] || fail "data file lacks provenance: $missing_data"
+
+# Wallpapers are binary assets whose terms nobody has established, so the ledger
+# records where each one came from and that redistribution is blocked. The
+# bijection is the point: an image cannot enter the tree without a record, and a
+# record cannot outlive its image.
+if [[ -d $root/backgrounds ]]; then
+  jq -e '
+    .schemaVersion == 1 and
+    (.entries | type == "array") and
+    all(.entries[];
+      (.destination | type == "string" and startswith("backgrounds/") and (contains("..") | not)) and
+      (.originRepository | type == "string" and length > 0) and
+      (.originCommit | test("^[0-9a-f]{40}$")) and
+      (.originPath | type == "string" and length > 0) and
+      (.sha256 | test("^[0-9a-f]{64}$")) and
+      (.license | type == "string" and length > 0) and
+      (.redistribution == "blocked" or .redistribution == "cleared"))
+  ' "$wallpaper_ledger" >/dev/null || fail 'wallpaper provenance ledger is invalid'
+
+  while IFS= read -r destination; do
+    [[ -f $root/$destination && ! -L $root/$destination && ! -x $root/$destination ]] ||
+      fail "missing safe wallpaper destination: $destination"
+  done < <(jq -r '.entries[].destination' "$wallpaper_ledger")
+
+  missing_wallpapers=$(comm -23 \
+    <(find "$root/backgrounds" -type f -printf '%P\n' | sed 's|^|backgrounds/|' | sort) \
+    <(jq -r '.entries[].destination' "$wallpaper_ledger" | sort))
+  [[ -z $missing_wallpapers ]] || fail "wallpaper lacks provenance: $missing_wallpapers"
+
+  while IFS= read -r -d '' file; do
+    case ${file##*.} in
+      png|jpg|jpeg|webp) ;;
+      *) fail "wallpaper is not a supported image: ${file#$root/}" ;;
+    esac
+  done < <(find "$root/backgrounds" -type f -print0)
+fi
 
 printf '%s\n' 'provenance contract: ok'
