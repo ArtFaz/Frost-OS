@@ -1,6 +1,6 @@
 pkgname=frost
 pkgver=0.2.0
-pkgrel=14
+pkgrel=15
 pkgdesc='Independent Frost desktop runtime and diagnostics CLI'
 arch=('x86_64')
 url='https://github.com/ArtFaz/Frost-OS'
@@ -70,6 +70,9 @@ package() {
   cp -r themes/. "$pkgdir/usr/share/frost/themes/"
   find "$pkgdir/usr/share/frost/themes" -type d -exec chmod 0755 {} +
   find "$pkgdir/usr/share/frost/themes" -type f -exec chmod 0644 {} +
+
+  install -d "$pkgdir/usr/share/frost/templates"
+  install -m644 default/templates/*.tpl "$pkgdir/usr/share/frost/templates/"
 
   install -d "$pkgdir/usr/share/frost/shell"
   cp -r shell/. "$pkgdir/usr/share/frost/shell/"
