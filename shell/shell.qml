@@ -5,7 +5,9 @@
 import QtQuick
 import Quickshell
 import "Island"
+import "Surfaces"
 
 ShellRoot {
     DynamicGlacier {}
+    SurfaceHost {}
 }

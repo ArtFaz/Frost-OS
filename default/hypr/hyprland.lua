@@ -127,12 +127,24 @@ hl.layer_rule({
     animation = "layers",
 })
 
+hl.layer_rule({
+    name = "frost-surfaces-blur",
+    match = { namespace = "^frost-surfaces$" },
+    blur = true,
+    blur_popups = true,
+    ignore_alpha = 0.12,
+    animation = "layers",
+})
+
 hl.on("hyprland.start", function()
     hl.exec_cmd("systemctl --user start --no-block frost-session.target")
 end)
 
 local main_mod = "SUPER"
 
+hl.bind(main_mod .. " + SPACE", hl.dsp.exec_cmd("quickshell ipc --path /usr/share/frost/shell call frost toggle launcher"))
+hl.bind(main_mod .. " + V", hl.dsp.exec_cmd("quickshell ipc --path /usr/share/frost/shell call frost toggle clipboard"))
+hl.bind(main_mod .. " + PERIOD", hl.dsp.exec_cmd("quickshell ipc --path /usr/share/frost/shell call frost toggle emoji"))
 hl.bind(main_mod .. " + RETURN", hl.dsp.exec_cmd("uwsm-app -- /usr/lib/frost/frost-terminal"))
 hl.bind(main_mod .. " + Q", hl.dsp.window.close())
 hl.bind(main_mod .. " + L", hl.dsp.exec_cmd("systemctl --user start frost-lock.service"))

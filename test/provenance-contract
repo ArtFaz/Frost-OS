@@ -85,7 +85,7 @@ extra=$(comm -13 \
 
 jq -e '
   .schemaVersion == 1 and
-  (.entries | type == "array" and length == 2) and
+  (.entries | type == "array" and length == 1) and
   all(.entries[];
     (.destination | startswith("config/data/") and (contains("..") | not)) and
     .authority == "Frost-authored" and

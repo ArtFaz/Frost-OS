@@ -10,6 +10,7 @@ QtObject {
     property string pendingAction: ""
     property string pendingInput: ""
     property var actionQueue: []
+    property var dataQueue: []
     property Process dataProcess
     property Process actionProcess
     readonly property string frostExecutable: Quickshell.env("FROST_PREVIEW") === "1" && Quickshell.env("FROST_CLI") !== ""
@@ -19,15 +20,37 @@ QtObject {
     signal actionFinished(string action, bool succeeded)
     signal actionRejected(string action)
 
+    // Only one data process runs at a time. Callers that ask for two sources back
+    // to back — the island does exactly that when it opens — used to have the
+    // second request silently dropped, so its panel kept showing stale data until
+    // some later isolated call happened to land. Queue instead, mirroring the
+    // action queue below.
     function query(kind) {
-        const allowed = ["battery-threshold", "brightness", "indicators", "notifications", "power", "privacy", "wifi", "wifi-scan"];
-        if (allowed.indexOf(kind) < 0 || dataProcess.running)
+        const allowed = ["battery-threshold", "brightness", "clipboard", "images", "indicators", "notifications", "power", "privacy", "wifi", "wifi-scan"];
+        if (allowed.indexOf(kind) < 0)
+            return false;
+        if (pendingDataKind === kind || dataQueue.indexOf(kind) >= 0)
+            return true;
+        if (dataQueue.length >= 8)
             return false;
 
+        const nextQueue = dataQueue.slice();
+        nextQueue.push(kind);
+        dataQueue = nextQueue;
+        startNextData();
+        return true;
+    }
+
+    function startNextData() {
+        if (dataProcess.running || dataQueue.length === 0)
+            return;
+
+        const nextQueue = dataQueue.slice();
+        const kind = nextQueue.shift();
+        dataQueue = nextQueue;
         pendingDataKind = kind;
         dataProcess.command = [root.frostExecutable, "shell-data", kind];
         dataProcess.running = true;
-        return true;
     }
 
     function action(name, argument) {
@@ -94,6 +117,7 @@ QtObject {
                 }
             }
             root.dataReady(kind, payload);
+            Qt.callLater(root.startNextData);
         }
 
         stdout: StdioCollector {

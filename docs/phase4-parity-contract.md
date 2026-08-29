@@ -23,6 +23,8 @@ The active shell is based on DynamicGlacier commit 70824af6350927c429ed57fb83d89
 | notifications | a viewer onto Mako: lists what makoctl reports, dismisses one or all, invokes the default action and toggles the dnd mode. It registers no notification server and holds no notification state of its own |
 | volume/brightness | hardware-key and reactive OSD morphs; brightness is polled from sysfs so any tool that changes it is reflected |
 
+The launcher, clipboard and emoji surfaces are visually held to the frozen `staging` tree, which `staging/docs/VISION.md` names the visual authority; their per-file records in `docs/provenance/ports.json` are `adapted` rather than `rewritten-from-concept` because the reproduction is deliberate and close. Frost's own JetBrains Mono and its accent-based selection fill are retained over the donor's font and highlight-based fill.
+
 Mako remains the sole notification server; the island reads and acts on notifications only through the typed `frost shell-data notifications` / `frost shell-action notification-*` boundary, which calls fixed `makoctl` arguments. Hyprlock/PAM and hyprpolkitagent remain separate authorities. The public frost IPC target exposes only bounded single-argument methods for show, toggle, hide and hardware OSD data.
 
 ## Action boundary

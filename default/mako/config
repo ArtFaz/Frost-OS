@@ -15,3 +15,6 @@ height=120
 max-visible=5
 icons=1
 max-icon-size=48
+
+[mode=dnd]
+invisible=1

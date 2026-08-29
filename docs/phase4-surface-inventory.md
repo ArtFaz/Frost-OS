@@ -17,6 +17,9 @@ This inventory describes the single active shell composition after the DynamicGl
 | privacy | Quickshell PipeWire for microphone use plus a typed bounded camera projection | indicators remain absent when state cannot be established |
 | idle inhibitor | frost shell-data indicators and shell-action stay-awake-toggle | the chip reports the last known state and refuses overlapping toggles |
 | notifications | Mako outside Quickshell, read and acted on through makoctl behind the typed CLI | the island never registers a notification server; when makoctl is unavailable the viewer shows an empty list and reports the failure |
+| launcher | one shared overlay window, namespace frost-surfaces; desktop entries executed through the Quickshell API and typed frost shell-actions | an empty list when no entries resolve; no command discovery and no shell string is ever built |
+| clipboard | frost shell-data clipboard and shell-action clipboard-copy over cliphist | empty list when cliphist is unavailable |
+| emoji | package-owned catalog at config/data/emojis.json | empty grid when the catalog cannot be read |
 | lock and Polkit | Hyprlock/PAM and hyprpolkitagent | no shell fallback or duplicated authority |
 
 qs.Core.ShellBackend is the only QML component allowed to instantiate processes. It owns two serialized processes, a bounded action queue and one stdin channel reserved for a validated Wi-Fi password. Installed execution remains fixed to /usr/bin/frost; worktree path overrides are accepted only while FROST_PREVIEW=1.

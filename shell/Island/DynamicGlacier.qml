@@ -1707,6 +1707,18 @@ Scope {
     }
 
     Connections {
+        target: Surfaces
+
+        function onIslandModeRequested(mode) {
+            if (mode === "wifi") root.toggleWifiPanel();
+            else if (mode === "bluetooth") root.toggleBluetoothPanel();
+            else if (mode === "battery") root.toggleBatteryPanel();
+            else if (mode === "audio") root.toggleAudioPanel();
+            else if (mode === "notifications") root.toggleNotificationsPanel();
+        }
+    }
+
+    Connections {
         target: ShellBackend
 
         function onDataReady(kind, payload) {
@@ -2187,6 +2199,12 @@ Scope {
                 root.showIdle();
                 return "ok";
             }
+            // Full-screen surfaces are siblings of the island, routed through the
+            // Surfaces singleton so the shell keeps exactly one IPC target.
+            if (Surfaces.known.indexOf(mode) >= 0) {
+                Surfaces.show(mode);
+                return "ok";
+            }
             if (mode === "wifi") root.toggleWifiPanel();
             else if (mode === "notifications") root.toggleNotificationsPanel();
             else if (mode === "bluetooth") root.toggleBluetoothPanel();
@@ -2200,6 +2218,10 @@ Scope {
         function toggle(mode: string): string {
             if (mode === "island") {
                 root.runtimeVisible = !root.runtimeVisible;
+                return "ok";
+            }
+            if (Surfaces.known.indexOf(mode) >= 0) {
+                Surfaces.toggle(mode);
                 return "ok";
             }
             if (root.mode === mode) {

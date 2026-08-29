@@ -328,7 +328,10 @@ fn rgba(theme: &Theme, role: &str, alpha: &str) -> String {
 fn mako_config(theme: &Theme) -> String {
     let light = theme.mode == "light";
     format!(
-        "font=JetBrains Mono 11\nbackground-color=#{}\ntext-color=#{}ff\nborder-color=#{}\nborder-size=1\nborder-radius=14\ndefault-timeout=5000\nignore-timeout=0\nanchor=top-right\nlayer=overlay\nmargin=12\npadding=14\nwidth=390\nheight=140\nmax-visible=5\nicons=1\nmax-icon-size=48\n",
+        // The dnd mode must exist here, not only be switched on by makoctl: a mode
+        // with no criteria attached is registered successfully and changes nothing,
+        // which is exactly how do-not-disturb silently did nothing before.
+        "font=JetBrains Mono 11\nbackground-color=#{}\ntext-color=#{}ff\nborder-color=#{}\nborder-size=1\nborder-radius=14\ndefault-timeout=5000\nignore-timeout=0\nanchor=top-right\nlayer=overlay\nmargin=12\npadding=14\nwidth=390\nheight=140\nmax-visible=5\nicons=1\nmax-icon-size=48\n\n[mode=dnd]\ninvisible=1\n",
         rgba(theme, "background", if light { "e0" } else { "cc" }),
         theme.colors["foreground"].trim_start_matches('#'),
         rgba(theme, "foreground", if light { "24" } else { "33" }),

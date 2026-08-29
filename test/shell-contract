@@ -13,13 +13,22 @@ for relative_path in \
   Island/DynamicGlacier.qml Island/FrostGlassSurface.qml Island/IslandContent.qml \
   Island/IslandSurface.qml Island/MIcon.qml Island/PeekStatusRow.qml \
   Island/NotificationsPanel.qml Island/PanelHeader.qml Island/PanelSwitch.qml \
-  Island/TrayRail.qml Island/WorkspaceRail.qml; do
+  Island/TrayRail.qml Island/WorkspaceRail.qml \
+  Core/Surfaces.qml Surfaces/ClipboardSurface.qml Surfaces/EmojiSurface.qml \
+  Surfaces/LauncherSurface.qml Surfaces/SurfaceHost.qml Surfaces/SurfaceSearchField.qml; do
   [[ -f $shell/$relative_path && ! -L $shell/$relative_path ]] || fail "missing Frost Island file: $relative_path"
 done
 
 mapfile -t ipc_targets < <(rg --no-filename -o 'target:\s*"[^"]+"' "$shell" --glob '*.qml')
 [[ ${#ipc_targets[@]} == 1 && ${ipc_targets[0]} == 'target: "frost"' ]] || fail 'shell must expose exactly one Frost IPC target'
 [[ $(rg -c 'PanelWindow\s*\{' "$shell/Island/DynamicGlacier.qml") == 1 ]] || fail 'island must own exactly one PanelWindow'
+# The full-screen surfaces share a single host window, so they keep one keyboard
+# focus lifetime and one compositor blur rule between them.
+[[ $(rg -c 'PanelWindow\s*\{' "$shell/Surfaces/SurfaceHost.qml") == 1 ]] || fail 'surfaces must share exactly one PanelWindow'
+rg -Fq 'WlrLayershell.namespace: "frost-surfaces"' "$shell/Surfaces/SurfaceHost.qml" || fail 'stable surface namespace is missing'
+rg -Fq 'WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive' "$shell/Surfaces/SurfaceHost.qml" || fail 'surfaces must take exclusive keyboard focus'
+# Applications are launched through the desktop-entry API, never a shell string.
+rg -Fq '.entry.execute()' "$shell/Surfaces/LauncherSurface.qml" || fail 'launcher must execute desktop entries natively'
 rg -Fq 'WlrLayershell.namespace: "frost-island"' "$shell/Island/DynamicGlacier.qml" || fail 'stable island namespace is missing'
 rg -Fq 'exclusiveZone: root.reservedZone' "$shell/Island/DynamicGlacier.qml" || fail 'constant island exclusion zone is missing'
 rg -Fq 'WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand' "$shell/Island/DynamicGlacier.qml" || fail 'search inputs cannot receive controlled keyboard focus'
@@ -52,7 +61,8 @@ if command -v qmllint >/dev/null; then
     "$shell/Island/NotificationsPanel.qml" \
     "$shell/Island/PanelHeader.qml" \
     "$shell/Island/PanelSwitch.qml" \
-    "$shell/Island/PeekStatusRow.qml"
+    "$shell/Island/PeekStatusRow.qml" \
+    "$shell"/Surfaces/*.qml
 fi
 
 printf '%s\n' 'shell contract: ok'

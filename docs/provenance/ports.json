@@ -38,6 +38,15 @@
       "notice": "docs/provenance.md"
     },
     {
+      "destination": "shell/Core/Surfaces.qml",
+      "originRepository": "Frost",
+      "originCommit": "",
+      "originPath": "",
+      "transformation": "original",
+      "license": "Frost project license",
+      "notice": "docs/provenance.md"
+    },
+    {
       "destination": "shell/Core/Theme.qml",
       "originRepository": "Frost-OS",
       "originCommit": "f4a8cc9cd4137469393f815ccef08a849ce9005d",
@@ -178,6 +187,51 @@
       "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
       "originPath": "config/omarchy/plugins/art.workspaces/Workspaces.qml",
       "transformation": "rewritten-from-concept",
+      "license": "pending-confirmation",
+      "notice": "docs/provenance.md"
+    },
+    {
+      "destination": "shell/Surfaces/ClipboardSurface.qml",
+      "originRepository": "staging",
+      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
+      "originPath": "config/omarchy/plugins/art.clipboard/Clipboard.qml",
+      "transformation": "adapted",
+      "license": "pending-confirmation",
+      "notice": "docs/provenance.md"
+    },
+    {
+      "destination": "shell/Surfaces/EmojiSurface.qml",
+      "originRepository": "staging",
+      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
+      "originPath": "config/omarchy/plugins/art.emojis/Emojis.qml",
+      "transformation": "adapted",
+      "license": "pending-confirmation",
+      "notice": "docs/provenance.md"
+    },
+    {
+      "destination": "shell/Surfaces/LauncherSurface.qml",
+      "originRepository": "staging",
+      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
+      "originPath": "config/omarchy/plugins/art.menu/Menu.qml",
+      "transformation": "adapted",
+      "license": "pending-confirmation",
+      "notice": "docs/provenance.md"
+    },
+    {
+      "destination": "shell/Surfaces/SurfaceHost.qml",
+      "originRepository": "Frost-OS",
+      "originCommit": "f4a8cc9cd4137469393f815ccef08a849ce9005d",
+      "originPath": "shell/Surfaces/SurfaceHost.qml",
+      "transformation": "adapted",
+      "license": "pending-confirmation",
+      "notice": "docs/provenance.md"
+    },
+    {
+      "destination": "shell/Surfaces/SurfaceSearchField.qml",
+      "originRepository": "staging",
+      "originCommit": "824831e75171dc4c87c8d53dfd22e3e07de7f6a6",
+      "originPath": "config/omarchy/plugins/art.clipboard/Clipboard.qml",
+      "transformation": "adapted",
       "license": "pending-confirmation",
       "notice": "docs/provenance.md"
     },
