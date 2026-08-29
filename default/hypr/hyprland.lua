@@ -180,6 +180,18 @@ hl.layer_rule({
     animation = "layers",
 })
 
+-- The event OSD is its own surface, so it needs the rule as much as the island
+-- and the overlay do; without it the card was the only Frost glass on screen
+-- with nothing behind it.
+hl.layer_rule({
+    name = "frost-osd-blur",
+    match = { namespace = "^frost-osd$" },
+    blur = true,
+    blur_popups = true,
+    ignore_alpha = 0.12,
+    animation = "layers",
+})
+
 hl.layer_rule({
     name = "frost-surfaces-blur",
     match = { namespace = "^frost-surfaces$" },

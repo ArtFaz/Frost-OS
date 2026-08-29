@@ -7,6 +7,7 @@ preview_dir=$(mktemp -d /tmp/frost-island-preview.XXXXXX)
 bar_was_hidden=false
 preview_namespace=frost-island
 preview_surface_namespace=frost-surfaces
+preview_osd_namespace=frost-osd
 preview_rule_name=frost-island-preview-$$
 source_shell=$frost_root/shell
 preview_entry=$source_shell/shell.qml
@@ -36,6 +37,7 @@ esac
 cleanup() {
   /usr/bin/hyprctl eval "local rule = rawget(_G, 'frost_island_preview_rule'); if rule ~= nil and rule.destroy ~= nil then rule:destroy() end; _G.frost_island_preview_rule = nil" >/dev/null 2>&1 || true
   /usr/bin/hyprctl eval "local rule = rawget(_G, 'frost_surfaces_preview_rule'); if rule ~= nil and rule.destroy ~= nil then rule:destroy() end; _G.frost_surfaces_preview_rule = nil" >/dev/null 2>&1 || true
+  /usr/bin/hyprctl eval "local rule = rawget(_G, 'frost_osd_preview_rule'); if rule ~= nil and rule.destroy ~= nil then rule:destroy() end; _G.frost_osd_preview_rule = nil" >/dev/null 2>&1 || true
   if [[ $bar_was_hidden == false ]]; then
     omarchy toggle bar on >/dev/null 2>&1 || true
   fi
@@ -60,6 +62,7 @@ if [[ $source_shell != "$frost_root/shell" ]]; then
 fi
 
 /usr/bin/hyprctl eval "_G.frost_island_preview_rule = hl.layer_rule({ name = '$preview_rule_name', match = { namespace = '^${preview_namespace//:/\\:}$' }, blur = true, blur_popups = true, ignore_alpha = 0.12, xray = false, animation = 'layers' })" >/dev/null
+/usr/bin/hyprctl eval "_G.frost_osd_preview_rule = hl.layer_rule({ name = '$preview_rule_name-osd', match = { namespace = '^${preview_osd_namespace}$' }, blur = true, blur_popups = true, ignore_alpha = 0.12, xray = false, animation = 'layers' })" >/dev/null
 /usr/bin/hyprctl eval "_G.frost_surfaces_preview_rule = hl.layer_rule({ name = '$preview_rule_name-surfaces', match = { namespace = '^${preview_surface_namespace}$' }, blur = true, blur_popups = true, ignore_alpha = 0.12, xray = false, animation = 'layers' })" >/dev/null
 
 printf 'Frost Island preview running from %s\n' "$preview_entry"

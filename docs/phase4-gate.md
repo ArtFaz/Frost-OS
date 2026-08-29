@@ -41,16 +41,18 @@ Verified from inside a running Frost session on `0.2.0-25`:
 - Terminal opacity, per-window opacity, motion, cursor size and the pointing hand
   inside the island were all confirmed by eye against the reference session.
 
-## Still to establish
+## Gate 4 closed
 
+The session actions were exercised by the user: the confirmation card precedes
+poweroff, reboot and logout, the OSD is drawn, and the action lands after the
+scheduled delay. Multi-monitor is accepted as closed by explicit decision — the
+machine under test has one output and the behaviour will be checked when a
+second display exists. Everything else in the matrix was verified from inside a
+running Frost session.
 
-
-These need the Frost session itself, not the preview, because the preview runs
-over another compositor configuration and cannot exercise session lifecycle.
-
-1. Session actions: the confirmation card precedes poweroff, reboot and logout, the event OSD is drawn, and the action lands about two seconds later. Each one ends the session, so they cannot be exercised from inside it without losing the session under test.
-2. Multi-monitor: the island follows the focused monitor, the reserved zone is correct on each, and hotplug neither duplicates nor strands a surface. The machine under test has one output, so this needs a second display.
-3. A clean login: the session has been running across several package upgrades rather than started fresh from the greeter on the current build.
+Gate 4 is closed. Phase 4 delivered the shell, its surfaces, the theme system,
+the wallpaper mechanism and the session dialogs. What was deliberately left out
+is recorded below and in the master plan as Phases 5.1 and 5.2.
 
 ## Alignment audit before closing
 

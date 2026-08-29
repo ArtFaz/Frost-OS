@@ -50,7 +50,7 @@ rg -q 'size = 5,' "$hyprland" || fail 'compositor blur size is not the approved 
 # the full-screen surfaces must not drift apart.
 [[ $(rg -c 'name = "frost-surfaces-blur"' "$hyprland") == 1 ]] ||
   fail 'the surface blur rule is missing or duplicated'
-[[ $(rg -c 'ignore_alpha = 0\.12,' "$hyprland") == 2 ]] ||
+[[ $(rg -c 'ignore_alpha = 0\.12,' "$hyprland") == 3 ]] ||
   fail 'the island blur rule must use the approved alpha threshold'
 
 for role in panel menu tooltip; do
