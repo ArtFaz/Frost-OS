@@ -7,6 +7,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode, Stdio};
 use std::time::{Duration, SystemTime};
 
+mod packages;
 mod theme;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -107,6 +108,7 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
         "doctor" => doctor_command(rest, false)?,
         "verify" => doctor_command(rest, true)?,
         "theme" => theme::theme_command(rest)?,
+        "packages" => packages::packages_command(rest)?,
         "weather" => weather_command(rest)?,
         "session-lock" => session_program(rest, "hyprlock")?,
         "session-notifications" => session_program(rest, "mako")?,
@@ -148,7 +150,10 @@ fn print_help() {
     println!(
         "Frost control and diagnostics\n\n\
 Usage:\n  frost status [--json]\n  frost doctor [--json]\n  \
-frost verify [--json]\n  frost theme <list|current|validate|set|sync>\n  frost weather <current|set CITY|clear>\n  frost version\n\nInternal typed shell interface:\n  \
+frost verify [--json]\n  frost theme <list|current|validate|set|sync>\n  frost weather <current|set CITY|clear>\n  \
+frost packages validate --inventory PATH MANIFEST [--json]\n  \
+frost packages plan --inventory PATH MANIFEST [--json] [--lockfile PATH] [--donor-base PATH]\n  \
+frost version\n\nInternal typed shell interface:\n  \
 frost shell-data <brightness|clipboard|images|indicators|notifications|themes|wallpapers|weather>\n  \
 frost shell-action ACTION [VALUE]"
     );
@@ -457,7 +462,7 @@ fn command_exists(program: &str) -> bool {
     })
 }
 
-fn json_escape(value: &str) -> String {
+pub(crate) fn json_escape(value: &str) -> String {
     let mut escaped = String::with_capacity(value.len());
     for character in value.chars() {
         match character {
@@ -506,7 +511,7 @@ fn shell_data_command(args: &[String]) -> Result<(), CliError> {
     Ok(())
 }
 
-fn capture(program: &str, args: &[&str]) -> Result<Vec<u8>, CliError> {
+pub(crate) fn capture(program: &str, args: &[&str]) -> Result<Vec<u8>, CliError> {
     let output = Command::new(program)
         .args(args)
         .output()

@@ -1,0 +1,56 @@
+#!/bin/bash
+# The `frost packages` resolver reads an inventory and a manifest and prints a
+# plan. Phase 5 forbids it from changing the system: no install, no removal, no
+# AUR recipe execution. This guards that boundary in the source.
+
+set -euo pipefail
+
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+src=$root/cli/src/packages.rs
+
+fail() {
+  printf 'packages contract: %s\n' "$1" >&2
+  exit 1
+}
+
+[[ -f $src ]] || fail 'cli/src/packages.rs is missing'
+
+# Every external command the module runs, and the only ones it may.
+mapfile -t commands < <(rg -o 'capture\(\s*"([^"]+)"' -r '$1' "$src" | sort -u)
+for cmd in "${commands[@]}"; do
+  case $cmd in
+    /usr/bin/jq | /usr/bin/pacman | /usr/bin/git) ;;
+    *) fail "unexpected external command: $cmd" ;;
+  esac
+done
+
+# pacman is read-only: query mode only.
+if rg -n 'pacman"[^)]*"-(S|R|U|Sy|Syu|D)"' "$src"; then
+  fail 'pacman is invoked with a non-query operation'
+fi
+rg -q '"/usr/bin/pacman", &\["-Qq"\]' "$src" || fail 'the only pacman call must be -Qq'
+
+# git is used to read a remote ref, never to fetch or check out a recipe.
+if rg -n '"(clone|fetch|checkout|pull|archive|remote add)"' "$src"; then
+  fail 'git is used for more than reading a ref'
+fi
+rg -q 'ls-remote' "$src" || fail 'the git call must be ls-remote'
+
+# No build or recipe execution anywhere. (The command whitelist above already
+# bars running an AUR helper; this catches a build tool named in a new call.)
+if rg -n 'makepkg|pkgctl|"-Bi"|"--rebuild"' "$src"; then
+  fail 'a package build tool is referenced'
+fi
+
+# The AUR boundary rule must be enforced in code.
+rg -q 'BOOTSTRAP.*CORE|"BOOTSTRAP" \| "CORE"' "$src" \
+  || fail 'the AUR-not-in-BOOTSTRAP/CORE rule is missing'
+
+# The plan must state that it changes nothing.
+rg -q 'installs and removes nothing' "$src" \
+  || fail 'the plan output no longer states it is review-only'
+
+# Resolution must mirror the selector: same base-membership function name.
+rg -q 'fn base_selected' "$src" || fail 'base_selected resolver is missing'
+
+printf 'packages contract: ok\n'

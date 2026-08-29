@@ -62,6 +62,23 @@ Allowed transformation values are `original`, `adapted`, `rewritten-from-concept
 
 `original` is reserved for Frost-authored files with no donor lineage at all. Such an entry carries `originRepository: "Frost"`, an empty `originCommit` and `originPath`, and `license: "Frost project license"`. This exists so that first-party work built directly on an upstream library API is not recorded as derived from a rights-blocked donor, which would overstate the publication debt and make the ledger less accurate, not more cautious. The test enforces the frozen donor commits for every other origin.
 
+## Phase 5 package inventory
+
+`frost-pkgs/tools/package-selector/inventory.json` is Frost-authored decision
+data, not a donor port. It reconciles the donor package lists —
+`omarchy/install/omarchy-base.packages` and `omarchy-other.packages` at
+`0ae1694830b6`, `omarchy-iso/builder/archinstall.packages` at `268bac16d351` —
+together with the `frost` package's own `depends()`. Those lists are read as
+**evidence only**: no donor file is copied into the repository, and the frozen
+commits are the ones already recorded in the source ledger above. The file's
+`generatedFrom` field carries the same record in machine-readable form.
+
+Donor-authored and donor-namespaced packages (`omarchy-keyring`, `omarchy-nvim`,
+`omacut`, `omacalc`, `omawrite`, `herdr`, `ttfx`) are classified `DROP` with a
+reason; they are named so the decision is explicit, not adopted. Every third-
+party package the inventory selects still owes the upstream-license audit listed
+below as blocker 4.
+
 ## Publication blockers
 
 1. Confirm the copyright ownership and redistribution license of every reused file from `Frost-OS` and `staging`.
