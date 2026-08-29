@@ -149,6 +149,14 @@ hl.window_rule({
     opacity = "0.985 0.96",
 })
 
+-- One definition of what counts as a terminal, so the universal clipboard
+-- bindings below can send the chord a terminal actually understands.
+hl.window_rule({
+    name = "frost-terminal-tag",
+    match = { class = "^(Alacritty|kitty|com\\.mitchellh\\.ghostty|foot|org\\.codeberg\\.dnkl\\.foot|wezterm|org\\.frost\\..*)$" },
+    tag = "+terminal",
+})
+
 hl.window_rule({
     name = "frost-opaque-content",
     match = { class = "^(chromium|firefox|zen|mpv|vlc|obs|steam|steam_app_.*|Pinta|imv|kdenlive)$" },
@@ -230,15 +238,59 @@ end)
 
 local main_mod = "SUPER"
 
+-- Send the chord with explicit modifiers to the focused surface, with no window
+-- target, so it reaches layer-shell surfaces as well as ordinary windows. A
+-- virtual keyboard will not do: the SUPER the user is physically holding merges
+-- into the injected chord at the seat. The down/up split works around Hyprland
+-- leaving synthetic key state stuck.
+local function send_chord(mods, key)
+    return function()
+        hl.dispatch(hl.dsp.send_key_state({ mods = mods, key = key, state = "down" }))
+        hl.timer(function()
+            hl.dispatch(hl.dsp.send_key_state({ mods = mods, key = key, state = "up" }))
+        end, { timeout = 50, type = "oneshot" })
+    end
+end
+
+local function active_window_is_terminal()
+    local window = hl.get_active_window()
+    if not window then
+        return false
+    end
+
+    for _, tag in ipairs(window.tags or {}) do
+        if tag:gsub("%*$", "") == "terminal" then
+            return true
+        end
+    end
+
+    return false
+end
+
+-- A terminal reads Ctrl+C as an interrupt, so it gets the Insert pair instead.
+local function universal_clipboard(default_mods, default_key, terminal_mods, terminal_key)
+    return function()
+        if active_window_is_terminal() then
+            send_chord(terminal_mods, terminal_key)()
+        else
+            send_chord(default_mods, default_key)()
+        end
+    end
+end
+
+hl.bind(main_mod .. " + C", universal_clipboard("CTRL", "C", "CTRL", "Insert"))
+hl.bind(main_mod .. " + V", universal_clipboard("CTRL", "V", "SHIFT", "Insert"))
+hl.bind(main_mod .. " + X", send_chord("CTRL", "X"))
+
 hl.bind(main_mod .. " + SPACE", hl.dsp.exec_cmd("quickshell ipc --path /usr/share/frost/shell call frost toggle launcher"))
-hl.bind(main_mod .. " + V", hl.dsp.exec_cmd("quickshell ipc --path /usr/share/frost/shell call frost toggle clipboard"))
-hl.bind(main_mod .. " + PERIOD", hl.dsp.exec_cmd("quickshell ipc --path /usr/share/frost/shell call frost toggle emoji"))
+hl.bind(main_mod .. " + CTRL + V", hl.dsp.exec_cmd("quickshell ipc --path /usr/share/frost/shell call frost toggle clipboard"))
+hl.bind(main_mod .. " + CTRL + E", hl.dsp.exec_cmd("quickshell ipc --path /usr/share/frost/shell call frost toggle emoji"))
 hl.bind(main_mod .. " + RETURN", hl.dsp.exec_cmd("uwsm-app -- /usr/lib/frost/frost-terminal"))
-hl.bind(main_mod .. " + Q", hl.dsp.window.close())
+hl.bind(main_mod .. " + W", hl.dsp.window.close())
 hl.bind(main_mod .. " + L", hl.dsp.exec_cmd("systemctl --user start frost-lock.service"))
 hl.bind(main_mod .. " + SHIFT + E", hl.dsp.exec_cmd("uwsm stop"))
 hl.bind(main_mod .. " + F", hl.dsp.window.fullscreen())
-hl.bind(main_mod .. " + SHIFT + V", hl.dsp.window.float({ action = "toggle" }))
+hl.bind(main_mod .. " + T", hl.dsp.window.float({ action = "toggle" }))
 
 hl.bind(main_mod .. " + left", hl.dsp.focus({ direction = "left" }))
 hl.bind(main_mod .. " + right", hl.dsp.focus({ direction = "right" }))
