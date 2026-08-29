@@ -38,55 +38,42 @@ for expected in \
   usr/share/frost/default/mako/config \
   usr/share/frost/default/ghostty/config \
   usr/share/frost/default/bash/bashrc \
-  usr/share/frost/config/data/app-inventory.json \
   usr/share/frost/config/data/emojis.json \
   usr/share/frost/config/shell.json \
+  usr/share/frost/config/schema/shell.schema.json \
   usr/share/frost/shell/shell.qml \
+  usr/share/frost/shell/Core/qmldir \
   usr/share/frost/shell/Core/Config.qml \
-  usr/share/frost/shell/Core/IndicatorState.qml \
   usr/share/frost/shell/Core/Motion.qml \
   usr/share/frost/shell/Core/ShellBackend.qml \
   usr/share/frost/shell/Core/Style.qml \
-  usr/share/frost/shell/Core/SystemState.qml \
+  usr/share/frost/shell/Core/Surfaces.qml \
   usr/share/frost/shell/Core/Theme.qml \
-  usr/share/frost/shell/Core/WeatherState.qml \
-  usr/share/frost/shell/Primitives/FocusRing.qml \
-  usr/share/frost/shell/Primitives/GlassSurface.qml \
-  usr/share/frost/shell/Primitives/InteractiveSurface.qml \
-  usr/share/frost/shell/Primitives/ModuleCard.qml \
-  usr/share/frost/shell/Primitives/PanelHeader.qml \
-  usr/share/frost/shell/Primitives/SearchField.qml \
-  usr/share/frost/shell/Primitives/SurfaceButton.qml \
-  usr/share/frost/shell/Primitives/ToggleSwitch.qml \
-  usr/share/frost/shell/Primitives/ValueSlider.qml \
-  usr/share/frost/shell/Bar/Bar.qml \
-  usr/share/frost/shell/Bar/Media.qml \
-  usr/share/frost/shell/Bar/MenuButton.qml \
-  usr/share/frost/shell/Bar/Status.qml \
-  usr/share/frost/shell/Bar/Workspaces.qml \
-  usr/share/frost/shell/Bar/Tray.qml \
-  usr/share/frost/shell/Bar/Clock.qml \
-  usr/share/frost/shell/Osd/Osd.qml \
-  usr/share/frost/shell/Osd/OsdModel.js \
-  usr/share/frost/shell/Surfaces/AppInstallerPanel.qml \
-  usr/share/frost/shell/Surfaces/AudioPanel.qml \
-  usr/share/frost/shell/Surfaces/BluetoothPanel.qml \
-  usr/share/frost/shell/Surfaces/ClipboardPanel.qml \
-  usr/share/frost/shell/Surfaces/ControlCenter.qml \
-  usr/share/frost/shell/Surfaces/CalendarPanel.qml \
-  usr/share/frost/shell/Surfaces/DisplayPowerPanel.qml \
-  usr/share/frost/shell/Surfaces/EmojiPanel.qml \
-  usr/share/frost/shell/Surfaces/ImagePickerPanel.qml \
-  usr/share/frost/shell/Surfaces/InstallerModel.js \
-  usr/share/frost/shell/Surfaces/Launcher.qml \
-  usr/share/frost/shell/Surfaces/MediaCard.qml \
-  usr/share/frost/shell/Surfaces/NetworkPanel.qml \
-  usr/share/frost/shell/Surfaces/NotificationModel.js \
-  usr/share/frost/shell/Surfaces/NotificationPanel.qml \
-  usr/share/frost/shell/Surfaces/OptionalPanel.qml \
-  usr/share/frost/shell/Surfaces/ReminderPanel.qml \
+  usr/share/frost/shell/Island/DynamicGlacier.qml \
+  usr/share/frost/shell/Island/IslandSurface.qml \
+  usr/share/frost/shell/Island/IslandContent.qml \
+  usr/share/frost/shell/Island/WorkspaceRail.qml \
+  usr/share/frost/shell/Island/TrayRail.qml \
+  usr/share/frost/shell/Island/TrayMenu.qml \
+  usr/share/frost/shell/Island/AudioIndicator.qml \
+  usr/share/frost/shell/Island/AudioPanel.qml \
+  usr/share/frost/shell/Island/BatteryPanel.qml \
+  usr/share/frost/shell/Island/BluetoothPanel.qml \
+  usr/share/frost/shell/Island/NotificationsPanel.qml \
+  usr/share/frost/shell/Island/PeekStatusRow.qml \
+  usr/share/frost/shell/Island/PanelSwitch.qml \
+  usr/share/frost/shell/Island/PanelHeader.qml \
+  usr/share/frost/shell/Island/MIcon.qml \
+  usr/share/frost/shell/Island/FrostGlassSurface.qml \
   usr/share/frost/shell/Surfaces/SurfaceHost.qml \
-  usr/share/frost/shell/Surfaces/WeatherPanel.qml \
+  usr/share/frost/shell/Surfaces/LauncherSurface.qml \
+  usr/share/frost/shell/Surfaces/ClipboardSurface.qml \
+  usr/share/frost/shell/Surfaces/EmojiSurface.qml \
+  usr/share/frost/shell/Surfaces/ImagePickerSurface.qml \
+  usr/share/frost/shell/Surfaces/BackgroundSurface.qml \
+  usr/share/frost/shell/Surfaces/EventOsd.qml \
+  usr/share/frost/shell/Surfaces/ConfirmCard.qml \
+  usr/share/frost/shell/Surfaces/SurfaceSearchField.qml \
   usr/share/doc/frost/phase4-surface-inventory.md \
   usr/share/doc/frost/phase4-parity-contract.md \
   usr/share/doc/frost/provenance/data.json \

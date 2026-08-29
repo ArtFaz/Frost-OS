@@ -9,9 +9,19 @@ fail() {
   exit 1
 }
 
-if rg -n -i '(omarchy|omacom|pkgs\.omarchy|github\.com/basecamp)' \
+# A donor endpoint is forbidden in any file, prose included: nothing in this repo
+# should point a build or a reader at a donor host.
+if rg -n -i '(pkgs\.omarchy|github\.com/basecamp|omarchy\.org|omarchy\.manual)' \
   "$root/pkgbuilds" "$root/tools" --glob '!validate-package-config'; then
-  fail 'donor identity or endpoint found in package build source'
+  fail 'donor endpoint found in package source'
+fi
+
+# A bare donor identity is forbidden in build source (PKGBUILD, .install, scripts,
+# keyring data). Markdown is documentation: provenance notes name the donor on
+# purpose, exactly as frost/docs/provenance.md does.
+if rg -n -i '(omarchy|omacom)' \
+  "$root/pkgbuilds" "$root/tools" --glob '!validate-package-config' --glob '!*.md'; then
+  fail 'donor identity found in package build source'
 fi
 
 if rg -n --glob PKGBUILD '(^|[[:space:]])source=.*(git\+|https?://)' "$root/pkgbuilds/frost"; then
