@@ -4,3 +4,4 @@
 *.pkg.tar.*
 *.sig
 
+/tools/package-selector/package-selector.html
