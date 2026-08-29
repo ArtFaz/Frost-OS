@@ -97,7 +97,6 @@ Item {
         return islandRadius + (height / 2 - islandRadius) * root.volumeMorph;
     }
     readonly property real bottomRadius: Math.max(1, Math.min(height / 2, expanded ? expandedBottomRadius : Math.min(height * 0.42, 8)))
-    readonly property color surfaceColor: Theme.cardBackground
 
     property bool wifiRadioEnabled: true
     property var wifiNetworks: []
@@ -203,7 +202,12 @@ Item {
             z: 0
             anchors.fill: parent
             bottomRadius: root.bottomRadius
-            fallbackColor: Theme.cardBackground
+            // Bar transmittance, not panel. The compositor blur is identical to
+            // the reference bar's, so the only thing that made the island read
+            // as less blurred was the panel role's extra 8 points of opacity.
+            // The island is one material morphing, so it keeps one alpha in
+            // every state rather than becoming a panel halfway through.
+            fallbackColor: Theme.barBackground
         }
 
         IslandContent {

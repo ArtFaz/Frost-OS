@@ -30,8 +30,8 @@ rg -Fq 'readonly property color selected: alpha(accent, 0.14)' "$theme" ||
 
 rg -Fq 'readonly property real glassAmount: 1' "$glass" ||
   fail 'Frost glass is not the single permanent material'
-rg -Fq 'fallbackColor: Theme.cardBackground' "$surface" ||
-  fail 'island surface does not consume the Frost semantic material'
+rg -Fq 'fallbackColor: Theme.barBackground' "$surface" ||
+  fail 'island surface does not consume the Frost bar material'
 rg -Fq 'FrostGlassSurface {' "$surface" ||
   fail 'island does not render the Frost glass surface'
 if rg -n 'liquidGlass|LiquidGlass|Material Symbols' "$root/shell"; then

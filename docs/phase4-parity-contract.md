@@ -8,6 +8,7 @@ The active shell is based on DynamicGlacier commit 70824af6350927c429ed57fb83d89
 - FrostGlassSurface.qml is the only glass material. Liquid Glass settings and variants are absent.
 - Frost semantic theme colors, JetBrains Mono text and Nerd Font glyphs replace donor material/font choices.
 - Hyprland supplies blur only to the exact frost-island namespace with size 5 and ignore-alpha 0.12.
+- The island paints at the bar transmittance of the reference session (0.68 dark, 0.76 light) in every state, resting and expanded. Blur is a compositor property and is already identical; transmittance is what decides how blurred the surface looks, so the island holds the bar's value rather than switching to the panel role as it opens.
 - Handle style and bounded idle width/height remain schema-version-3 data in `config/shell.json`. The island exposes no UI to change them.
 
 ## Active modes
