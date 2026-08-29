@@ -69,8 +69,12 @@ Item {
         return matched;
     }
 
+    // Which source this is comes from one place, so the query and the reply
+    // filter can never disagree.
+    readonly property string sourceKind: root.wallpaperMode ? "wallpapers" : "images"
+
     function refresh() {
-        ShellBackend.query(root.wallpaperMode ? "wallpapers" : "images");
+        ShellBackend.query(root.sourceKind);
     }
 
     function selectAdjacent(delta) {
@@ -109,15 +113,25 @@ Item {
 
         root.filterText = "";
         root.selectedIndex = 0;
-        root.refresh();
+        // active and wallpaperMode are two bindings onto the same change of
+        // Surfaces.active and settle in no guaranteed order. Querying inline
+        // asked for images while the mode was still catching up, and the reply
+        // was then discarded for having the wrong kind — which is why the
+        // wallpaper list came back empty.
+        Qt.callLater(root.refresh);
         keyCatcher.forceActiveFocus();
+    }
+
+    onWallpaperModeChanged: {
+        if (root.active)
+            Qt.callLater(root.refresh);
     }
 
     Connections {
         target: ShellBackend
 
         function onDataReady(kind, payload) {
-            if (kind !== (root.wallpaperMode ? "wallpapers" : "images") || !payload)
+            if (kind !== root.sourceKind || !payload)
                 return;
 
             root.images = Array.isArray(payload.items) ? payload.items : [];
