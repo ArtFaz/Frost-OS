@@ -1,0 +1,54 @@
+#!/bin/bash
+# Every QML file Frost ships must parse. The shell and the greeter are the two
+# pieces that fail at runtime rather than at build time — a syntax error there
+# costs an empty session or a black screen on a machine that is already
+# installed, which is exactly how both were found. qmllint reads them without a
+# compositor, so the check is free.
+#
+# Two categories are off on purpose:
+#   unqualified  the greeter reads `config`, which SDDM injects, and the shell
+#                reads the Style/Theme singletons quickshell registers.
+#   import       `qs.Core` only resolves inside quickshell's import path.
+# Everything else, syntax included, is an error here.
+
+set -euo pipefail
+
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+
+fail() { printf 'qml contract: %s\n' "$1" >&2; exit 1; }
+
+# The Qt 5 qmllint is usually first on PATH and rejects Qt 6 syntax outright, so
+# the Qt 6 binary is named explicitly.
+linter=""
+for candidate in ${QMLLINT:-} /usr/lib/qt6/bin/qmllint /usr/bin/qmllint-qt6; do
+  if [[ -x $candidate ]]; then
+    linter=$candidate
+    break
+  fi
+done
+if [[ -z $linter ]]; then
+  printf 'qml contract: skipped (no Qt 6 qmllint; install qt6-declarative)\n'
+  exit 0
+fi
+
+mapfile -t files < <(find "$root/shell" -name '*.qml' -type f | sort)
+files+=("$root/default/sddm/frost/Main.qml")
+((${#files[@]} > 1)) || fail 'no QML files found'
+
+failed=()
+for file in "${files[@]}"; do
+  [[ -f $file ]] || fail "missing QML file: ${file#"$root"/}"
+  "$linter" --unqualified disable --import disable "$file" >/dev/null 2>&1 \
+    || failed+=("${file#"$root"/}")
+done
+
+if ((${#failed[@]})); then
+  printf 'qml contract: %s file(s) do not parse\n' "${#failed[@]}" >&2
+  for file in "${failed[@]}"; do
+    printf '  -- %s\n' "$file" >&2
+    "$linter" --unqualified disable --import disable "$root/$file" 2>&1 | sed 's/^/     /' >&2
+  done
+  exit 1
+fi
+
+printf 'qml contract: ok (%s files parse)\n' "${#files[@]}"

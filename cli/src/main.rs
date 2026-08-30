@@ -1524,17 +1524,6 @@ fn run_fixed(program: &str, args: &[&str]) -> Result<(), CliError> {
     }
 }
 
-fn spawn_fixed(program: &str, args: &[&str]) -> Result<(), CliError> {
-    Command::new(program)
-        .args(args)
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .spawn()
-        .map(|_| ())
-        .map_err(|error| CliError::Operational(format!("could not start {program}: {error}")))
-}
-
 fn set_brightness(value: &str) -> Result<(), CliError> {
     if !valid_numeric(value, 100) {
         return Err(CliError::Usage(

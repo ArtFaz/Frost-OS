@@ -11,6 +11,7 @@ root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 "$root/test/material-contract"
 "$root/test/phase4-contract"
 "$root/test/shell-contract"
+"$root/test/qml-contract"
 "$root/test/packages-contract"
 cargo fmt --manifest-path "$root/cli/Cargo.toml" -- --check
 cargo test --manifest-path "$root/cli/Cargo.toml"

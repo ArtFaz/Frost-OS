@@ -29,7 +29,6 @@ Item {
     readonly property int headerHeight: Style.headerHeight
     readonly property int contentSpacing: 12
     readonly property int rowSpacing: 3
-    readonly property int rowPeek: Math.round(Style.rowHeight * 0.55)
     readonly property int footerHeight: Style.footerHeight
 
     readonly property bool appsRoute: root.route === "apps"
@@ -42,8 +41,9 @@ Item {
                                                      : root.menuRows()
     readonly property int rowUnit: root.appsRoute || root.searchingRoot ? Style.detailRowHeight : Style.rowHeight
 
-    // Never end on a row boundary: fit whole rows, then add one spacing plus a
-    // peek so the next row is visibly cut and the list reads as scrollable.
+    // Whole rows only: the viewport is an exact number of rows, so the selection
+    // reaches the edge and the list scrolls by one row instead of ending on a
+    // half-drawn one.
     readonly property int listHeight: {
         const budget = Math.min(Style.menuMaxHeight, root.hostHeight - 10 - root.cardPadding * 2
                                 - root.headerHeight - root.contentSpacing * 2 - root.footerHeight);
@@ -52,8 +52,8 @@ Item {
         if (total <= budget)
             return Math.max(root.rowUnit, total);
 
-        const whole = Math.max(1, Math.floor((budget - root.rowSpacing - root.rowPeek) / unit));
-        return whole * unit - root.rowSpacing + root.rowSpacing + root.rowPeek;
+        const whole = Math.max(1, Math.floor((budget + root.rowSpacing) / unit));
+        return whole * unit - root.rowSpacing;
     }
 
     function menuRows() {
@@ -437,14 +437,12 @@ Item {
 
                         // Keyboard navigation drives the view through the current
                         // index and a highlight range, not by repositioning it after
-                        // the fact. positionViewAtIndex(Contain) had to guess where
-                        // to land against the peeking row at the bottom and jumped a
-                        // block at a time; a range scrolls by exactly the row that
-                        // left it.
+                        // the fact: the range scrolls by exactly the row that left
+                        // it, where positionViewAtIndex(Contain) jumped a block.
                         currentIndex: root.selectedIndex
                         highlightRangeMode: ListView.ApplyRange
                         preferredHighlightBegin: 0
-                        preferredHighlightEnd: Math.max(0, height - root.rowPeek - root.rowUnit)
+                        preferredHighlightEnd: Math.max(0, height - root.rowUnit)
                         highlightMoveDuration: 130
                         highlightMoveVelocity: -1
 
