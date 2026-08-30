@@ -10,6 +10,16 @@
 set -uo pipefail
 export LC_ALL=C
 
+# Half of this report is the desktop user's own session, theme and dconf state,
+# and under sudo every one of those lines would read root's home instead. The
+# bootstrap log is world-readable, so nothing here needs privilege.
+if [[ $EUID -eq 0 && -n ${SUDO_USER:-} ]]; then
+  exec sudo -u "$SUDO_USER" -H -- "$(realpath "${BASH_SOURCE[0]}")" "$@"
+fi
+if [[ $EUID -eq 0 ]]; then
+  printf 'frost-report: run me as the desktop user, not root — session state will be wrong.\n' >&2
+fi
+
 section() { printf '\n=== %s\n' "$1"; }
 kv() { printf '  %-28s %s\n' "$1" "${2:-—}"; }
 
