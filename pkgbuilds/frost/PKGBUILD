@@ -1,6 +1,6 @@
 pkgname=frost
 pkgver=0.2.0
-pkgrel=37
+pkgrel=38
 pkgdesc='Independent Frost desktop runtime and diagnostics CLI'
 arch=('x86_64')
 url='https://github.com/ArtFaz/Frost-OS'
@@ -71,6 +71,7 @@ package() {
   install -Dm755 bin/frost-osd "$pkgdir/usr/lib/frost/frost-osd"
   install -Dm755 bin/frost-terminal "$pkgdir/usr/lib/frost/frost-terminal"
   install -Dm755 bin/frost-capture "$pkgdir/usr/lib/frost/frost-capture"
+  install -Dm755 tools/frost-report "$pkgdir/usr/lib/frost/frost-report"
 
   install -Dm644 config/shell.json "$pkgdir/usr/share/frost/config/shell.json"
   install -Dm644 config/schema/shell.schema.json \

@@ -40,7 +40,7 @@ fi
 # reviewed list of CachyOS-base packages Frost supplies its own version of.
 while IFS= read -r line; do
   grep -qE 'pacman +-R' <<<"$line" || continue
-  grep -qE 'pacman -Rdd --noconfirm "\$\{present\[@\]\}"$' <<<"$line" \
+  grep -qE 'pacman -Rdd --noconfirm "\$\{present\[@\]\}"( \|\| die .*)?$' <<<"$line" \
     || fail "package removal outside the FROST_REPLACES swap: $line"
 done <<<"$rules"
 grep -qE '^readonly FROST_REPLACES=\(' "$script" || fail 'FROST_REPLACES list is missing'
@@ -104,6 +104,27 @@ if grep -n 'sudoers' <<<"$rules" >/dev/null; then
     || fail 'an interrupt would leave the sudoers drop-in behind'
   grep -qE 'rm -f -- "\$SUDOERS_DROPIN"' "$script" || fail 'the sudoers drop-in is never removed'
 fi
+
+# The screen stays readable and nothing is lost: command output goes to the log
+# through the runners, and a failure prints the tail rather than vanishing.
+grep -qE '^run\(\) \{' "$script" || fail 'the logging runner is missing'
+grep -qE '^try_run\(\) \{' "$script" || fail 'the best-effort runner is missing'
+grep -qE 'tail -n [0-9]+ "\$LOG_FILE"' "$script" || fail 'a failed command never shows its output'
+if grep -nE '^[[:space:]]*pacman +-(S[^i]|R)' <<<"$rules"; then
+  fail 'a pacman transaction runs outside the logging runner'
+fi
+
+# No success line may come from a path that did nothing: the stage helpers report
+# three distinct states instead of collapsing them onto && / ||.
+grep -qE '^report\(\) \{' "$script" || fail 'the three-state stage reporter is missing'
+
+# The bash package ships /etc/skel/.bashrc, so a new account always has one and a
+# conditional create never fires. The Frost line is appended and guarded by
+# itself, which is also what makes the stage idempotent.
+grep -qE '^readonly BASHRC_LINE=' "$script" || fail 'the sourced bashrc line is not a fixed constant'
+grep -qE 'grep -qxF "\$line" "\$rc"' "$script" \
+  || fail 'the bashrc seed is not guarded by the line it adds'
+grep -qE '>> "\$rc"' "$script" || fail 'the bashrc seed replaces the file instead of appending'
 
 # The login shell change is bounded: the invoking user, and only to bash.
 if grep -q 'chsh' <<<"$rules"; then

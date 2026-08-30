@@ -6,14 +6,17 @@
 #
 # The Frost packages come from a signed repository carried in the bundle; the
 # rest of the set comes from the CachyOS repositories, so a network is required.
-# The whole run is appended to /var/log/frost-bootstrap.log, and every stage is
-# idempotent: re-running it on a half-finished machine is the way to repair it.
+#
+# The screen shows stages and results; the full output of every command lands in
+# /var/log/frost-bootstrap.log, and the tail of it is printed when something
+# fails. Every stage is idempotent: re-running this on a half-finished machine is
+# the way to repair it.
 #
 # What it changes: pacman trust and configuration, the base providers Frost
 # replaces (FROST_REPLACES), the package set, the SDDM and frost-firstboot units,
-# and — only while the AUR apps build — one sudoers drop-in for the invoking
-# user. The initramfs, the boot splash and the bootloader are left exactly as
-# CachyOS configured them.
+# the invoking user's login shell and shell rc, and — only while the AUR apps
+# build — one sudoers drop-in. The initramfs, the boot splash and the bootloader
+# are left exactly as CachyOS configured them.
 
 set -euo pipefail
 export LC_ALL=C
@@ -22,6 +25,7 @@ readonly FROST_FPR=9F8D63165ACC27A4FDCCED02FD40A38811EDD104
 readonly REPO_DEST=/var/lib/frost/repo
 readonly LOG_FILE=/var/log/frost-bootstrap.log
 readonly SUDOERS_DROPIN=/etc/sudoers.d/zz-frost-bootstrap
+readonly BASHRC_LINE='. /usr/share/frost/default/bash/bashrc'
 readonly MIN_FREE_KIB=$((15 * 1024 * 1024))
 readonly PACKAGES=(frost-keyring frost frost-settings frost-meta)
 
@@ -65,15 +69,48 @@ readonly FROST_UNWANTED='^(jack2|pulseaudio|pipewire-media-session|nvidia(-[0-9a
 here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 invoker=${SUDO_USER:-}
 aur_failed=()
+aur_installed=0
 
-die() { printf 'bootstrap-cachyos: %s\n' "$1" >&2; exit 1; }
-step() { printf '\n== %s\n' "$1"; }
-note() { printf '   %s\n' "$1"; }
+[[ $EUID -eq 0 ]] || { printf 'bootstrap-cachyos: run as root (sudo ./bootstrap-cachyos)\n' >&2; exit 1; }
 
-[[ $EUID -eq 0 ]] || die 'run as root (sudo ./bootstrap-cachyos)'
+# fd 3 is the log. Everything the script says goes to both; everything a command
+# says goes to the log alone and surfaces only when it fails.
+exec 3>>"$LOG_FILE"
 
-exec > >(tee -a "$LOG_FILE") 2>&1
-printf '\n=== bootstrap-cachyos %s\n' "$(date -Is)"
+say() { printf '%s\n' "$1"; printf '%s\n' "$1" >&3; }
+step() { say ''; say "== $1"; }
+note() { say "   $1"; }
+die() { printf 'bootstrap-cachyos: %s\n' "$1" >&2; printf 'bootstrap-cachyos: %s\n' "$1" >&3; exit 1; }
+
+# Report a three-state helper: 0 did the work, 10 it was already in place,
+# anything else failed. No success line may come from a path that did nothing.
+report() {
+  case $1 in
+    0) note "$2" ;;
+    10) note "$3" ;;
+    *) note "$4" ;;
+  esac
+}
+
+# A command whose output belongs in the log. On failure the tail is printed, so
+# a quiet screen never hides the reason.
+run() {
+  local status=0
+  "$@" >&3 2>&3 || status=$?
+  ((status == 0)) && return 0
+  printf '\n-- last lines of %s --\n' "$LOG_FILE" >&2
+  tail -n 20 "$LOG_FILE" | sed 's/^/   /' >&2
+  return "$status"
+}
+
+# Best effort: logged, never printed, failure is the caller's to interpret.
+try_run() {
+  local status=0
+  "$@" >&3 2>&3 || status=$?
+  return "$status"
+}
+
+printf '\n=== bootstrap-cachyos %s\n' "$(date -Is)" >&3
 
 step 'preflight'
 command -v pacman >/dev/null || die 'pacman not found — this is not an Arch/CachyOS base'
@@ -91,14 +128,26 @@ free_kib=$(df -kP / | awk 'NR == 2 { print $4 }')
 ((free_kib >= MIN_FREE_KIB)) \
   || die "not enough free space on / ($((free_kib / 1024 / 1024)) GiB, need $((MIN_FREE_KIB / 1024 / 1024)) GiB)"
 
-if [[ $(findmnt -n -o FSTYPE / 2>/dev/null || true) != btrfs ]]; then
-  note 'root is not Btrfs; snapshots and rollback will be unavailable.'
+# The invoking user decides three later stages, so it is settled once here.
+has_invoker=0
+if [[ -n $invoker && $invoker != root ]] && id -u "$invoker" >/dev/null 2>&1; then
+  has_invoker=1
+else
+  note 'no unprivileged invoking user (use sudo, not a root shell)'
 fi
-note "$(df -h / | awk 'NR == 2 { print $4 }') free on /"
+
+if [[ $(findmnt -n -o FSTYPE / 2>/dev/null || true) != btrfs ]]; then
+  note 'root is not Btrfs; snapshots and rollback will be unavailable'
+fi
+note "$(df -h / | awk 'NR == 2 { print $4 }') free on /, logging to $LOG_FILE"
 
 step 'trusting the Frost signing key'
-pacman-key --add "$here/frost.gpg" || die 'could not import frost.gpg into the pacman keyring'
-pacman-key --lsign-key "$FROST_FPR" || note 'the Frost key was already trusted'
+run pacman-key --add "$here/frost.gpg" || die 'could not import frost.gpg into the pacman keyring'
+if try_run pacman-key --lsign-key "$FROST_FPR"; then
+  note 'signing key trusted'
+else
+  note 'the Frost key was already trusted'
+fi
 
 step "installing the Frost repository under $REPO_DEST"
 install -d -m0755 "$REPO_DEST"
@@ -107,7 +156,9 @@ install -d -m0755 "$REPO_DEST"
 rm -rf -- "${REPO_DEST:?}/x86_64"
 install -d -m0755 "$REPO_DEST/x86_64"
 cp -a "$here/repo/x86_64/." "$REPO_DEST/x86_64/"
-if ! grep -q '^\[frost\]' /etc/pacman.conf; then
+if grep -q '^\[frost\]' /etc/pacman.conf; then
+  note 'the [frost] repository was already configured'
+else
   cat >> /etc/pacman.conf <<EOF
 
 [frost]
@@ -121,15 +172,16 @@ step 'updating the base system'
 # A full upgrade, not just a refresh: installing new packages against a stale
 # base is a partial upgrade, which Arch and CachyOS do not support. Keyrings go
 # first so the upgrade can verify what it downloads on an older image.
-pacman -Sy --noconfirm || die 'could not refresh the package databases — check the network and the mirrorlist'
+run pacman -Sy --noconfirm || die 'could not refresh the package databases — check the network and the mirrorlist'
 keyrings=()
 for keyring in archlinux-keyring cachyos-keyring; do
   pacman -Si "$keyring" >/dev/null 2>&1 && keyrings+=("$keyring")
 done
 if ((${#keyrings[@]})); then
-  pacman -S --needed --noconfirm "${keyrings[@]}" || die 'the keyring update failed'
+  run pacman -S --needed --noconfirm "${keyrings[@]}" || die 'the keyring update failed'
 fi
-pacman -Syu --noconfirm || die 'the base system upgrade failed; resolve it and re-run'
+run pacman -Syu --noconfirm || die 'the base system upgrade failed; resolve it and re-run'
+note 'base system up to date'
 
 step 'swapping the base providers Frost replaces'
 # Only names from the fixed FROST_REPLACES list, and only when a package is
@@ -144,7 +196,7 @@ for pkg in "${FROST_REPLACES[@]}"; do
 done
 if ((${#present[@]})); then
   note "removing: ${present[*]}"
-  pacman -Rdd --noconfirm "${present[@]}"
+  run pacman -Rdd --noconfirm "${present[@]}" || die 'the provider swap failed'
 else
   note 'nothing to replace'
 fi
@@ -152,72 +204,100 @@ fi
 step 'installing the providers Frost chooses'
 # --ask=4 auto-answers "yes" to a conflict with an installed package
 # (--noconfirm alone answers "no" and aborts).
-pacman -S --needed --noconfirm --ask=4 "${FROST_PROVIDERS[@]}" \
-  || die 'the provider transaction failed; the log above names the conflict'
+run pacman -S --needed --noconfirm --ask=4 "${FROST_PROVIDERS[@]}" \
+  || die 'the provider transaction failed; the lines above name the conflict'
+note "${#FROST_PROVIDERS[@]} providers pinned"
 
 step 'checking the resolved plan'
 targets=(base-devel git "${PACKAGES[@]}")
-plan=$(pacman -S --needed --print --print-format '%n' "${targets[@]}") \
-  || die 'the Frost package set does not resolve; the log above names the conflict'
-unwanted=$(grep -xE "$FROST_UNWANTED" <<<"$plan" || true)
+plan=$(pacman -S --needed --print --print-format '%n %s' "${targets[@]}") \
+  || die 'the Frost package set does not resolve; the log names the conflict'
+unwanted=$(awk '{print $1}' <<<"$plan" | grep -xE "$FROST_UNWANTED" || true)
 [[ -z $unwanted ]] \
   || die "the resolved plan pulls in packages Frost replaces: $(tr '\n' ' ' <<<"$unwanted")"
-note "$(grep -c . <<<"$plan") packages to install or upgrade"
+note "$(grep -c . <<<"$plan") packages, $(awk '{s += $2} END {printf "%.0f", s / 1048576}' <<<"$plan") MiB to download"
 
 step 'installing Frost'
-pacman -S --needed --noconfirm --ask=4 "${targets[@]}" || die 'the Frost install failed'
+note 'this is the long one; watch the log for progress'
+run pacman -S --needed --noconfirm --ask=4 "${targets[@]}" || die 'the Frost install failed'
+note "installed $(pacman -Q "${PACKAGES[@]}" | tr '\n' ' ')"
 
 step 'enabling the display manager and first-boot reconciliation'
-systemctl enable --force sddm.service || die 'could not enable sddm'
-systemctl enable frost-firstboot.service || die 'could not enable frost-firstboot'
+run systemctl enable --force sddm.service || die 'could not enable sddm'
+run systemctl enable frost-firstboot.service || die 'could not enable frost-firstboot'
+note 'sddm and frost-firstboot enabled'
 
 if [[ -x /usr/lib/frost/frost-firstboot ]]; then
   step 'running first-boot reconciliation now'
-  /usr/lib/frost/frost-firstboot || note 'first-boot reconciliation reported an issue; it will retry on boot'
+  if run /usr/lib/frost/frost-firstboot; then
+    note 'hyprlock PAM, snapper and the firewall reconciled'
+  else
+    note 'first-boot reconciliation reported an issue; it will retry on boot'
+  fi
 fi
 
 step 'preparing the user account'
-# CachyOS gives its first user fish. Frost's shell defaults, prompt and
-# keybindings are written for bash, so the invoking user is moved over — only
-# that user, only to bash, and only when they are not already there.
-if [[ -z $invoker ]] || ! id -u "$invoker" >/dev/null 2>&1; then
-  note 'no invoking user — leaving the login shell alone'
+if ((has_invoker == 0)); then
+  note 'skipped: no invoking user'
 else
+  # CachyOS gives its first user fish. Frost's shell defaults, prompt and
+  # keybindings are written for bash, so the invoking user is moved over — only
+  # that user, only to bash, and only when they are not already there.
+  status=0
   current_shell=$(getent passwd "$invoker" | cut -d: -f7)
   if [[ $current_shell == */bash ]]; then
-    note "$invoker already logs in with bash"
-  elif chsh -s /bin/bash "$invoker"; then
-    note "$invoker: $current_shell -> /bin/bash"
+    status=10
   else
-    note "could not change the login shell; do it later with: chsh -s /bin/bash $invoker"
+    try_run chsh -s /bin/bash "$invoker" || status=$?
   fi
-  # Arriving from fish there is usually no ~/.bashrc at all, and bash then
-  # starts bare. Created only when missing: an existing one is the user's.
-  su - "$invoker" -s /bin/bash -c '
+  report "$status" \
+    "$invoker: $current_shell -> /bin/bash" \
+    "$invoker already logs in with bash" \
+    "could not change the login shell; do it later with: chsh -s /bin/bash $invoker"
+
+  # The bash package ships /etc/skel/.bashrc, so a new account always has one
+  # already and creating the file conditionally never fired. The Frost defaults
+  # are appended to whatever is there instead, guarded by the line itself.
+  status=0
+  try_run su - "$invoker" -s /bin/bash -c '
     set -eu
-    [ -f "$HOME/.bashrc" ] && exit 0
-    printf "# Frost defaults. This file is yours to edit.\n. /usr/share/frost/default/bash/bashrc\n" > "$HOME/.bashrc"
-  ' && note "seeded ~$invoker/.bashrc from the Frost defaults" \
-    || note 'left the existing ~/.bashrc alone'
+    rc="$HOME/.bashrc"
+    line="'"$BASHRC_LINE"'"
+    if [ -f "$rc" ] && grep -qxF "$line" "$rc"; then
+      exit 10
+    fi
+    {
+      [ -f "$rc" ] || printf "# Frost. This file is yours to edit.\n"
+      printf "\n# Frost defaults: prompt, history and aliases.\n%s\n" "$line"
+    } >> "$rc"
+  ' || status=$?
+  report "$status" \
+    "~$invoker/.bashrc now sources the Frost defaults" \
+    "~$invoker/.bashrc already sources the Frost defaults" \
+    "could not update ~$invoker/.bashrc"
 
   # CachyOS Hello is copied out of /etc/skel into the user's own autostart
   # directory, so it is their file and no package owns it. Hidden=true is the
   # XDG way to switch an entry off, and deleting that one line brings it back.
-  su - "$invoker" -s /bin/bash -c '
+  status=0
+  try_run su - "$invoker" -s /bin/bash -c '
     set -eu
     entry="$HOME/.config/autostart/cachyos-hello.desktop"
-    [ -f "$entry" ] || exit 1
-    grep -q "^Hidden=true$" "$entry" && exit 1
+    [ -f "$entry" ] || exit 10
+    grep -q "^Hidden=true$" "$entry" && exit 10
     printf "Hidden=true\n" >> "$entry"
-  ' && note 'disabled the CachyOS Hello autostart' \
-    || note 'CachyOS Hello autostart not present or already disabled'
+  ' || status=$?
+  report "$status" \
+    'disabled the CachyOS Hello autostart' \
+    'CachyOS Hello autostart absent or already disabled' \
+    'could not disable the CachyOS Hello autostart'
 fi
 
 step 'building the AUR apps'
 # Best effort and never as root: paru comes from the repositories when they
 # carry it (CachyOS does) and from its AUR recipe otherwise, built as the
-# invoking user. If there is no unprivileged invoker or no network, this is
-# skipped with a printed hint and the install still succeeds.
+# invoking user. Without an invoker or a network this is skipped with a printed
+# hint and the install still succeeds.
 
 aur_apps() {
   { [[ -f $here/aur.lock.json ]] && command -v jq >/dev/null; } || return 0
@@ -226,10 +306,12 @@ aur_apps() {
          | join(" ")' "$here/aur.lock.json"
 }
 
+apps=$(aur_apps)
+
 manual_aur_hint() {
-  printf 'Finish later, as your user:\n'
-  printf '  sudo pacman -S --needed paru   # or build it from https://aur.archlinux.org/paru.git\n'
-  printf '  paru -S --needed %s\n' "$(aur_apps)"
+  say 'Finish later, as your user:'
+  say "  sudo pacman -S --needed paru   # or build it from https://aur.archlinux.org/paru.git"
+  say "  paru -S --needed $apps"
 }
 
 # paru escalates through sudo, so the invoking user needs to reach pacman without
@@ -239,11 +321,10 @@ manual_aur_hint() {
 # `%wheel ALL=(ALL) ALL`, which matches every command for a user in wheel and
 # demands a password — so a grant must sort after it (hence zz-) or it is read
 # first and silently loses. paru also runs `sudo -v` before its transaction,
-# which a rule naming one command cannot satisfy. So the grant is unqualified. It is bounded the other three ways instead: one
-# named user, one file, validated before it takes effect, and handed back by the
-# trap on every exit including a failure or an interrupt. It exists only while
-# this stage runs. Decision recorded 2026-08-30; the alternative is dropping the
-# AUR stage and printing the command for the user to run after first login.
+# which a rule naming one command cannot satisfy. So the grant is unqualified.
+# It is bounded the other three ways instead: one named user, one file, validated
+# before it takes effect, and handed back by the trap on every exit including a
+# failure or an interrupt. It exists only while this stage runs.
 revoke_pacman_nopasswd() { rm -f -- "$SUDOERS_DROPIN"; }
 grant_pacman_nopasswd() {
   local staged
@@ -254,57 +335,73 @@ grant_pacman_nopasswd() {
   visudo -cqf "$staged" || { rm -f -- "$staged"; die 'the generated sudoers drop-in is invalid'; }
   install -m0440 -o root -g root "$staged" "$SUDOERS_DROPIN"
   rm -f -- "$staged"
-  note "granted $invoker passwordless sudo for this stage only; revoked on exit"
 }
 
-apps=$(aur_apps)
-if [[ -z $invoker || $invoker == root ]] || ! id -u "$invoker" >/dev/null 2>&1; then
-  note 'no unprivileged invoking user (use sudo, not a root shell) — skipping.'
+if ((has_invoker == 0)); then
+  note 'skipped: no invoking user'
   manual_aur_hint
 elif [[ -z $apps ]]; then
-  note 'aur.lock.json lists nothing to build — skipping.'
+  note 'skipped: aur.lock.json lists nothing to build'
 elif ! command -v curl >/dev/null || ! curl -sf -I --max-time 15 https://aur.archlinux.org/ >/dev/null 2>&1; then
-  note 'the AUR is not reachable right now — skipping.'
+  note 'skipped: the AUR is not reachable right now'
   manual_aur_hint
 else
   grant_pacman_nopasswd
+  note "granted $invoker passwordless sudo for this stage only; revoked on exit"
+
   if ! command -v paru >/dev/null && pacman -Si paru >/dev/null 2>&1; then
-    note 'installing paru from the repositories'
-    pacman -S --needed --noconfirm paru || note 'paru is not installable from the repositories'
+    run pacman -S --needed --noconfirm paru || note 'paru is not installable from the repositories'
   fi
   if ! command -v paru >/dev/null; then
     note "building paru from the AUR as $invoker"
     # Only the AUR recipe needs a compiler; the repository build does not.
-    pacman -S --needed --noconfirm rust || note 'rust is unavailable; the paru build will likely fail'
+    try_run pacman -S --needed --noconfirm rust || note 'rust is unavailable; the paru build will likely fail'
     # -s /bin/bash on purpose: su - uses the account's login shell, and a
     # CachyOS user still on fish would be handed this bash script to run.
-    su - "$invoker" -s /bin/bash -c '
+    try_run su - "$invoker" -s /bin/bash -c '
       set -eu
       d=$(mktemp -d)
       trap "rm -rf -- $d" EXIT
       git clone --depth 1 https://aur.archlinux.org/paru.git "$d/paru"
       cd "$d/paru"
       makepkg -si --noconfirm --needed
-    ' || note 'paru failed to build.'
+    ' || note 'paru failed to build'
   fi
+
   if command -v paru >/dev/null; then
-    # One at a time: a single broken recipe must not cost the other fourteen.
+    note "paru $(paru --version 2>/dev/null | awk 'NR == 1 {print $2}'), building $(wc -w <<<"$apps") apps"
+    # One at a time: a single broken recipe must not cost the others.
     for app in $apps; do
-      printf '\n-- %s\n' "$app"
-      su - "$invoker" -s /bin/bash -c "paru -S --needed --noconfirm --skipreview -- $app" \
-        || aur_failed+=("$app")
+      printf '\n-- %s\n' "$app" >&3
+      if try_run su - "$invoker" -s /bin/bash -c "paru -S --needed --noconfirm --skipreview -- $app"; then
+        aur_installed=$((aur_installed + 1))
+      else
+        aur_failed+=("$app")
+      fi
     done
+    note "AUR: $aur_installed/$(wc -w <<<"$apps") installed"
   else
     manual_aur_hint
   fi
   revoke_pacman_nopasswd
 fi
 
+step 'verifying'
+if command -v frost >/dev/null; then
+  if run frost verify; then
+    note 'frost verify: every check ok'
+  else
+    note 'frost verify reported failures; run it inside the session for detail'
+  fi
+else
+  note 'the frost command is not on PATH — the install did not complete'
+fi
+
 step 'done'
 if ((${#aur_failed[@]})); then
-  printf 'these AUR apps did not build: %s\n' "${aur_failed[*]}"
-  printf 'retry as your user with: paru -S --needed %s\n' "${aur_failed[*]}"
+  say "these AUR apps did not build: ${aur_failed[*]}"
+  say "retry as your user with: paru -S --needed ${aur_failed[*]}"
 fi
-printf 'Log:   %s\n' "$LOG_FILE"
-printf 'Check: frost doctor (after logging into the Frost session)\n'
-printf 'Reboot into Frost.\n'
+say "Log:   $LOG_FILE"
+say 'Check: frost-report (after logging into the Frost session)'
+say 'Reboot into Frost.'

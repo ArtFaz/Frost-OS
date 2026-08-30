@@ -1,6 +1,6 @@
 pkgname=frost-settings
 pkgver=0.2.0
-pkgrel=4
+pkgrel=5
 pkgdesc='Frost privileged and global system configuration'
 arch=('any')
 url='https://github.com/ArtFaz/Frost-OS'
@@ -46,6 +46,7 @@ package() {
   install -Dm644 default/etc/sddm.conf.d/10-frost.conf "$pkgdir/etc/sddm.conf.d/10-frost.conf"
   install -Dm644 default/etc/sysctl.d/99-frost.conf "$pkgdir/etc/sysctl.d/99-frost.conf"
   install -Dm644 default/etc/systemd/zram-generator.conf "$pkgdir/etc/systemd/zram-generator.conf"
+  install -d -m0750 "$pkgdir/etc/sudoers.d"
   install -Dm440 default/sudoers/frost "$pkgdir/etc/sudoers.d/frost"
 
   # First-boot reconciliation: the script, its data, and its unit.
