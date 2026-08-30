@@ -17,5 +17,6 @@ done
 "$root/test/meta-contract"
 "$root/test/settings-contract"
 "$root/test/install-contract"
+"$root/test/resolve-plan"
 "$root/test/package-build"
 "$root/test/signatures"

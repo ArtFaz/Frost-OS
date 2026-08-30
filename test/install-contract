@@ -46,8 +46,29 @@ done <<<"$rules"
 grep -qE '^readonly FROST_REPLACES=\(' "$script" || fail 'FROST_REPLACES list is missing'
 grep -qE 'for pkg in "\$\{FROST_REPLACES\[@\]\}"' "$script" \
   || fail 'the removal is not driven from FROST_REPLACES'
+# sudo-rs must not be pre-removed: that deletes /usr/bin/sudo and only the next
+# transaction puts it back. pacman swaps it for `sudo` atomically instead.
+if sed -n '/^readonly FROST_REPLACES=(/,/^)/p' "$script" | grep -qw 'sudo-rs'; then
+  fail 'sudo-rs is in FROST_REPLACES; it must be swapped inside a transaction, not pre-removed'
+fi
 # Any conflict the list did not foresee is auto-resolved, never left to abort.
 grep -qE 'pacman -S .*--ask=4' "$script" || fail 'the install does not pass --ask=4 to resolve conflicts'
+# Every provider Frost picks is named and installed up front. Left to itself,
+# --noconfirm answers the provider question with the first candidate, which for
+# `jack` is jack2 — an unresolvable conflict against pipewire-jack.
+grep -qE '^readonly FROST_PROVIDERS=\(' "$script" || fail 'FROST_PROVIDERS list is missing'
+providers=$(sed -n '/^readonly FROST_PROVIDERS=(/,/^)/p' "$script")
+for provider in pipewire-jack wireplumber mesa vulkan-radeon ttf-dejavu tesseract-data-eng openbsd-netcat; do
+  grep -qw "$provider" <<<"$providers" || fail "FROST_PROVIDERS does not pin $provider"
+done
+grep -qE 'pacman -S .*"\$\{FROST_PROVIDERS\[@\]\}"' "$script" \
+  || fail 'FROST_PROVIDERS is never installed'
+# Installing onto a stale base is a partial upgrade, which Arch does not support.
+grep -qE 'pacman -Syu ' "$script" || fail 'the base system is never fully upgraded'
+# The resolution is inspected before the transaction runs, so a bad provider
+# choice costs a message instead of a half-installed system.
+grep -qE 'pacman -S .*--print' "$script" || fail 'the install does not check the resolved plan first'
+grep -qE '^readonly FROST_UNWANTED=' "$script" || fail 'the rejected-package pattern is missing'
 # git is only ever a shallow clone of an AUR recipe (never a fetch of anything
 # else); "git" as a pacman package name is not an invocation.
 while IFS= read -r line; do
@@ -59,6 +80,26 @@ done <<<"$rules"
 # makepkg and paru appear only inside the su - "$invoker" -c block.
 grep -qE '\$\{SUDO_USER:-\}' "$script" || fail 'the AUR step does not derive its user from $SUDO_USER'
 grep -qE 'su - "\$invoker" -c' "$script" || fail 'the AUR step does not drop to the invoking user'
+
+# The AUR stage may grant the invoking user passwordless pacman, because paru
+# installs through sudo. Exactly one fixed path, validated before it takes
+# effect, and handed back by a trap on every exit.
+if grep -n 'sudoers' <<<"$rules" >/dev/null; then
+  grep -qE '^readonly SUDOERS_DROPIN=/etc/sudoers\.d/00-frost-bootstrap$' "$script" \
+    || fail 'the sudoers drop-in is not the fixed /etc/sudoers.d/00-frost-bootstrap'
+  grep -qE 'NOPASSWD: /usr/bin/pacman' "$script" \
+    || fail 'the sudoers drop-in grants more than pacman'
+  grep -qE 'visudo -cqf' "$script" || fail 'the sudoers drop-in is installed without visudo validation'
+  grep -qE 'trap revoke_pacman_nopasswd EXIT' "$script" \
+    || fail 'the sudoers drop-in is not revoked by a trap'
+  grep -qE 'rm -f -- "\$SUDOERS_DROPIN"' "$script" || fail 'the sudoers drop-in is never removed'
+fi
+
+# The initramfs, the boot splash and the bootloader belong to CachyOS. Frost
+# ships no Plymouth theme, so touching them was risk without a return.
+if grep -n -E '(mkinitcpio|dracut|booster|limine|grub|/boot/)' <<<"$rules"; then
+  fail 'bootstrap touches the initramfs or the bootloader'
+fi
 
 # The trust root in the script matches the shipped keyring.
 fpr=$(gpg --with-colons --show-keys "$keyring" 2>/dev/null | awk -F: '/^fpr:/{print $10; exit}')
@@ -80,7 +121,7 @@ grep -qE '\$EUID -eq 0' "$script" || fail 'bootstrap does not check for root'
 if grep -n -E 'systemctl +(disable|mask|stop)' <<<"$rules"; then
   fail 'bootstrap disables or masks a unit'
 fi
-grep -qE 'systemctl enable sddm\.service' "$script" || fail 'bootstrap does not enable sddm'
+grep -qE 'systemctl enable (--force )?sddm\.service' "$script" || fail 'bootstrap does not enable sddm'
 grep -qE 'systemctl enable frost-firstboot\.service' "$script" || fail 'bootstrap does not enable frost-firstboot'
 
 # The bundle assembler and its output path guard.

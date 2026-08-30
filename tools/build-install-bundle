@@ -38,14 +38,19 @@ done
 cat > "$b/README" <<'EOF'
 Frost offline install bundle.
 
-  1. Install CachyOS Minimal on the target machine (Btrfs root).
+  1. Install CachyOS Minimal on the target machine (Btrfs root, multilib on).
   2. Copy this directory across, or extract the tarball.
   3. cd frost-install-bundle && sudo ./bootstrap-cachyos
-  4. Reboot into Frost. bootstrap-cachyos builds the AUR apps itself when a
-     network is up; if it skipped them, see aur.lock.json.
+  4. Reboot into Frost.
 
-The package repository here is signed by the Frost trust root
-9F8D63165ACC27A4FDCCED02FD40A38811EDD104; bootstrap-cachyos imports it.
+The Frost packages are carried here and signed by the trust root
+9F8D63165ACC27A4FDCCED02FD40A38811EDD104, which bootstrap-cachyos imports. The
+rest of the set comes from the CachyOS repositories, so the machine needs a
+network.
+
+The run is logged to /var/log/frost-bootstrap.log and every stage is idempotent:
+re-running the script is how an interrupted install is finished. The AUR apps in
+aur.lock.json are built last, as the invoking user, best effort.
 EOF
 
 tar --zstd -C "$stage" -cf "$out" frost-install-bundle

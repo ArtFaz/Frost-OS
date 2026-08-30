@@ -9,7 +9,7 @@ Contents (source under `frost/default/` and `frost/bin/frost-firstboot`):
 
 - `usr/share/sddm/themes/frost/` — the greeter theme.
 - `/etc` drop-ins Frost owns: `sddm.conf.d/10-frost.conf`,
-  `sysctl.d/10-frost.conf`, `systemd/zram-generator.conf`, `sudoers.d/frost`.
+  `sysctl.d/99-frost.conf`, `systemd/zram-generator.conf`, `sudoers.d/frost`.
 - `usr/lib/frost/frost-firstboot` + `frost-firstboot.service` — a
   marker-guarded oneshot that reconciles the hardened `/etc/pam.d/hyprlock`,
   the snapper root config and timers, and the firewall. Files owned by another

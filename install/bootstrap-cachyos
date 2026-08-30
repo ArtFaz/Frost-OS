@@ -4,59 +4,108 @@
 #
 #   sudo ./bootstrap-cachyos
 #
-# The Frost packages come from a signed repository carried in the bundle and
-# need no network. After that, if a network is up, it also bootstraps paru and
-# builds the AUR apps from aur.lock.json as the invoking user — best effort:
-# a failure there is reported but does not abort the install.
+# The Frost packages come from a signed repository carried in the bundle; the
+# rest of the set comes from the CachyOS repositories, so a network is required.
+# The whole run is appended to /var/log/frost-bootstrap.log, and every stage is
+# idempotent: re-running it on a half-finished machine is the way to repair it.
 #
-# The only packages it removes are the CachyOS-base audio/system providers that
-# collide with Frost's PipeWire stack (jack2, pulseaudio*, sudo-rs, ...); the
-# exhaustive list is FROST_REPLACES below and any leftover conflict is resolved
-# by --ask=4 on the install. Nothing else is removed.
+# What it changes: pacman trust and configuration, the base providers Frost
+# replaces (FROST_REPLACES), the package set, the SDDM and frost-firstboot units,
+# and — only while the AUR apps build — one sudoers drop-in for the invoking
+# user. The initramfs, the boot splash and the bootloader are left exactly as
+# CachyOS configured them.
 
 set -euo pipefail
 export LC_ALL=C
 
 readonly FROST_FPR=9F8D63165ACC27A4FDCCED02FD40A38811EDD104
 readonly REPO_DEST=/var/lib/frost/repo
+readonly LOG_FILE=/var/log/frost-bootstrap.log
+readonly SUDOERS_DROPIN=/etc/sudoers.d/00-frost-bootstrap
+readonly MIN_FREE_KIB=$((15 * 1024 * 1024))
 readonly PACKAGES=(frost-keyring frost frost-settings frost-meta)
 
+# The providers Frost chooses, installed as their own transaction before
+# anything that depends on them. Without this, pacman resolves each virtual
+# dependency on its own and --noconfirm accepts the first candidate: `jack`
+# would come from jack2 (unresolvable against the pipewire-jack that frost-meta
+# requires), `vulkan-driver` from an NVIDIA stack, `ttf-font` from
+# gnu-free-fonts and `tessdata` from the Afrikaans model. Every name here is a
+# deliberate choice; the comment names the virtual it settles.
+readonly FROST_PROVIDERS=(
+  pipewire pipewire-alsa pipewire-jack pipewire-pulse # jack
+  wireplumber                                         # pipewire-session-manager
+  mesa lib32-mesa                                     # opengl-driver, lib32-opengl-driver
+  vulkan-radeon lib32-vulkan-radeon                   # vulkan-driver
+  ttf-dejavu                                          # ttf-font
+  tesseract-data-eng                                  # tessdata
+  openbsd-netcat                                      # netcat
+  sudo                                                # takes over from sudo-rs
+)
+
 # CachyOS Minimal ships alternative providers that Conflict/Replace packages the
-# Frost set pulls in — chiefly the PipeWire audio stack and plain `sudo`. Each
-# name here is removed (if installed) so the Frost provider can take over; this
-# swap is the only removal the script performs. install-contract pins the list.
+# Frost set pulls in. Each name here is removed when installed under that exact
+# name, so the Frost provider can take over; this swap is the only removal the
+# script performs. `sudo-rs` is deliberately absent: pacman swaps it for `sudo`
+# within a transaction, so the machine is never left without /usr/bin/sudo.
 readonly FROST_REPLACES=(
   jack2 jack pipewire-jack-client                 # -> pipewire-jack
   pulseaudio pulseaudio-alsa pulseaudio-bluetooth # -> pipewire-pulse / pipewire-alsa
   pulseaudio-jack pulseaudio-equalizer-ladspa
   pulseaudio-rtp pulseaudio-zeroconf pulseaudio-lirc
   pipewire-media-session                          # -> wireplumber
-  sudo-rs                                         # CachyOS variant provides/conflicts sudo -> sudo
   virtualbox-guest-utils-nox                      # -> virtualbox-guest-utils
 )
 
+# Names that must not appear in the resolved plan: a provider Frost rejected, or
+# a second kernel dragged in by one. Checked before the install runs, so a bad
+# resolution costs a message instead of a half-installed system.
+readonly FROST_UNWANTED='^(jack2|pulseaudio|pipewire-media-session|nvidia(-[0-9a-z]+)?-utils|linux(-lts|-zen|-hardened)?)$'
+
 here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+aur_failed=()
 
 die() { printf 'bootstrap-cachyos: %s\n' "$1" >&2; exit 1; }
 step() { printf '\n== %s\n' "$1"; }
+note() { printf '   %s\n' "$1"; }
 
 [[ $EUID -eq 0 ]] || die 'run as root (sudo ./bootstrap-cachyos)'
+
+exec > >(tee -a "$LOG_FILE") 2>&1
+printf '\n=== bootstrap-cachyos %s\n' "$(date -Is)"
+
+step 'preflight'
 command -v pacman >/dev/null || die 'pacman not found — this is not an Arch/CachyOS base'
 command -v pacman-key >/dev/null || die 'pacman-key not found'
+command -v pacman-conf >/dev/null || die 'pacman-conf not found'
+[[ $(uname -m) == x86_64 ]] || die "the Frost repository is x86_64 only (this is $(uname -m))"
 [[ -f $here/frost.gpg ]] || die 'frost.gpg is not next to this script'
 [[ -d $here/repo/x86_64 ]] || die 'repo/x86_64 is not next to this script'
 
+# lib32-mesa is part of the set, so multilib is not optional.
+pacman-conf --repo-list | grep -qx multilib \
+  || die 'the [multilib] repository is disabled — enable it in /etc/pacman.conf, then re-run'
+
+free_kib=$(df -kP / | awk 'NR == 2 { print $4 }')
+((free_kib >= MIN_FREE_KIB)) \
+  || die "not enough free space on / ($((free_kib / 1024 / 1024)) GiB, need $((MIN_FREE_KIB / 1024 / 1024)) GiB)"
+
 if [[ $(findmnt -n -o FSTYPE / 2>/dev/null || true) != btrfs ]]; then
-  printf 'bootstrap-cachyos: note — root is not Btrfs; snapshots and rollback will be unavailable.\n'
+  note 'root is not Btrfs; snapshots and rollback will be unavailable.'
 fi
+note "$(df -h / | awk 'NR == 2 { print $4 }') free on /"
 
 step 'trusting the Frost signing key'
-pacman-key --add "$here/frost.gpg"
-pacman-key --lsign-key "$FROST_FPR"
+pacman-key --add "$here/frost.gpg" || die 'could not import frost.gpg into the pacman keyring'
+pacman-key --lsign-key "$FROST_FPR" || note 'the Frost key was already trusted'
 
-step 'installing the Frost repository under '"$REPO_DEST"
+step "installing the Frost repository under $REPO_DEST"
 install -d -m0755 "$REPO_DEST"
-cp -a "$here/repo/x86_64" "$REPO_DEST/"
+# Replace rather than copy into: cp -a of a directory onto an existing one of
+# the same name nests it, and a second run would build up repo/x86_64/x86_64.
+rm -rf -- "${REPO_DEST:?}/x86_64"
+install -d -m0755 "$REPO_DEST/x86_64"
+cp -a "$here/repo/x86_64/." "$REPO_DEST/x86_64/"
 if ! grep -q '^\[frost\]' /etc/pacman.conf; then
   cat >> /etc/pacman.conf <<EOF
 
@@ -64,16 +113,27 @@ if ! grep -q '^\[frost\]' /etc/pacman.conf; then
 SigLevel = Required
 Server = file://$REPO_DEST/\$arch
 EOF
-  printf 'added the [frost] repository to /etc/pacman.conf\n'
+  note 'added the [frost] repository to /etc/pacman.conf'
 fi
 
-step 'installing Frost'
-pacman -Sy --noconfirm
+step 'updating the base system'
+# A full upgrade, not just a refresh: installing new packages against a stale
+# base is a partial upgrade, which Arch and CachyOS do not support. Keyrings go
+# first so the upgrade can verify what it downloads on an older image.
+pacman -Sy --noconfirm || die 'could not refresh the package databases — check the network and the mirrorlist'
+keyrings=()
+for keyring in archlinux-keyring cachyos-keyring; do
+  pacman -Si "$keyring" >/dev/null 2>&1 && keyrings+=("$keyring")
+done
+if ((${#keyrings[@]})); then
+  pacman -S --needed --noconfirm "${keyrings[@]}" || die 'the keyring update failed'
+fi
+pacman -Syu --noconfirm || die 'the base system upgrade failed; resolve it and re-run'
 
-# Drop base providers Frost replaces, so the install does not stop on a
-# conflict. Only names from the fixed FROST_REPLACES list, and only when a
-# package is installed under that exact name — `pacman -Q <name>` also matches
-# a *provider* (jack2 provides jack), which -Rdd cannot then remove.
+step 'swapping the base providers Frost replaces'
+# Only names from the fixed FROST_REPLACES list, and only when a package is
+# installed under that exact name — `pacman -Q <name>` also matches a *provider*
+# (jack2 provides jack), which -Rdd cannot then remove.
 mapfile -t installed_pkgs < <(pacman -Qq)
 declare -A is_installed=()
 for pkg in "${installed_pkgs[@]}"; do is_installed[$pkg]=1; done
@@ -82,71 +142,94 @@ for pkg in "${FROST_REPLACES[@]}"; do
   [[ -n ${is_installed[$pkg]:-} ]] && present+=("$pkg")
 done
 if ((${#present[@]})); then
-  printf 'removing base providers Frost replaces: %s\n' "${present[*]}"
+  note "removing: ${present[*]}"
   pacman -Rdd --noconfirm "${present[@]}"
+else
+  note 'nothing to replace'
 fi
 
-# --ask=4 auto-answers "yes" to any remaining conflict question (--noconfirm
-# alone answers "no" and aborts), covering base collisions not in the list.
-pacman -S --needed --noconfirm --ask=4 base-devel git rust "${PACKAGES[@]}"
+step 'installing the providers Frost chooses'
+# --ask=4 auto-answers "yes" to a conflict with an installed package
+# (--noconfirm alone answers "no" and aborts).
+pacman -S --needed --noconfirm --ask=4 "${FROST_PROVIDERS[@]}" \
+  || die 'the provider transaction failed; the log above names the conflict'
 
-step 'reconciling the initramfs hooks'
-HOOKS_CHANGED=0
-add_hook() {
-  local hook=$1 after=$2 conf=/etc/mkinitcpio.conf
-  if grep -qE "^HOOKS=.*\b${hook}\b" "$conf"; then
-    return 0
-  fi
-  if grep -qE "^HOOKS=.*\b${after}\b" "$conf"; then
-    sed -i -E "s/^(HOOKS=\(.*\b${after}\b)/\1 ${hook}/" "$conf"
-  else
-    sed -i -E "s/^(HOOKS=\()/\1${hook} /" "$conf"
-  fi
-  HOOKS_CHANGED=1
-  printf 'added %s hook\n' "$hook"
-}
-add_hook plymouth keyboard
-add_hook btrfs filesystems
-if ((HOOKS_CHANGED)); then
-  mkinitcpio -P
-fi
+step 'checking the resolved plan'
+targets=(base-devel git "${PACKAGES[@]}")
+plan=$(pacman -S --needed --print --print-format '%n' "${targets[@]}") \
+  || die 'the Frost package set does not resolve; the log above names the conflict'
+unwanted=$(grep -xE "$FROST_UNWANTED" <<<"$plan" || true)
+[[ -z $unwanted ]] \
+  || die "the resolved plan pulls in packages Frost replaces: $(tr '\n' ' ' <<<"$unwanted")"
+note "$(grep -c . <<<"$plan") packages to install or upgrade"
+
+step 'installing Frost'
+pacman -S --needed --noconfirm --ask=4 "${targets[@]}" || die 'the Frost install failed'
 
 step 'enabling the display manager and first-boot reconciliation'
-systemctl enable sddm.service
-systemctl enable frost-firstboot.service
+systemctl enable --force sddm.service || die 'could not enable sddm'
+systemctl enable frost-firstboot.service || die 'could not enable frost-firstboot'
 
 if [[ -x /usr/lib/frost/frost-firstboot ]]; then
   step 'running first-boot reconciliation now'
-  /usr/lib/frost/frost-firstboot || printf 'first-boot reconciliation reported an issue; it will retry on boot\n'
+  /usr/lib/frost/frost-firstboot || note 'first-boot reconciliation reported an issue; it will retry on boot'
 fi
 
 step 'building the AUR apps'
-# Best effort and never as root: paru is built from its AUR recipe as the
-# invoking user, then it installs the rest of aur.lock.json. If there is no
-# unprivileged invoker or no network, this is skipped with a printed hint and
-# the install still succeeds.
+# Best effort and never as root: paru comes from the repositories when they
+# carry it (CachyOS does) and from its AUR recipe otherwise, built as the
+# invoking user. If there is no unprivileged invoker or no network, this is
+# skipped with a printed hint and the install still succeeds.
 
 aur_apps() {
   { [[ -f $here/aur.lock.json ]] && command -v jq >/dev/null; } || return 0
-  jq -r '[.packages[].name] | map(select(. != "paru")) | join(" ")' "$here/aur.lock.json"
+  jq -r '[.packages[].name]
+         | map(select(. != "paru" and test("^[a-z0-9][a-z0-9@._+-]*$")))
+         | join(" ")' "$here/aur.lock.json"
 }
 
 manual_aur_hint() {
   printf 'Finish later, as your user:\n'
-  printf '  git clone https://aur.archlinux.org/paru.git && (cd paru && makepkg -si)\n'
+  printf '  sudo pacman -S --needed paru   # or build it from https://aur.archlinux.org/paru.git\n'
   printf '  paru -S --needed %s\n' "$(aur_apps)"
 }
 
+# paru runs pacman through sudo for every package it installs. Granting exactly
+# that, for exactly this user, keeps the run unattended; the trap gives it back
+# on any exit, including a failure.
+revoke_pacman_nopasswd() { rm -f -- "$SUDOERS_DROPIN"; }
+grant_pacman_nopasswd() {
+  local staged
+  trap revoke_pacman_nopasswd EXIT
+  trap 'revoke_pacman_nopasswd; exit 130' INT TERM
+  staged=$(mktemp)
+  printf '%s ALL=(root) NOPASSWD: /usr/bin/pacman\n' "$invoker" > "$staged"
+  visudo -cqf "$staged" || { rm -f -- "$staged"; die 'the generated sudoers drop-in is invalid'; }
+  install -m0440 -o root -g root "$staged" "$SUDOERS_DROPIN"
+  rm -f -- "$staged"
+  note "granted $invoker NOPASSWD pacman for the duration of this stage"
+}
+
 invoker=${SUDO_USER:-}
+apps=$(aur_apps)
 if [[ -z $invoker || $invoker == root ]] || ! id -u "$invoker" >/dev/null 2>&1; then
-  printf 'no unprivileged invoking user (use sudo, not a root shell) — skipping.\n'
+  note 'no unprivileged invoking user (use sudo, not a root shell) — skipping.'
   manual_aur_hint
+elif [[ -z $apps ]]; then
+  note 'aur.lock.json lists nothing to build — skipping.'
 elif ! command -v curl >/dev/null || ! curl -sf -I --max-time 15 https://aur.archlinux.org/ >/dev/null 2>&1; then
-  printf 'the AUR is not reachable right now — skipping.\n'
+  note 'the AUR is not reachable right now — skipping.'
   manual_aur_hint
 else
+  grant_pacman_nopasswd
+  if ! command -v paru >/dev/null && pacman -Si paru >/dev/null 2>&1; then
+    note 'installing paru from the repositories'
+    pacman -S --needed --noconfirm paru || note 'paru is not installable from the repositories'
+  fi
   if ! command -v paru >/dev/null; then
-    printf 'building paru from the AUR as %s\n' "$invoker"
+    note "building paru from the AUR as $invoker"
+    # Only the AUR recipe needs a compiler; the repository build does not.
+    pacman -S --needed --noconfirm rust || note 'rust is unavailable; the paru build will likely fail'
     su - "$invoker" -c '
       set -eu
       d=$(mktemp -d)
@@ -154,19 +237,25 @@ else
       git clone --depth 1 https://aur.archlinux.org/paru.git "$d/paru"
       cd "$d/paru"
       makepkg -si --noconfirm --needed
-    ' || printf 'paru failed to build.\n'
+    ' || note 'paru failed to build.'
   fi
   if command -v paru >/dev/null; then
-    apps=$(aur_apps)
-    if [[ -n ${apps:-} ]]; then
-      printf 'installing the AUR apps: %s\n' "$apps"
-      su - "$invoker" -c "paru -S --needed --noconfirm $apps" \
-        || printf 'some AUR apps did not build; finish with: paru -S --needed %s\n' "$apps"
-    fi
+    # One at a time: a single broken recipe must not cost the other fourteen.
+    for app in $apps; do
+      printf '\n-- %s\n' "$app"
+      su - "$invoker" -c "paru -S --needed --noconfirm --skipreview -- $app" || aur_failed+=("$app")
+    done
   else
     manual_aur_hint
   fi
+  revoke_pacman_nopasswd
 fi
 
 step 'done'
+if ((${#aur_failed[@]})); then
+  printf 'these AUR apps did not build: %s\n' "${aur_failed[*]}"
+  printf 'retry as your user with: paru -S --needed %s\n' "${aur_failed[*]}"
+fi
+printf 'Log:   %s\n' "$LOG_FILE"
+printf 'Check: frost doctor (after logging into the Frost session)\n'
 printf 'Reboot into Frost.\n'

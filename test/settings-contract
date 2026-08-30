@@ -20,7 +20,7 @@ for rel in \
   default/sddm/frost/Main.qml \
   default/pam/hyprlock \
   default/etc/sddm.conf.d/10-frost.conf \
-  default/etc/sysctl.d/10-frost.conf \
+  default/etc/sysctl.d/99-frost.conf \
   default/etc/systemd/zram-generator.conf \
   default/sudoers/frost \
   default/systemd/system/frost-firstboot.service \
@@ -75,7 +75,7 @@ rg -q '^ConditionPathExists=!/var/lib/frost/firstboot-done$' "$unit" || fail 'fr
 # --- PKGBUILD: config-only, backs up its /etc files ---
 rg -q "^arch=\('any'\)$" "$pkgbuild" || fail 'frost-settings must be arch=any'
 rg -q '^build\(\)' "$pkgbuild" && fail 'frost-settings must not have a build step'
-for b in etc/sudoers.d/frost etc/sddm.conf.d/10-frost.conf etc/sysctl.d/10-frost.conf etc/systemd/zram-generator.conf; do
+for b in etc/sudoers.d/frost etc/sddm.conf.d/10-frost.conf etc/sysctl.d/99-frost.conf etc/systemd/zram-generator.conf; do
   rg -q "'$b'" "$pkgbuild" || fail "backup() is missing $b"
 done
 

@@ -1,6 +1,6 @@
 pkgname=frost-settings
 pkgver=0.2.0
-pkgrel=1
+pkgrel=2
 pkgdesc='Frost privileged and global system configuration'
 arch=('any')
 url='https://github.com/ArtFaz/Frost-OS'
@@ -23,7 +23,7 @@ options=('!debug' '!strip')
 backup=(
   'etc/sudoers.d/frost'
   'etc/sddm.conf.d/10-frost.conf'
-  'etc/sysctl.d/10-frost.conf'
+  'etc/sysctl.d/99-frost.conf'
   'etc/systemd/zram-generator.conf'
 )
 install=frost-settings.install
@@ -44,7 +44,7 @@ package() {
   # /etc/pam.d/hyprlock belong to their own packages and are reconciled by
   # frost-firstboot instead.
   install -Dm644 default/etc/sddm.conf.d/10-frost.conf "$pkgdir/etc/sddm.conf.d/10-frost.conf"
-  install -Dm644 default/etc/sysctl.d/10-frost.conf "$pkgdir/etc/sysctl.d/10-frost.conf"
+  install -Dm644 default/etc/sysctl.d/99-frost.conf "$pkgdir/etc/sysctl.d/99-frost.conf"
   install -Dm644 default/etc/systemd/zram-generator.conf "$pkgdir/etc/systemd/zram-generator.conf"
   install -Dm440 default/sudoers/frost "$pkgdir/etc/sudoers.d/frost"
 
