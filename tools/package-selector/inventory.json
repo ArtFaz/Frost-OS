@@ -1,5 +1,5 @@
 {
-  "inventoryVersion": "2026-08-29.4",
+  "inventoryVersion": "2026-08-29.5",
   "generatedFrom": [
     {
       "source": "arch extra/multilib",
@@ -55,17 +55,6 @@
         "cups-filters",
         "cups-pdf",
         "system-config-printer"
-      ]
-    },
-    "input-method": {
-      "label": "Input method (CJK)",
-      "description": "Fcitx5 input method framework for Chinese, Japanese, Korean and compose-heavy layouts.",
-      "default": false,
-      "packages": [
-        "fcitx5",
-        "fcitx5-gtk",
-        "fcitx5-qt",
-        "noto-fonts-cjk"
       ]
     },
     "development": {
@@ -274,7 +263,6 @@
         "bluetooth",
         "development",
         "gaming",
-        "input-method",
         "media-production",
         "printing",
         "tailscale"
@@ -1070,7 +1058,6 @@
       "category": "DESKTOP",
       "default": "optional",
       "reason": "Input method framework for CJK and compose layouts",
-      "feature": "input-method",
       "sizeKib": 18810
     },
     {
@@ -1079,7 +1066,6 @@
       "category": "DESKTOP",
       "default": "optional",
       "reason": "GTK integration for Fcitx5",
-      "feature": "input-method",
       "sizeKib": 319
     },
     {
@@ -1088,7 +1074,6 @@
       "category": "DESKTOP",
       "default": "optional",
       "reason": "Qt integration for Fcitx5",
-      "feature": "input-method",
       "sizeKib": 1789
     },
     {
