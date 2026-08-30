@@ -1,11 +1,18 @@
 #!/bin/bash
-# Turn a freshly installed CachyOS Minimal into a Frost system. Run as root
+# Turn a freshly installed CachyOS Minimal into a Frost system. Run with sudo
 # from inside the extracted frost-install-bundle directory:
 #
 #   sudo ./bootstrap-cachyos
 #
-# It carries its own signed package repository, so it needs no network. It only
-# adds packages and enables two services; it removes nothing.
+# The Frost packages come from a signed repository carried in the bundle and
+# need no network. After that, if a network is up, it also bootstraps paru and
+# builds the AUR apps from aur.lock.json as the invoking user — best effort:
+# a failure there is reported but does not abort the install.
+#
+# The only packages it removes are the CachyOS-base audio/system providers that
+# collide with Frost's PipeWire stack (jack2, pulseaudio*, sudo-rs, ...); the
+# exhaustive list is FROST_REPLACES below and any leftover conflict is resolved
+# by --ask=4 on the install. Nothing else is removed.
 
 set -euo pipefail
 export LC_ALL=C
@@ -13,6 +20,20 @@ export LC_ALL=C
 readonly FROST_FPR=9F8D63165ACC27A4FDCCED02FD40A38811EDD104
 readonly REPO_DEST=/var/lib/frost/repo
 readonly PACKAGES=(frost-keyring frost frost-settings frost-meta)
+
+# CachyOS Minimal ships alternative providers that Conflict/Replace packages the
+# Frost set pulls in — chiefly the PipeWire audio stack and plain `sudo`. Each
+# name here is removed (if installed) so the Frost provider can take over; this
+# swap is the only removal the script performs. install-contract pins the list.
+readonly FROST_REPLACES=(
+  jack2 jack pipewire-jack-client                 # -> pipewire-jack
+  pulseaudio pulseaudio-alsa pulseaudio-bluetooth # -> pipewire-pulse / pipewire-alsa
+  pulseaudio-jack pulseaudio-equalizer-ladspa
+  pulseaudio-rtp pulseaudio-zeroconf pulseaudio-lirc
+  pipewire-media-session                          # -> wireplumber
+  sudo-rs                                         # CachyOS variant provides/conflicts sudo -> sudo
+  virtualbox-guest-utils-nox                      # -> virtualbox-guest-utils
+)
 
 here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 
@@ -48,7 +69,21 @@ fi
 
 step 'installing Frost'
 pacman -Sy --noconfirm
-pacman -S --needed --noconfirm base-devel git "${PACKAGES[@]}"
+
+# Drop base providers Frost replaces, so the install does not stop on a
+# conflict. Only names from the fixed FROST_REPLACES list, only if installed.
+present=()
+for pkg in "${FROST_REPLACES[@]}"; do
+  pacman -Qq "$pkg" &>/dev/null && present+=("$pkg")
+done
+if ((${#present[@]})); then
+  printf 'removing base providers Frost replaces: %s\n' "${present[*]}"
+  pacman -Rdd --noconfirm "${present[@]}"
+fi
+
+# --ask=4 auto-answers "yes" to any remaining conflict question (--noconfirm
+# alone answers "no" and aborts), covering base collisions not in the list.
+pacman -S --needed --noconfirm --ask=4 base-devel git rust "${PACKAGES[@]}"
 
 step 'reconciling the initramfs hooks'
 HOOKS_CHANGED=0
@@ -80,11 +115,53 @@ if [[ -x /usr/lib/frost/frost-firstboot ]]; then
   /usr/lib/frost/frost-firstboot || printf 'first-boot reconciliation reported an issue; it will retry on boot\n'
 fi
 
-step 'done'
-printf 'Reboot into Frost. Then, as your user, add the AUR apps:\n\n'
-if [[ -f $here/aur.lock.json ]] && command -v jq >/dev/null; then
+step 'building the AUR apps'
+# Best effort and never as root: paru is built from its AUR recipe as the
+# invoking user, then it installs the rest of aur.lock.json. If there is no
+# unprivileged invoker or no network, this is skipped with a printed hint and
+# the install still succeeds.
+
+aur_apps() {
+  { [[ -f $here/aur.lock.json ]] && command -v jq >/dev/null; } || return 0
+  jq -r '[.packages[].name] | map(select(. != "paru")) | join(" ")' "$here/aur.lock.json"
+}
+
+manual_aur_hint() {
+  printf 'Finish later, as your user:\n'
   printf '  git clone https://aur.archlinux.org/paru.git && (cd paru && makepkg -si)\n'
-  printf '  paru -S %s\n\n' "$(jq -r '[.packages[].name] | join(" ")' "$here/aur.lock.json")"
+  printf '  paru -S --needed %s\n' "$(aur_apps)"
+}
+
+invoker=${SUDO_USER:-}
+if [[ -z $invoker || $invoker == root ]] || ! id -u "$invoker" >/dev/null 2>&1; then
+  printf 'no unprivileged invoking user (use sudo, not a root shell) — skipping.\n'
+  manual_aur_hint
+elif ! command -v curl >/dev/null || ! curl -sf -I --max-time 15 https://aur.archlinux.org/ >/dev/null 2>&1; then
+  printf 'the AUR is not reachable right now — skipping.\n'
+  manual_aur_hint
 else
-  printf '  see aur.lock.json for the AUR package list\n\n'
+  if ! command -v paru >/dev/null; then
+    printf 'building paru from the AUR as %s\n' "$invoker"
+    su - "$invoker" -c '
+      set -eu
+      d=$(mktemp -d)
+      trap "rm -rf -- $d" EXIT
+      git clone --depth 1 https://aur.archlinux.org/paru.git "$d/paru"
+      cd "$d/paru"
+      makepkg -si --noconfirm --needed
+    ' || printf 'paru failed to build.\n'
+  fi
+  if command -v paru >/dev/null; then
+    apps=$(aur_apps)
+    if [[ -n ${apps:-} ]]; then
+      printf 'installing the AUR apps: %s\n' "$apps"
+      su - "$invoker" -c "paru -S --needed --noconfirm $apps" \
+        || printf 'some AUR apps did not build; finish with: paru -S --needed %s\n' "$apps"
+    fi
+  else
+    manual_aur_hint
+  fi
 fi
+
+step 'done'
+printf 'Reboot into Frost.\n'

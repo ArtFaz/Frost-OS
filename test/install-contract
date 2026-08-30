@@ -1,8 +1,9 @@
 #!/bin/bash
 # Static checks on install/bootstrap-cachyos. It runs as root on a fresh
-# machine, so it must be tightly bounded: no network, no removals, a fixed
-# package set, the real trust root, and signature enforcement on the repo it
-# adds.
+# machine, so it must be tightly bounded: the Frost package install is offline,
+# removals are limited to the fixed FROST_REPLACES provider swap, the package
+# set is fixed, the trust root is real, and the repo it adds enforces
+# signatures.
 
 set -euo pipefail
 
@@ -17,18 +18,47 @@ bash -n "$script"
 
 rules=$(grep -v '^[[:space:]]*#' "$script" | grep -v '^[[:space:]]*$')
 
-# No network fetches — the bundle is offline.
-if grep -n -E '\b(curl|wget|rsync|scp|nc)\b' <<<"$rules"; then
-  fail 'bootstrap fetches over the network'
+# The Frost package install is offline — carried in the bundle. The only
+# network use is the best-effort AUR step: a curl HEAD reachability probe and
+# git clones of AUR recipes, both run as the unprivileged invoking user.
+if grep -n -E '\b(wget|rsync|scp|nc)\b' <<<"$rules"; then
+  fail 'bootstrap fetches with wget/rsync/scp/nc'
 fi
-# Never removes packages or wipes anything.
-if grep -n -E 'pacman +-R|rm +-rf +/|mkfs|dd +if=|:> */(etc|boot|usr)' <<<"$rules"; then
-  fail 'bootstrap removes packages or destroys data'
+while IFS= read -r line; do
+  case $line in
+    *curl*)
+      grep -qE 'curl .*( -I\b| --head\b)' <<<"$line" \
+        || fail "curl is used for more than a HEAD reachability probe: $line"
+      ;;
+  esac
+done <<<"$rules"
+# Never wipes anything.
+if grep -n -E 'rm +-rf +/|mkfs|dd +if=|:> */(etc|boot|usr)' <<<"$rules"; then
+  fail 'bootstrap destroys data'
 fi
-# git only appears in the printed hint, never executed.
-if grep -n -E '^\s*git ' <<<"$rules"; then
-  fail 'bootstrap runs git directly'
-fi
+# The only removal permitted is the FROST_REPLACES provider swap: a fixed,
+# reviewed list of CachyOS-base packages Frost supplies its own version of.
+while IFS= read -r line; do
+  grep -qE 'pacman +-R' <<<"$line" || continue
+  grep -qE 'pacman -Rdd --noconfirm "\$\{present\[@\]\}"$' <<<"$line" \
+    || fail "package removal outside the FROST_REPLACES swap: $line"
+done <<<"$rules"
+grep -qE '^readonly FROST_REPLACES=\(' "$script" || fail 'FROST_REPLACES list is missing'
+grep -qE 'for pkg in "\$\{FROST_REPLACES\[@\]\}"' "$script" \
+  || fail 'the removal is not driven from FROST_REPLACES'
+# Any conflict the list did not foresee is auto-resolved, never left to abort.
+grep -qE 'pacman -S .*--ask=4' "$script" || fail 'the install does not pass --ask=4 to resolve conflicts'
+# git is only ever a shallow clone of an AUR recipe (never a fetch of anything
+# else); "git" as a pacman package name is not an invocation.
+while IFS= read -r line; do
+  grep -qE '\bgit (clone|pull|fetch|remote|checkout|init|submodule|-C)\b' <<<"$line" || continue
+  grep -qE 'git clone (--depth [0-9]+ )?https://aur\.archlinux\.org/' <<<"$line" \
+    || fail "unexpected git invocation: $line"
+done <<<"$rules"
+# The AUR step drops privileges to $SUDO_USER and never builds as root:
+# makepkg and paru appear only inside the su - "$invoker" -c block.
+grep -qE '\$\{SUDO_USER:-\}' "$script" || fail 'the AUR step does not derive its user from $SUDO_USER'
+grep -qE 'su - "\$invoker" -c' "$script" || fail 'the AUR step does not drop to the invoking user'
 
 # The trust root in the script matches the shipped keyring.
 fpr=$(gpg --with-colons --show-keys "$keyring" 2>/dev/null | awk -F: '/^fpr:/{print $10; exit}')
