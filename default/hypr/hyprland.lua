@@ -10,11 +10,20 @@ hl.monitor({
 
 hl.config({
     input = {
+        -- One keyboard, always ABNT2. Read from the system only if Frost ever
+        -- ships on another machine; kb_options is empty (no compose remap).
         kb_layout = "br",
+        kb_options = "",
         follow_mouse = 1,
+        sensitivity = 0,
+        repeat_rate = 40,
+        repeat_delay = 250,
+        numlock_by_default = true,
         touchpad = {
             natural_scroll = false,
             tap_to_click = true,
+            clickfinger_behavior = true,
+            scroll_factor = 0.4,
         },
     },
     general = {
@@ -27,6 +36,17 @@ hl.config({
         },
         resize_on_border = false,
         layout = "dwindle",
+    },
+    dwindle = {
+        preserve_split = true,
+        force_split = 2,
+    },
+    cursor = {
+        hide_on_key_press = true,
+        warp_on_change_workspace = 1,
+    },
+    binds = {
+        hide_special_on_workspace_change = true,
     },
     group = {
         col = {
@@ -102,6 +122,10 @@ hl.config({
         -- config every single upgrade. Reloading after an upgrade is an explicit
         -- hyprctl reload instead.
         disable_autoreload = true,
+        key_press_enables_dpms = true,
+        mouse_move_enables_dpms = true,
+        focus_on_activate = true,
+        disable_scale_notification = true,
     },
     xwayland = {
         -- Without this every XWayland client renders blurry on a scaled output.
@@ -136,14 +160,25 @@ hl.animation({ leaf = "fadeLayersOut", enabled = true, speed = 2.5, bezier = "mo
 hl.animation({ leaf = "workspaces", enabled = true, speed = 2.0, bezier = "motionSmooth", style = "slidefade 15%" })
 hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 2.0, bezier = "motionSmooth", style = "slidefadevert 12%" })
 
+-- Three-finger horizontal swipe changes workspace.
+hl.gesture({ fingers = 3, direction = "horizontal", action = "workspace" })
+
 hl.window_rule({
     name = "frost-apps-no-blur",
     match = { class = ".*" },
     no_blur = true,
 })
 
--- Windows are very slightly translucent so the material reads as one surface.
--- Applications whose own content is the subject opt out below.
+-- Nothing forces itself to maximize.
+hl.window_rule({
+    name = "frost-no-forced-maximize",
+    match = { class = ".*" },
+    suppress_event = "maximize",
+})
+
+-- A focused window is fully solid; only an unfocused one carries the faint
+-- translucency that ties the material together. Applications whose own content
+-- is the subject opt out entirely below.
 hl.window_rule({
     name = "frost-default-opacity-tag",
     match = { class = ".*" },
@@ -153,7 +188,7 @@ hl.window_rule({
 hl.window_rule({
     name = "frost-default-opacity",
     match = { tag = "default-opacity" },
-    opacity = "0.985 0.96",
+    opacity = "1.0 0.96",
 })
 
 -- One definition of what counts as a terminal, so the universal clipboard
@@ -169,6 +204,92 @@ hl.window_rule({
     match = { class = "^(chromium|firefox|zen|mpv|vlc|obs|steam|steam_app_.*|Pinta|imv|kdenlive)$" },
     tag = "-default-opacity",
     opacity = "1.0 1.0",
+})
+
+-- Behavioural window rules. Every one is data: a class or title match and named
+-- properties, never a command.
+
+-- One centred card for anything tagged as a floating window.
+hl.window_rule({
+    name = "frost-floating-window",
+    match = { tag = "floating-window" },
+    float = true,
+    center = true,
+    size = { 875, 600 },
+})
+
+-- The GTK portal only ever draws dialogs — file pickers, screen-share prompts,
+-- permission requests — so all of them float, whatever the requesting app is.
+hl.window_rule({
+    name = "frost-portal-dialog",
+    match = { class = "^xdg-desktop-portal-gtk$" },
+    tag = "+floating-window",
+})
+
+-- Open/Save dialogs some apps draw themselves.
+hl.window_rule({
+    name = "frost-file-dialog",
+    match = { title = "^(Open.*|Save.*|Save|All Files|.* wants to (open|save).*|Choose.*)" },
+    tag = "+floating-window",
+})
+
+-- Small viewers and settings dialogs that belong floating.
+hl.window_rule({
+    name = "frost-floating-apps",
+    match = { class = "^(org\\.gnome\\.Evince|org\\.gnome\\.NautilusPreviewer|imv|nm-connection-editor|blueman-manager|org\\.pulseaudio\\.pavucontrol|org\\.gnome\\.DiskUtility)$" },
+    tag = "+floating-window",
+})
+
+-- Password managers float and are kept out of screen shares and captures.
+hl.window_rule({
+    name = "frost-password-manager",
+    match = { class = "^(1Password|Bitwarden|KeePassXC|org\\.keepassxc\\.KeePassXC|Proton Pass|Passwords)$" },
+    tag = "+floating-window",
+    no_screen_share = true,
+})
+
+-- Picture-in-picture: a small pinned always-solid overlay.
+hl.window_rule({
+    name = "frost-pip-tag",
+    match = { title = "[Pp]icture.?[Ii]n.?.?[Pp]icture" },
+    tag = "+pip",
+})
+hl.window_rule({
+    name = "frost-pip",
+    match = { tag = "pip" },
+    tag = "-default-opacity",
+    float = true,
+    pin = true,
+    size = { 600, 338 },
+    keep_aspect_ratio = true,
+    border_size = 0,
+    opacity = "1.0 1.0",
+})
+
+-- Fullscreen games and streams keep the screen awake.
+hl.window_rule({
+    name = "frost-fullscreen-idle-inhibit",
+    match = { class = "^(com\\.moonlight_stream\\.Moonlight|steam_app_.*|com\\.libretro\\.RetroArch)$" },
+    idle_inhibit = "fullscreen",
+})
+hl.window_rule({
+    name = "frost-noidle-tag",
+    match = { tag = "noidle" },
+    idle_inhibit = "always",
+})
+
+-- Scroll the terminal at a comfortable rate on the touchpad.
+hl.window_rule({
+    name = "frost-terminal-scroll",
+    match = { class = "^com\\.mitchellh\\.ghostty$" },
+    scroll_touchpad = 0.2,
+})
+
+hl.layer_rule({
+    name = "frost-selection-noanim",
+    match = { namespace = "^selection$" },
+    no_anim = true,
+    animation = "none",
 })
 
 hl.layer_rule({
