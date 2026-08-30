@@ -343,6 +343,12 @@ fn collect_checks(strict: bool) -> Vec<Check> {
         "wl-copy",
         "awk",
         "start-hyprland",
+        // Screenshot and night-light paths added in Phase 5.1.
+        "hyprctl",
+        "grim",
+        "slurp",
+        "hyprsunset",
+        "hyprpicker",
     ] {
         checks.push(Check {
             name: format!("command:{command}"),
