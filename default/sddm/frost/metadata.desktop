@@ -4,7 +4,11 @@ Description=Frosted Glass greeter for the Frost desktop
 Author=Frost
 Copyright=Frost project
 License=MIT
-Type=qml
+# QtVersion is load-bearing: without it SDDM 0.21 treats the theme as Qt5 and
+# execs /usr/bin/sddm-greeter, which links Qt5 libraries the Frost set does not
+# install — the greeter then dies with exit 127 and a black screen.
+Type=sddm-theme
+QtVersion=6
 Version=0.2.0
 Website=https://github.com/ArtFaz/Frost-OS
 Screenshot=
