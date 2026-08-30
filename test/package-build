@@ -23,9 +23,11 @@ for expected in \
   usr/lib/frost/frost-hyprland \
   usr/lib/frost/frost-osd \
   usr/lib/frost/frost-terminal \
+  usr/lib/frost/frost-capture \
   usr/lib/systemd/user/frost-session.target \
   usr/lib/systemd/user/frost-shell.service \
   usr/lib/systemd/user/frost-stay-awake.service \
+  usr/lib/systemd/user/frost-nightlight.service \
   usr/lib/systemd/user/frost-theme.service \
   usr/lib/systemd/user/frost-notifications.service \
   usr/lib/systemd/user/frost-polkit.service \
@@ -95,12 +97,15 @@ for dependency in \
   cliphist \
   curl \
   ghostty \
+  grim \
   hypridle \
   hyprland \
   hyprlock \
   hyprpolkitagent \
+  hyprsunset \
   jq \
   libnotify \
+  slurp \
   mako \
   networkmanager \
   noto-fonts-emoji \

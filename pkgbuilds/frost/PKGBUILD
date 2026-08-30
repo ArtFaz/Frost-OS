@@ -1,6 +1,6 @@
 pkgname=frost
 pkgver=0.2.0
-pkgrel=31
+pkgrel=32
 pkgdesc='Independent Frost desktop runtime and diagnostics CLI'
 arch=('x86_64')
 url='https://github.com/ArtFaz/Frost-OS'
@@ -15,10 +15,12 @@ depends=(
   'gawk'
   'ghostty'
   'glibc'
+  'grim'
   'hypridle'
   'hyprland'
   'hyprlock'
   'hyprpolkitagent'
+  'hyprsunset'
   'jq'
   'libnotify'
   'mako'
@@ -26,6 +28,7 @@ depends=(
   'noto-fonts-emoji'
   'power-profiles-daemon'
   'quickshell'
+  'slurp'
   'systemd'
   'ttf-jetbrains-mono'
   'ttf-nerd-fonts-symbols-mono'
@@ -62,6 +65,7 @@ package() {
   install -Dm755 bin/frost-hyprland "$pkgdir/usr/lib/frost/frost-hyprland"
   install -Dm755 bin/frost-osd "$pkgdir/usr/lib/frost/frost-osd"
   install -Dm755 bin/frost-terminal "$pkgdir/usr/lib/frost/frost-terminal"
+  install -Dm755 bin/frost-capture "$pkgdir/usr/lib/frost/frost-capture"
 
   install -Dm644 config/shell.json "$pkgdir/usr/share/frost/config/shell.json"
   install -Dm644 config/schema/shell.schema.json \
