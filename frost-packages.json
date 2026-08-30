@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "inventoryVersion": "2026-08-29.3",
+  "inventoryVersion": "2026-08-29.5",
   "profiles": [
     "this-machine"
   ],
@@ -9,7 +9,6 @@
     "bluetooth": true,
     "development": true,
     "gaming": true,
-    "input-method": true,
     "media-production": true,
     "printing": false,
     "scanning": false,
@@ -18,7 +17,6 @@
   },
   "packages": {
     "include": [
-      "dkms",
       "libva-utils"
     ],
     "exclude": [
@@ -44,7 +42,8 @@
       "hyprmon-bin",
       "paru",
       "parui",
-      "vesktop-bin"
+      "vesktop-bin",
+      "visual-studio-code-bin"
     ]
   },
   "notes": {}

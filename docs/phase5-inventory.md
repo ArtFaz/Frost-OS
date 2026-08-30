@@ -126,17 +126,41 @@ its current commit — the recipe is still never fetched or executed.
 
 ## Gate 5
 
-Not yet closed. Gate 5 closes when:
+**Closed 2026-08-30.**
 
-- [ ] `frost-packages.json` is exported and `frost packages validate` passes;
-- [ ] every exclusion has a known effect (the `plan` output explains each);
-- [ ] no essential package was dropped by accident; real hardware stays supported;
-- [ ] optional features are coherent with the shell components;
-- [ ] each AUR selection is explicit in the JSON with a resolvable pkgbase;
-- [ ] the user approves the manifest explicitly.
+- [x] `frost-packages.json` is exported and `frost packages validate` passes;
+- [x] every exclusion has a known effect (the `plan` output explains each);
+- [x] no essential package was dropped by accident; real hardware stays supported;
+- [x] optional features are coherent with the shell components;
+- [x] each AUR selection is explicit in the JSON with a resolvable pkgbase;
+- [x] the user approves the manifest explicitly.
 
 Only after that may `frost-meta` be generated or changed (Phase 6).
 
 ### Record
 
-_(to be filled when Gate 5 closes: manifest hash, plan summary, approval)_
+- **Manifest:** `frost-packages.json` at the repo root, `inventoryVersion 2026-08-29.5`.
+- **SHA-256:** `e7b2e221beb311dbd6a66c5901267fd1a7b5ee5a75d80a0b16372e6131247d82`
+- **Lockfile:** `aur.lock.json` — 8 AUR selections, each pinned to a `git ls-remote`
+  commit on 2026-08-30.
+- **Resolution:** 200 packages, no risks, no auto-added dependencies, no
+  excluded-but-required packages. Against the donor base list: +83 / −31.
+- **Profile:** `this-machine` (Vaio FE16, Ryzen 5 5825U, all-AMD).
+- **Features on:** `aur`, `bluetooth`, `development`, `gaming`, `media-production`,
+  `tailscale`, `virtualisation-guest`. Off: `printing`, `scanning`.
+  `virtualisation-guest` is kept on deliberately — Frost will first be installed
+  in a VM before the real machine is formatted; the guest agents self-disable on
+  bare metal via their virtualization conditions.
+- **Explicit include:** `libva-utils`.
+- **Explicit exclude (14):** `chromium`, `evince`, `foot`, `jetbrains-toolbox`,
+  `kdenlive`, `localsend`, `moonlight-qt`, `pacsea-bin`, `parsec-bin`, `ruby`,
+  `tmux`, `xournalpp`, `yt-dlp`, `zbar`. PDFs are read in Brave; a video editor,
+  a second terminal, a second browser, a second AUR TUI and the streaming clients
+  are not wanted.
+- **AUR (8):** `anydesk-bin`, `beekeeper-studio-bin`, `brave-bin`, `hyprmon-bin`,
+  `paru`, `parui`, `vesktop-bin`, `visual-studio-code-bin`.
+- **Approval:** the user approved the manifest on 2026-08-30 after `dkms` was
+  dropped from the include list and the three flagged items (VM guest agents,
+  `dkms`, no PDF viewer) were each decided.
+
+`frost-meta` may now be generated from this manifest in Phase 6.

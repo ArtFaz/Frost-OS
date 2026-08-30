@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "inventoryVersion": "2026-08-29.5",
+  "packages": [
+    {"name":"anydesk-bin","pkgbase":"anydesk-bin","recipeUrl":"https://aur.archlinux.org/anydesk-bin.git","commit":"1ab396f348300d9b0559abc962e4f2d67d793c87"},
+    {"name":"beekeeper-studio-bin","pkgbase":"beekeeper-studio-bin","recipeUrl":"https://aur.archlinux.org/beekeeper-studio-bin.git","commit":"0b88d8d382e131bef6ecf855a6b55e6a49197c6d"},
+    {"name":"brave-bin","pkgbase":"brave-bin","recipeUrl":"https://aur.archlinux.org/brave-bin.git","commit":"7b85edf5694c59dd523fabfdec2cedbd525b5e37"},
+    {"name":"hyprmon-bin","pkgbase":"hyprmon-bin","recipeUrl":"https://aur.archlinux.org/hyprmon-bin.git","commit":"612430ba613b89cc6b8fde924311a4593ff6f6ad"},
+    {"name":"paru","pkgbase":"paru","recipeUrl":"https://aur.archlinux.org/paru.git","commit":"329be2113c590046cb29858c23d9b96a8d7bd586"},
+    {"name":"parui","pkgbase":"parui","recipeUrl":"https://aur.archlinux.org/parui.git","commit":"29a25a8585059e3e88efde2acdd554d274f0dba3"},
+    {"name":"vesktop-bin","pkgbase":"vesktop-bin","recipeUrl":"https://aur.archlinux.org/vesktop-bin.git","commit":"d386cbde2502bdaeea10280f6881c6ec1b5b8c2e"},
+    {"name":"visual-studio-code-bin","pkgbase":"visual-studio-code-bin","recipeUrl":"https://aur.archlinux.org/visual-studio-code-bin.git","commit":"69b361eca02a84aa97c43c885e23d463eec96770"}
+  ]
+}
