@@ -20,9 +20,21 @@ const state = {
 
 /* ---------- loading ---------- */
 
+function applyDefaultProfile() {
+  const key = state.inv.defaultProfile;
+  const pr = key && state.inv.profiles[key];
+  if (!pr) return;
+  state.profiles.add(key);
+  (pr.features || []).forEach((f) => { if (f in state.features) state.features[f] = true; });
+}
+
 function boot(inv) {
   state.inv = inv;
+  state.profiles = new Set();
+  state.include.clear();
+  state.exclude.clear();
   for (const [key, f] of Object.entries(inv.features)) state.features[key] = !!f.default;
+  applyDefaultProfile();
   $('#version').textContent =
     `inventory ${inv.inventoryVersion} · ${inv.packages.length} packages`;
   $('#needs-inventory').classList.add('hidden');
@@ -63,20 +75,24 @@ function activeProfileObjs() {
 }
 
 // The default ("base") membership before the user's explicit overrides.
+//  - a profile's excludePackages always wins
+//  - any enabled feature that lists the package pulls it in (feature.packages
+//    is the membership list; a package may be pulled by more than one feature)
+//  - a profile's includePackages pulls it in
+//  - a profile's includeCategories pulls in every non-optional package in the
+//    category, unless the package names a feature (p.feature) that is off
 function baseSelected(p) {
   if (p.category === 'DROP') return false;
   const profs = activeProfileObjs();
   for (const pr of profs) {
     if ((pr.excludePackages || []).includes(p.name)) return false;
   }
-  if (p.feature && state.features[p.feature]) {
-    const list = state.inv.features[p.feature].packages || [];
-    if (list.includes(p.name)) return true;
+  for (const [fk, on] of Object.entries(state.features)) {
+    if (on && (state.inv.features[fk].packages || []).includes(p.name)) return true;
   }
   for (const pr of profs) {
     if ((pr.includePackages || []).includes(p.name)) return true;
     if ((pr.includeCategories || []).includes(p.category) && p.default !== 'optional') {
-      // a feature-gated package only rides its profile category when the feature is on
       if (!p.feature || state.features[p.feature]) return true;
     }
   }
@@ -123,6 +139,7 @@ function resetDefaults() {
   state.imported = null;
   state.selected = null;
   for (const [key, f] of Object.entries(state.inv.features)) state.features[key] = !!f.default;
+  applyDefaultProfile();
   render();
 }
 

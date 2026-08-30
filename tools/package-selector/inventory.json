@@ -1,5 +1,5 @@
 {
-  "inventoryVersion": "2026-08-29.2",
+  "inventoryVersion": "2026-08-29.3",
   "generatedFrom": [
     {
       "source": "arch extra/multilib",
@@ -97,15 +97,11 @@
     },
     "gaming": {
       "label": "Gaming",
-      "description": "32-bit GPU drivers and a game streaming client. Steam and launchers are installed per-title from the terminal.",
+      "description": "A game streaming client and 32-bit OpenGL. The vendor 32-bit Vulkan driver comes from your hardware selection; Steam and launchers are installed per-title from the terminal.",
       "default": false,
       "packages": [
         "moonlight-qt",
-        "lib32-mesa",
-        "lib32-vulkan-radeon",
-        "lib32-vulkan-intel",
-        "lib32-nvidia-utils",
-        "lib32-nvidia-580xx-utils"
+        "lib32-mesa"
       ]
     },
     "scanning": {
@@ -196,8 +192,78 @@
         "aur",
         "development"
       ]
+    },
+    "this-machine": {
+      "label": "This machine",
+      "description": "Seeded on 2026-08-29 from the packages installed on the Vaio FE16 (Ryzen 5 5825U, all-AMD): the desktop set, the features actually in use, the AMD graphics stack, and the AUR apps carried over from Omarchy. A starting point — adjust and re-review before Gate 5.",
+      "includeCategories": [
+        "BOOTSTRAP",
+        "CORE",
+        "DESKTOP"
+      ],
+      "includePackages": [
+        "anydesk-bin",
+        "beekeeper-studio-bin",
+        "bolt",
+        "brave-bin",
+        "chromium",
+        "cliamp",
+        "ddcutil",
+        "dua-cli",
+        "exfatprogs",
+        "expac",
+        "foot",
+        "gum",
+        "gvfs-mtp",
+        "gvfs-nfs",
+        "gvfs-smb",
+        "hyprmon-bin",
+        "inetutils",
+        "inotify-tools",
+        "inxi",
+        "jetbrains-toolbox",
+        "kernel-modules-hook",
+        "lib32-vulkan-radeon",
+        "libreoffice-fresh",
+        "libvips",
+        "localsend",
+        "nautilus-python",
+        "obsidian",
+        "parsec-bin",
+        "pinta",
+        "qemu-user-static-binfmt",
+        "qrencode",
+        "socat",
+        "sushi",
+        "tensaku",
+        "tesseract",
+        "tesseract-data-eng",
+        "tobi-try",
+        "ttf-ia-writer",
+        "ttf-jetbrains-mono-nerd-basic",
+        "tzupdate",
+        "vesktop-bin",
+        "vulkan-radeon",
+        "whois",
+        "woff2-font-awesome",
+        "wtype",
+        "xournalpp",
+        "yt-dlp",
+        "zbar"
+      ],
+      "features": [
+        "aur",
+        "bluetooth",
+        "development",
+        "gaming",
+        "input-method",
+        "media-production",
+        "printing",
+        "tailscale"
+      ]
     }
   },
+  "defaultProfile": "this-machine",
   "packages": [
     {
       "name": "alsa-firmware",
@@ -2450,6 +2516,56 @@
       ]
     },
     {
+      "name": "anydesk-bin",
+      "source": "aur",
+      "category": "OPTIONAL",
+      "default": "optional",
+      "reason": "AnyDesk remote desktop client",
+      "feature": "aur",
+      "pkgbase": "anydesk-bin",
+      "recipeUrl": "https://aur.archlinux.org/anydesk-bin.git"
+    },
+    {
+      "name": "beekeeper-studio-bin",
+      "source": "aur",
+      "category": "OPTIONAL",
+      "default": "optional",
+      "reason": "Beekeeper Studio SQL database GUI",
+      "feature": "aur",
+      "pkgbase": "beekeeper-studio-bin",
+      "recipeUrl": "https://aur.archlinux.org/beekeeper-studio-bin.git"
+    },
+    {
+      "name": "brave-bin",
+      "source": "aur",
+      "category": "OPTIONAL",
+      "default": "optional",
+      "reason": "Brave web browser (binary build)",
+      "feature": "aur",
+      "pkgbase": "brave-bin",
+      "recipeUrl": "https://aur.archlinux.org/brave-bin.git"
+    },
+    {
+      "name": "hyprmon-bin",
+      "source": "aur",
+      "category": "OPTIONAL",
+      "default": "optional",
+      "reason": "Hyprland monitor layout and hotplug tool",
+      "feature": "aur",
+      "pkgbase": "hyprmon-bin",
+      "recipeUrl": "https://aur.archlinux.org/hyprmon-bin.git"
+    },
+    {
+      "name": "jetbrains-toolbox",
+      "source": "aur",
+      "category": "OPTIONAL",
+      "default": "optional",
+      "reason": "Installer and updater for JetBrains IDEs",
+      "feature": "aur",
+      "pkgbase": "jetbrains-toolbox",
+      "recipeUrl": "https://aur.archlinux.org/jetbrains-toolbox.git"
+    },
+    {
       "name": "open-vm-tools",
       "source": "arch",
       "category": "OPTIONAL",
@@ -2466,6 +2582,16 @@
       "feature": "aur",
       "pkgbase": "pacsea-bin",
       "recipeUrl": "https://aur.archlinux.org/pacsea-bin.git"
+    },
+    {
+      "name": "parsec-bin",
+      "source": "aur",
+      "category": "OPTIONAL",
+      "default": "optional",
+      "reason": "Parsec low-latency remote desktop and game streaming",
+      "feature": "aur",
+      "pkgbase": "parsec-bin",
+      "recipeUrl": "https://aur.archlinux.org/parsec-bin.git"
     },
     {
       "name": "paru",
@@ -2520,6 +2646,16 @@
       "reason": "Firewall rule helper for Docker published ports",
       "feature": "development",
       "sizeKib": 65
+    },
+    {
+      "name": "vesktop-bin",
+      "source": "aur",
+      "category": "OPTIONAL",
+      "default": "optional",
+      "reason": "Discord client with Vencord and Wayland screenshare",
+      "feature": "aur",
+      "pkgbase": "vesktop-bin",
+      "recipeUrl": "https://aur.archlinux.org/vesktop-bin.git"
     },
     {
       "name": "virtualbox-guest-utils",

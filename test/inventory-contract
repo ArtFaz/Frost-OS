@@ -69,6 +69,8 @@ check 'profile package not in inventory' \
   '[.packages[].name] as $n | .profiles | to_entries[] | .key as $p | ((.value.includePackages // []) + (.value.excludePackages // []))[] | select($n | index(.) | not) | "\($p) -> \(.)"'
 check 'profile feature not defined' \
   '[.features | keys[]] as $f | .profiles | to_entries[] | .key as $p | (.value.features // [])[] | select($f | index(.) | not) | "\($p) -> \(.)"'
+check 'defaultProfile is not a defined profile' \
+  '[.profiles | keys[]] as $p | (.defaultProfile // empty) as $d | select($p | index($d) | not) | $d'
 
 dupes=$(jq -r '.packages[].name' "$inv" | sort | uniq -d)
 [[ -z $dupes ]] || { printf 'inventory: duplicate package names\n' >&2; printf '  %s\n' $dupes >&2; exit 1; }

@@ -26,6 +26,10 @@
         }
       }
     },
+    "defaultProfile": {
+      "type": "string",
+      "description": "Profile key the selector activates on load. Must be a key in .profiles."
+    },
     "categories": {
       "type": "array",
       "items": { "enum": ["BOOTSTRAP", "CORE", "DESKTOP", "HARDWARE", "OPTIONAL", "DEVELOPMENT", "DROP"] },
