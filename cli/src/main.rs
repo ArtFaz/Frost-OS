@@ -349,6 +349,8 @@ fn collect_checks(strict: bool) -> Vec<Check> {
         "slurp",
         "hyprsunset",
         "hyprpicker",
+        // GTK applications take their light/dark preference from GSettings.
+        "gsettings",
     ] {
         checks.push(Check {
             name: format!("command:{command}"),

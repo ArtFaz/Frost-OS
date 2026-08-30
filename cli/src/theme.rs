@@ -4,6 +4,7 @@ use std::env;
 use std::fs;
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 const DEFAULT_THEME: &str = "gruvbox";
 const MAX_THEME_BYTES: u64 = 64 * 1024;
@@ -505,6 +506,43 @@ fn hyprlock_config(theme: &Theme) -> String {
     )
 }
 
+/// The shell watches ~/.local/state/frost/background.json for the wallpaper
+/// selection. A watch cannot attach to a file that does not exist, so on a
+/// fresh account the first selection went unnoticed until the next login while
+/// every later one worked. Theme sync runs before the shell, so seeding an
+/// empty selection here gives the watch something to hold from the start.
+fn ensure_background_state() -> Result<(), CliError> {
+    let path = home_dir()?.join(".local/state/frost/background.json");
+    if path.exists() {
+        return Ok(());
+    }
+    let parent = path.parent().expect("state path has a parent");
+    fs::create_dir_all(parent).map_err(|error| {
+        CliError::Operational(format!("could not create state directory: {error}"))
+    })?;
+    fs::write(&path, "{\"schemaVersion\":1,\"path\":\"\"}\n")
+        .map_err(|error| CliError::Operational(format!("could not seed wallpaper state: {error}")))
+}
+
+/// GTK applications never read a Frost theme. libadwaita ones — Nautilus is the
+/// one in the set — take their light/dark preference from the XDG appearance
+/// portal, which serves this GSettings key, and GTK3 reads gtk-theme through
+/// the same portal. Without this a dark session opens a white file manager.
+/// Best effort on purpose: a session without a settings backend must still get
+/// its theme materialised.
+fn apply_gtk_color_scheme(theme: &Theme) {
+    let (scheme, gtk_theme) = if theme.mode == "light" {
+        ("prefer-light", "Adwaita")
+    } else {
+        ("prefer-dark", "Adwaita-dark")
+    };
+    for (key, value) in [("color-scheme", scheme), ("gtk-theme", gtk_theme)] {
+        let _ = Command::new("/usr/bin/gsettings")
+            .args(["set", "org.gnome.desktop.interface", key, value])
+            .status();
+    }
+}
+
 fn sync_theme() -> Result<(Theme, PathBuf), CliError> {
     let selected = selected_name()?;
     let (theme, source) = resolve_theme(&selected).or_else(|_| resolve_theme(DEFAULT_THEME))?;
@@ -547,6 +585,8 @@ fn sync_theme() -> Result<(Theme, PathBuf), CliError> {
         ),
         0o600,
     )?;
+    ensure_background_state()?;
+    apply_gtk_color_scheme(&theme);
     Ok((theme, source))
 }
 
