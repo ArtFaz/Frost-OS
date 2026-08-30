@@ -4,58 +4,87 @@ set -euo pipefail
 
 export LC_ALL=C
 
+usage='usage: frost-osd <action>
+  volume-up|volume-down|volume-mute
+  volume-up-fine|volume-down-fine
+  brightness-up|brightness-down
+  brightness-up-fine|brightness-down-fine
+  brightness-max|brightness-min
+  mic-mute
+  kbd-up|kbd-down|kbd-toggle'
+
 if (($# != 1)); then
-  printf '%s\n' 'usage: frost-osd volume-up|volume-down|volume-mute|brightness-up|brightness-down' >&2
+  printf '%s\n' "$usage" >&2
   exit 2
 fi
 
+sink='@DEFAULT_AUDIO_SINK@'
+source='@DEFAULT_AUDIO_SOURCE@'
+kbd='*::kbd_backlight'
+
 case $1 in
-  volume-up)
-    /usr/bin/wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+
-    kind=volume
-    ;;
-  volume-down)
-    /usr/bin/wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
-    kind=volume
-    ;;
-  volume-mute)
-    /usr/bin/wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
-    kind=volume
-    ;;
-  brightness-up)
-    /usr/bin/brightnessctl --class=backlight set +5% >/dev/null
-    kind=brightness
-    ;;
-  brightness-down)
-    /usr/bin/brightnessctl --class=backlight set 5%- >/dev/null
-    kind=brightness
-    ;;
+  volume-up)        /usr/bin/wpctl set-volume -l 1.0 "$sink" 5%+;  kind=volume ;;
+  volume-down)      /usr/bin/wpctl set-volume "$sink" 5%-;          kind=volume ;;
+  volume-up-fine)   /usr/bin/wpctl set-volume -l 1.0 "$sink" 1%+;  kind=volume ;;
+  volume-down-fine) /usr/bin/wpctl set-volume "$sink" 1%-;          kind=volume ;;
+  volume-mute)      /usr/bin/wpctl set-mute "$sink" toggle;         kind=volume ;;
+  mic-mute)         /usr/bin/wpctl set-mute "$source" toggle;       kind=mic ;;
+  brightness-up)        /usr/bin/brightnessctl --class=backlight set +5% >/dev/null;  kind=brightness ;;
+  brightness-down)      /usr/bin/brightnessctl --class=backlight set 5%- >/dev/null;  kind=brightness ;;
+  brightness-up-fine)   /usr/bin/brightnessctl --class=backlight set +1% >/dev/null;  kind=brightness ;;
+  brightness-down-fine) /usr/bin/brightnessctl --class=backlight set 1%- >/dev/null;  kind=brightness ;;
+  brightness-max)       /usr/bin/brightnessctl --class=backlight set 100% >/dev/null; kind=brightness ;;
+  brightness-min)       /usr/bin/brightnessctl --class=backlight set 1% >/dev/null;   kind=brightness ;;
+  kbd-up)     /usr/bin/brightnessctl --device="$kbd" set +10% >/dev/null 2>&1 || true; kind=kbd ;;
+  kbd-down)   /usr/bin/brightnessctl --device="$kbd" set 10%- >/dev/null 2>&1 || true; kind=kbd ;;
+  kbd-toggle) /usr/bin/brightnessctl --device="$kbd" --exponent=1 set +1 >/dev/null 2>&1 || true; kind=kbd ;;
   *)
     printf 'unsupported Frost OSD action: %s\n' "$1" >&2
     exit 2
     ;;
 esac
 
-if [[ $kind == volume ]]; then
-  volume_line=$(/usr/bin/wpctl get-volume @DEFAULT_AUDIO_SINK@)
-  value=$(/usr/bin/awk '{ printf "%d", ($2 * 100) + 0.5 }' <<<"$volume_line")
-  if [[ $volume_line == *'[MUTED]'* ]]; then
-    icon=volume-muted
-  else
-    icon=volume
-  fi
-else
-  current=$(/usr/bin/brightnessctl --class=backlight get)
-  maximum=$(/usr/bin/brightnessctl --class=backlight max)
-  if [[ ! $current =~ ^[0-9]+$ || ! $maximum =~ ^[1-9][0-9]*$ ]]; then
-    printf '%s\n' 'brightness device returned invalid values' >&2
-    exit 1
-  fi
-  value=$((current * 100 / maximum))
-  icon=brightness
-fi
+read_audio_percent() {
+  local line
+  line=$(/usr/bin/wpctl get-volume "$1")
+  local value
+  value=$(/usr/bin/awk '{ printf "%d", ($2 * 100) + 0.5 }' <<<"$line")
+  local muted=0
+  [[ $line == *'[MUTED]'* ]] && muted=1
+  printf '%d %d' "$value" "$muted"
+}
 
-if [[ ! $value =~ ^[0-9]+$ ]]; then
+read_backlight_percent() {
+  local current maximum
+  current=$(/usr/bin/brightnessctl "$@" get 2>/dev/null || echo 0)
+  maximum=$(/usr/bin/brightnessctl "$@" max 2>/dev/null || echo 0)
+  if [[ ! $current =~ ^[0-9]+$ || ! $maximum =~ ^[1-9][0-9]*$ ]]; then
+    printf '0'
+    return
+  fi
+  printf '%d' "$((current * 100 / maximum))"
+}
+
+case $kind in
+  volume)
+    read -r value muted < <(read_audio_percent "$sink")
+    ((muted)) && icon=volume-muted || icon=volume
+    ;;
+  mic)
+    read -r value muted < <(read_audio_percent "$source")
+    ((muted)) && icon=volume-muted || icon=volume
+    ;;
+  brightness)
+    value=$(read_backlight_percent --class=backlight)
+    icon=brightness
+    ;;
+  kbd)
+    value=$(read_backlight_percent --device="$kbd")
+    icon=brightness
+    ;;
+esac
+
+if [[ ! ${value:-} =~ ^[0-9]+$ ]]; then
   printf '%s\n' 'OSD value is not numeric' >&2
   exit 1
 fi

@@ -1,0 +1,95 @@
+#!/bin/bash
+
+# Screenshots and screen recording for the Frost session. Every external tool is
+# a fixed absolute path with data-only arguments; the compositor keybinds call
+# this with one fixed verb.
+
+set -euo pipefail
+
+export LC_ALL=C
+
+readonly GRIM=/usr/bin/grim
+readonly SLURP=/usr/bin/slurp
+readonly WL_COPY=/usr/bin/wl-copy
+readonly NOTIFY=/usr/bin/notify-send
+readonly HYPRCTL=/usr/bin/hyprctl
+readonly JQ=/usr/bin/jq
+readonly TESSERACT=/usr/bin/tesseract
+readonly RECORDER=/usr/bin/gpu-screen-recorder
+
+pictures=${XDG_PICTURES_DIR:-$HOME/Pictures}/Screenshots
+videos=${XDG_VIDEOS_DIR:-$HOME/Videos}/Screencasts
+recorder_pidfile=${XDG_RUNTIME_DIR:-/tmp}/frost/screen-recording.pid
+
+usage='usage: frost-capture <screen|region|window|text|record>'
+
+note() { "$NOTIFY" -a Frost -t 2500 "$1" "${2:-}" >/dev/null 2>&1 || true; }
+
+active_window_geometry() {
+  "$HYPRCTL" -j activewindow \
+    | "$JQ" -r 'if .at and .size then "\(.at[0]),\(.at[1]) \(.size[0])x\(.size[1])" else empty end'
+}
+
+take_png() {
+  # $1: optional geometry ("x,y wxh"); empty means the whole output
+  local target="$pictures/$(date +%Y-%m-%d_%H-%M-%S).png"
+  mkdir -p -- "$pictures"
+  if [[ -n ${1:-} ]]; then
+    "$GRIM" -g "$1" -- "$target"
+  else
+    "$GRIM" -- "$target"
+  fi
+  "$WL_COPY" --type image/png < "$target"
+  note 'Screenshot saved' "${target/#$HOME/~}"
+}
+
+record_toggle() {
+  mkdir -p -- "$(dirname -- "$recorder_pidfile")" "$videos"
+  if [[ -f $recorder_pidfile ]] && kill -0 "$(cat "$recorder_pidfile")" 2>/dev/null; then
+    kill -INT "$(cat "$recorder_pidfile")"
+    rm -f -- "$recorder_pidfile"
+    note 'Screen recording stopped'
+    return
+  fi
+  if [[ ! -x $RECORDER ]]; then
+    note 'Screen recording unavailable' 'gpu-screen-recorder is not installed'
+    return
+  fi
+  local out="$videos/$(date +%Y-%m-%d_%H-%M-%S).mp4"
+  "$RECORDER" -w screen -f 60 -o "$out" >/dev/null 2>&1 &
+  echo $! > "$recorder_pidfile"
+  note 'Screen recording started' "${out/#$HOME/~}"
+}
+
+case ${1:-} in
+  screen)
+    take_png ''
+    ;;
+  region)
+    geometry=$("$SLURP") || exit 0
+    take_png "$geometry"
+    ;;
+  window)
+    geometry=$(active_window_geometry)
+    [[ -n $geometry ]] || { note 'No active window'; exit 0; }
+    take_png "$geometry"
+    ;;
+  text)
+    [[ -x $TESSERACT ]] || { note 'OCR unavailable' 'tesseract is not installed'; exit 0; }
+    geometry=$("$SLURP") || exit 0
+    text=$("$GRIM" -g "$geometry" - | "$TESSERACT" - - 2>/dev/null || true)
+    if [[ -n ${text//[[:space:]]/} ]]; then
+      printf '%s' "$text" | "$WL_COPY"
+      note 'Text copied to clipboard'
+    else
+      note 'No text found'
+    fi
+    ;;
+  record)
+    record_toggle
+    ;;
+  *)
+    printf '%s\n' "$usage" >&2
+    exit 2
+    ;;
+esac

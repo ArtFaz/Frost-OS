@@ -1011,6 +1011,56 @@ fn stay_awake_toggle() -> Result<(), CliError> {
     )
 }
 
+fn nightlight_toggle() -> Result<(), CliError> {
+    run_fixed(
+        "/usr/bin/systemctl",
+        &[
+            "--user",
+            if user_unit_active("frost-nightlight.service") {
+                "stop"
+            } else {
+                "start"
+            },
+            "frost-nightlight.service",
+        ],
+    )
+}
+
+/// Do Not Disturb has no toggle verb in makoctl, so the current mode is read
+/// back and inverted. `makoctl mode` prints one mode per line.
+fn notification_dnd_toggle() -> Result<(), CliError> {
+    let modes = capture("/usr/bin/makoctl", &["mode"])?;
+    let modes = String::from_utf8_lossy(&modes);
+    let on = modes.lines().any(|line| line.trim() == "dnd");
+    run_fixed(
+        "/usr/bin/makoctl",
+        &["mode", if on { "-r" } else { "-a" }, "dnd"],
+    )
+}
+
+/// Close every open window. Hyprland has no "close all" dispatcher, so the
+/// client list is read as JSON and each address is closed individually. An
+/// address that is not a `0x` hex handle is skipped rather than interpolated.
+fn close_all_windows() -> Result<(), CliError> {
+    let clients = capture("/usr/bin/hyprctl", &["-j", "clients"])?;
+    let addresses = capture_with_input("/usr/bin/jq", &["-r", ".[].address"], &clients)?;
+    let addresses = String::from_utf8_lossy(&addresses);
+    for address in addresses.lines() {
+        let address = address.trim();
+        let is_handle = address.strip_prefix("0x").is_some_and(|rest| {
+            !rest.is_empty() && rest.len() <= 16 && rest.chars().all(|c| c.is_ascii_hexdigit())
+        });
+        if !is_handle {
+            continue;
+        }
+        let _ = run_fixed(
+            "/usr/bin/hyprctl",
+            &["dispatch", "closewindow", &format!("address:{address}")],
+        );
+    }
+    Ok(())
+}
+
 fn valid_weather_city(value: &str) -> bool {
     let trimmed = value.trim();
     (2..=80).contains(&trimmed.chars().count())
@@ -1363,6 +1413,11 @@ fn shell_action_command(args: &[String]) -> Result<(), CliError> {
             &["--user", "stop", "frost-reminder.timer"],
         ),
         ("stay-awake-toggle", None) => stay_awake_toggle(),
+        ("notification-dnd", Some("toggle")) => notification_dnd_toggle(),
+        ("notification-dismiss-latest", None) => run_fixed("/usr/bin/makoctl", &["dismiss"]),
+        ("notification-invoke-latest", None) => run_fixed("/usr/bin/makoctl", &["invoke"]),
+        ("nightlight-toggle", None) => nightlight_toggle(),
+        ("close-all-windows", None) => close_all_windows(),
         ("poweroff", None) => schedule_session_action(&["/usr/bin/systemctl", "poweroff"]),
         ("reboot", None) => schedule_session_action(&["/usr/bin/systemctl", "reboot"]),
         ("suspend", None) => run_fixed("/usr/bin/systemctl", &["suspend"]),

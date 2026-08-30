@@ -297,35 +297,208 @@ local function universal_clipboard(default_mods, default_key, terminal_mods, ter
     end
 end
 
+-- Every action here is a native dispatcher or a fixed executable with data-only
+-- arguments. No shell interpretation, no command assembled from configuration.
+-- Shell state is reached through the single `frost` IPC target with `toggle`.
+
+local FROST_IPC = "quickshell ipc --path /usr/share/frost/shell call frost "
+
+local function ipc(rest)
+    return hl.dsp.exec_cmd(FROST_IPC .. rest)
+end
+
+local function app(command)
+    return hl.dsp.exec_cmd("uwsm-app -- " .. command)
+end
+
+local function term(command)
+    return app("/usr/lib/frost/frost-terminal -e " .. command)
+end
+
+local function osd(action)
+    return hl.dsp.exec_cmd("/usr/lib/frost/frost-osd " .. action)
+end
+
+local function capture(action)
+    return hl.dsp.exec_cmd("/usr/lib/frost/frost-capture " .. action)
+end
+
+local function shell_action(action)
+    return hl.dsp.exec_cmd("frost shell-action " .. action)
+end
+
+-- Universal clipboard: a terminal reads Ctrl+C as an interrupt, so it gets the
+-- Insert pair instead.
 hl.bind(main_mod .. " + C", universal_clipboard("CTRL", "C", "CTRL", "Insert"))
 hl.bind(main_mod .. " + V", universal_clipboard("CTRL", "V", "SHIFT", "Insert"))
 hl.bind(main_mod .. " + X", send_chord("CTRL", "X"))
+hl.bind(main_mod .. " + CTRL + V", ipc("toggle clipboard"))
 
-hl.bind(main_mod .. " + SPACE", hl.dsp.exec_cmd("quickshell ipc --path /usr/share/frost/shell call frost toggle launcher"))
-hl.bind(main_mod .. " + CTRL + V", hl.dsp.exec_cmd("quickshell ipc --path /usr/share/frost/shell call frost toggle clipboard"))
-hl.bind(main_mod .. " + CTRL + E", hl.dsp.exec_cmd("quickshell ipc --path /usr/share/frost/shell call frost toggle emoji"))
-hl.bind(main_mod .. " + RETURN", hl.dsp.exec_cmd("uwsm-app -- /usr/lib/frost/frost-terminal"))
-hl.bind(main_mod .. " + W", hl.dsp.window.close())
-hl.bind(main_mod .. " + L", hl.dsp.exec_cmd("systemctl --user start frost-lock.service"))
+-- Shell surfaces.
+hl.bind(main_mod .. " + SPACE", ipc("toggle launcher"))
+hl.bind(main_mod .. " + ALT + SPACE", ipc("toggle launcher"))
+hl.bind(main_mod .. " + CTRL + E", ipc("toggle emoji"))
+hl.bind(main_mod .. " + CTRL + SPACE", ipc("toggle wallpaper"))
+hl.bind(main_mod .. " + SHIFT + SPACE", ipc("toggle island"))
+
+-- Applications. Targets are fixed binaries; the set matches the package
+-- manifest, and a key whose app is not installed simply does nothing.
+hl.bind(main_mod .. " + RETURN", app("/usr/lib/frost/frost-terminal"))
+hl.bind(main_mod .. " + SHIFT + RETURN", app("brave"))
+hl.bind(main_mod .. " + SHIFT + B", app("brave"))
+hl.bind(main_mod .. " + SHIFT + ALT + B", app("brave --incognito"))
+hl.bind(main_mod .. " + SHIFT + F", app("nautilus"))
+hl.bind(main_mod .. " + SHIFT + N", app("code"))
+hl.bind(main_mod .. " + SHIFT + M", app("spotify-launcher"))
+hl.bind(main_mod .. " + SHIFT + ALT + M", term("cliamp"))
+hl.bind(main_mod .. " + SHIFT + O", app("obsidian"))
+hl.bind(main_mod .. " + SHIFT + D", term("lazydocker"))
+hl.bind(main_mod .. " + CTRL + T", term("btop"))
+
+-- Session.
+hl.bind(main_mod .. " + CTRL + L", hl.dsp.exec_cmd("systemctl --user start frost-lock.service"))
 hl.bind(main_mod .. " + SHIFT + E", hl.dsp.exec_cmd("uwsm stop"))
+hl.bind("CTRL + ALT + DELETE", shell_action("close-all-windows"))
+
+-- Window management.
+hl.bind(main_mod .. " + W", hl.dsp.window.close())
+hl.bind(main_mod .. " + Q", hl.dsp.window.close())
 hl.bind(main_mod .. " + F", hl.dsp.window.fullscreen())
+hl.bind(main_mod .. " + ALT + F", hl.dsp.window.fullscreen({ mode = "maximized" }))
 hl.bind(main_mod .. " + T", hl.dsp.window.float({ action = "toggle" }))
+hl.bind(main_mod .. " + J", hl.dsp.layout("togglesplit"))
+hl.bind(main_mod .. " + P", hl.dsp.window.pseudo())
+-- Super + L is left free: the donor's per-workspace master/dwindle swap is a
+-- donor script and Frost only ships the dwindle layout. Lock moved to
+-- Super + Ctrl + L (the donor's own lock key).
+hl.bind(main_mod .. " + G", hl.dsp.group.toggle())
+hl.bind(main_mod .. " + ALT + G", hl.dsp.window.move({ out_of_group = true }))
 
 hl.bind(main_mod .. " + left", hl.dsp.focus({ direction = "left" }))
 hl.bind(main_mod .. " + right", hl.dsp.focus({ direction = "right" }))
 hl.bind(main_mod .. " + up", hl.dsp.focus({ direction = "up" }))
 hl.bind(main_mod .. " + down", hl.dsp.focus({ direction = "down" }))
 
-for workspace = 1, 5 do
-    hl.bind(main_mod .. " + " .. workspace, hl.dsp.focus({ workspace = workspace }))
-    hl.bind(main_mod .. " + SHIFT + " .. workspace, hl.dsp.window.move({ workspace = workspace }))
+hl.bind(main_mod .. " + SHIFT + left", hl.dsp.window.swap({ direction = "l" }))
+hl.bind(main_mod .. " + SHIFT + right", hl.dsp.window.swap({ direction = "r" }))
+hl.bind(main_mod .. " + SHIFT + up", hl.dsp.window.swap({ direction = "u" }))
+hl.bind(main_mod .. " + SHIFT + down", hl.dsp.window.swap({ direction = "d" }))
+
+hl.bind(main_mod .. " + ALT + left", hl.dsp.window.move({ into_group = "l" }))
+hl.bind(main_mod .. " + ALT + right", hl.dsp.window.move({ into_group = "r" }))
+hl.bind(main_mod .. " + ALT + up", hl.dsp.window.move({ into_group = "u" }))
+hl.bind(main_mod .. " + ALT + down", hl.dsp.window.move({ into_group = "d" }))
+
+hl.bind(main_mod .. " + CTRL + left", hl.dsp.group.prev())
+hl.bind(main_mod .. " + CTRL + right", hl.dsp.group.next())
+
+-- Ten workspaces, on the number row (layout-independent keycodes).
+for workspace = 1, 10 do
+    local key = main_mod .. " + code:" .. tostring(workspace + 9)
+    hl.bind(key, hl.dsp.focus({ workspace = tostring(workspace) }))
+    hl.bind(main_mod .. " + SHIFT + code:" .. tostring(workspace + 9),
+        hl.dsp.window.move({ workspace = tostring(workspace) }))
+    hl.bind(main_mod .. " + SHIFT + ALT + code:" .. tostring(workspace + 9),
+        hl.dsp.window.move({ workspace = tostring(workspace), follow = false }))
 end
 
+hl.bind(main_mod .. " + S", hl.dsp.workspace.toggle_special("scratchpad"))
+hl.bind(main_mod .. " + grave", hl.dsp.workspace.toggle_special("scratchpad"))
+hl.bind(main_mod .. " + ALT + S", hl.dsp.window.move({ workspace = "special:scratchpad", follow = false }))
+hl.bind(main_mod .. " + SHIFT + grave", hl.dsp.window.move({ workspace = "special:scratchpad", follow = false }))
+
+hl.bind(main_mod .. " + TAB", hl.dsp.focus({ workspace = "e+1" }))
+hl.bind(main_mod .. " + SHIFT + TAB", hl.dsp.focus({ workspace = "e-1" }))
+hl.bind(main_mod .. " + CTRL + TAB", hl.dsp.focus({ workspace = "previous" }))
+
+hl.bind(main_mod .. " + SHIFT + ALT + left", hl.dsp.workspace.move({ monitor = "l" }))
+hl.bind(main_mod .. " + SHIFT + ALT + right", hl.dsp.workspace.move({ monitor = "r" }))
+hl.bind(main_mod .. " + SHIFT + ALT + up", hl.dsp.workspace.move({ monitor = "u" }))
+hl.bind(main_mod .. " + SHIFT + ALT + down", hl.dsp.workspace.move({ monitor = "d" }))
+
+hl.bind("ALT + TAB", hl.dsp.window.cycle_next())
+hl.bind("ALT + SHIFT + TAB", hl.dsp.window.cycle_next({ next = false }))
+hl.bind("ALT + TAB", hl.dsp.window.bring_to_top())
+hl.bind("ALT + SHIFT + TAB", hl.dsp.window.bring_to_top())
+
+hl.bind("CTRL + ALT + TAB", hl.dsp.focus({ monitor = "+1" }))
+hl.bind("CTRL + ALT + SHIFT + TAB", hl.dsp.focus({ monitor = "-1" }))
+
+hl.bind(main_mod .. " + ALT + TAB", hl.dsp.group.next())
+hl.bind(main_mod .. " + ALT + SHIFT + TAB", hl.dsp.group.prev())
+for index = 1, 5 do
+    hl.bind(main_mod .. " + ALT + code:" .. tostring(index + 9), hl.dsp.group.active({ index = index }))
+end
+
+-- Resize the active window. code:20/21 are the two keys left of Backspace,
+-- chosen by physical position so they work on any layout.
+hl.bind(main_mod .. " + code:20", hl.dsp.window.resize({ x = -100, y = 0, relative = true }))
+hl.bind(main_mod .. " + code:21", hl.dsp.window.resize({ x = 100, y = 0, relative = true }))
+hl.bind(main_mod .. " + SHIFT + code:20", hl.dsp.window.resize({ x = 0, y = -100, relative = true }))
+hl.bind(main_mod .. " + SHIFT + code:21", hl.dsp.window.resize({ x = 0, y = 100, relative = true }))
+hl.bind(main_mod .. " + ALT + code:20", hl.dsp.window.resize({ x = -25, y = 0, relative = true }))
+hl.bind(main_mod .. " + ALT + code:21", hl.dsp.window.resize({ x = 25, y = 0, relative = true }))
+hl.bind(main_mod .. " + CTRL + code:20", hl.dsp.window.resize({ x = -300, y = 0, relative = true }))
+hl.bind(main_mod .. " + CTRL + code:21", hl.dsp.window.resize({ x = 300, y = 0, relative = true }))
+
+hl.bind(main_mod .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }))
+hl.bind(main_mod .. " + mouse_up", hl.dsp.focus({ workspace = "e-1" }))
 hl.bind(main_mod .. " + mouse:272", hl.dsp.window.drag(), { mouse = true })
 hl.bind(main_mod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
 
-hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("/usr/lib/frost/frost-osd volume-up"), { locked = true, repeating = true })
-hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("/usr/lib/frost/frost-osd volume-down"), { locked = true, repeating = true })
-hl.bind("XF86AudioMute", hl.dsp.exec_cmd("/usr/lib/frost/frost-osd volume-mute"), { locked = true })
-hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("/usr/lib/frost/frost-osd brightness-up"), { locked = true, repeating = true })
-hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("/usr/lib/frost/frost-osd brightness-down"), { locked = true, repeating = true })
+-- Cursor zoom (native config, no external call).
+hl.bind(main_mod .. " + CTRL + Z", function()
+    local zoom = hl.get_config("cursor.zoom_factor") or 1
+    hl.config({ cursor = { zoom_factor = zoom + 1 } })
+end)
+hl.bind(main_mod .. " + CTRL + ALT + Z", function()
+    hl.config({ cursor = { zoom_factor = 1 } })
+end)
+
+-- Island panels by keyboard.
+hl.bind(main_mod .. " + CTRL + A", ipc("toggle audio"))
+hl.bind(main_mod .. " + CTRL + B", ipc("toggle bluetooth"))
+hl.bind(main_mod .. " + CTRL + W", ipc("toggle wifi"))
+hl.bind(main_mod .. " + CTRL + P", ipc("toggle battery"))
+
+-- Notifications.
+hl.bind(main_mod .. " + comma", shell_action("notification-dismiss-latest"))
+hl.bind(main_mod .. " + ALT + comma", shell_action("notification-invoke-latest"))
+hl.bind(main_mod .. " + SHIFT + comma", shell_action("notification-clear"))
+hl.bind(main_mod .. " + SHIFT + ALT + comma", ipc("toggle notifications"))
+hl.bind(main_mod .. " + CTRL + comma", shell_action("notification-dnd toggle"))
+
+-- Session toggles.
+hl.bind(main_mod .. " + CTRL + I", shell_action("stay-awake-toggle"))
+hl.bind(main_mod .. " + CTRL + N", shell_action("nightlight-toggle"))
+
+-- Capture.
+hl.bind("PRINT", capture("screen"))
+hl.bind("ALT + PRINT", capture("record"))
+hl.bind(main_mod .. " + CTRL + C", capture("region"))
+hl.bind(main_mod .. " + CTRL + PRINT", capture("text"))
+hl.bind(main_mod .. " + PRINT", hl.dsp.exec_cmd("hyprpicker -a"))
+
+-- Media, brightness, audio.
+hl.bind("XF86AudioRaiseVolume", osd("volume-up"), { locked = true, repeating = true })
+hl.bind("XF86AudioLowerVolume", osd("volume-down"), { locked = true, repeating = true })
+hl.bind("XF86AudioMute", osd("volume-mute"), { locked = true })
+hl.bind("XF86AudioMicMute", osd("mic-mute"), { locked = true })
+hl.bind("ALT + XF86AudioRaiseVolume", osd("volume-up-fine"), { locked = true, repeating = true })
+hl.bind("ALT + XF86AudioLowerVolume", osd("volume-down-fine"), { locked = true, repeating = true })
+hl.bind("XF86MonBrightnessUp", osd("brightness-up"), { locked = true, repeating = true })
+hl.bind("XF86MonBrightnessDown", osd("brightness-down"), { locked = true, repeating = true })
+hl.bind("ALT + XF86MonBrightnessUp", osd("brightness-up-fine"), { locked = true, repeating = true })
+hl.bind("ALT + XF86MonBrightnessDown", osd("brightness-down-fine"), { locked = true, repeating = true })
+hl.bind("SHIFT + XF86MonBrightnessUp", osd("brightness-max"), { locked = true })
+hl.bind("SHIFT + XF86MonBrightnessDown", osd("brightness-min"), { locked = true })
+hl.bind("XF86KbdBrightnessUp", osd("kbd-up"), { locked = true, repeating = true })
+hl.bind("XF86KbdBrightnessDown", osd("kbd-down"), { locked = true, repeating = true })
+hl.bind("XF86KbdLightOnOff", osd("kbd-toggle"), { locked = true })
+
+hl.bind("XF86AudioNext", ipc("media next"), { locked = true })
+hl.bind("XF86AudioPrev", ipc("media previous"), { locked = true })
+hl.bind("XF86AudioPlay", ipc("media playPause"), { locked = true })
+hl.bind("XF86AudioPause", ipc("media playPause"), { locked = true })
+hl.bind("ALT + XF86AudioPlay", ipc("media next"), { locked = true })
+hl.bind("ALT + SHIFT + XF86AudioPlay", ipc("media previous"), { locked = true })

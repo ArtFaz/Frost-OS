@@ -14,6 +14,7 @@ required_files=(
   bin/frost-hyprland
   bin/frost-osd
   bin/frost-terminal
+  bin/frost-capture
   default/wayland-sessions/frost.desktop
   default/hypr/hyprland.lua
   default/hypr/hypridle.conf
@@ -37,7 +38,7 @@ for relative_path in "${required_files[@]}"; do
     fail "missing regular file: $relative_path"
 done
 
-for executable in "$root/bin/frost-hyprland" "$root/bin/frost-osd" "$root/bin/frost-terminal"; do
+for executable in "$root/bin/frost-hyprland" "$root/bin/frost-osd" "$root/bin/frost-terminal" "$root/bin/frost-capture"; do
   [[ -x $executable ]] || fail "wrapper is not executable: ${executable#$root/}"
 done
 
@@ -86,6 +87,11 @@ hyprland_config=$root/default/hypr/hyprland.lua
 if rg -n '\b(require|dofile|loadfile)\s*\(|os\.execute\s*\(|io\.popen\s*\(' "$hyprland_config"; then
   fail 'Hyprland Lua may not load or execute an external runtime tree'
 fi
+# Every keybind command is a fixed executable with data-only arguments. No
+# shell interpretation may reach the compositor's exec dispatcher.
+if rg -n 'exec_cmd\("[^"]*(\$\(|`|; |&&|\|\||bash -c|sh -c| \| )' "$hyprland_config"; then
+  fail 'Hyprland keybind command contains shell interpretation'
+fi
 
 rg -q '^\s*hl\.exec_cmd\("systemctl --user start --no-block frost-session\.target"\)$' \
   "$hyprland_config" || fail 'Hyprland does not start only the Frost target'
@@ -124,7 +130,7 @@ if rg -n -i '^(on-notify|on-button|on-touch)=' "$root/default/mako/config"; then
   fail 'Mako config may not execute notification hooks'
 fi
 
-bash -n "$root/bin/frost-hyprland" "$root/bin/frost-osd" "$root/bin/frost-terminal" "$root/default/bash/bashrc"
+bash -n "$root/bin/frost-hyprland" "$root/bin/frost-osd" "$root/bin/frost-terminal" "$root/bin/frost-capture" "$root/default/bash/bashrc"
 desktop-file-validate "$root/default/wayland-sessions/frost.desktop"
 
 if command -v Hyprland >/dev/null; then

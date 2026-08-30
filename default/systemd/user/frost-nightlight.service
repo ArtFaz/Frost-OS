@@ -1,0 +1,9 @@
+[Unit]
+Description=Frost user-requested night light
+PartOf=frost-session.target
+After=frost-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/hyprsunset --temperature 4000
+Restart=no

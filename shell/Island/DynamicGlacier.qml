@@ -2317,6 +2317,21 @@ Scope {
             }
         }
 
+        // Media transport for the XF86Audio keys. The shell owns the MPRIS
+        // connection, so a keybind routes through here rather than shelling out
+        // to a second player-control tool.
+        function media(action: string): string {
+            if (action === "next")
+                root.mediaNext();
+            else if (action === "previous")
+                root.mediaPrevious();
+            else if (action === "playPause")
+                root.mediaTogglePlaying();
+            else
+                return "error:unsupported-action";
+            return "ok";
+        }
+
         function demo(): string {
             root.demo();
             return "ok";
