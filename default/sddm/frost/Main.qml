@@ -39,11 +39,7 @@ Rectangle {
 
     anchors.fill: parent
 
-    gradient: Gradient {
-        GradientStop { position: 0.0; color: config.backgroundTop || "#141618" }
-        GradientStop { position: 0.55; color: config.backgroundMid || "#1b1e21" }
-        GradientStop { position: 1.0; color: config.backgroundBottom || "#101214" }
-    }
+    color: config.background || "#141618"
 
     Timer {
         interval: 1000
@@ -92,14 +88,6 @@ Rectangle {
             passwordInput.forceActiveFocus();
         }
     }
-
-    // ---- depth ----------------------------------------------------------
-    // Three very faint discs. Cheap, no shader, no extra QML module, and they
-    // keep a flat gradient from looking like a broken render.
-
-    Glow { size: root.height * 1.1; centerX: 0.18; centerY: 0.15; tint: root.accentColor; strength: 0.05 }
-    Glow { size: root.height * 0.9; centerX: 0.85; centerY: 0.80; tint: root.textColor; strength: 0.03 }
-    Glow { size: root.height * 0.5; centerX: 0.50; centerY: 0.50; tint: root.accentColor; strength: 0.04 }
 
     // ---- clock ----------------------------------------------------------
 
@@ -259,22 +247,6 @@ Rectangle {
     Component.onCompleted: passwordInput.forceActiveFocus()
 
     // ---- small components ----------------------------------------------
-
-    component Glow: Rectangle {
-        property real size: 400
-        property real centerX: 0.5
-        property real centerY: 0.5
-        property color tint: "#ffffff"
-        property real strength: 0.05
-
-        width: size
-        height: size
-        radius: size / 2
-        x: root.width * centerX - size / 2
-        y: root.height * centerY - size / 2
-        color: Qt.rgba(tint.r, tint.g, tint.b, strength)
-        antialiasing: true
-    }
 
     component InputField: Rectangle {
         id: field
