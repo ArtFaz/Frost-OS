@@ -43,7 +43,7 @@ if [[ ! -f $root/pkgbuilds/frost-keyring/PKGBUILD ]]; then
 fi
 
 for required_dependency in \
-  hyprland uwsm mako hyprlock hypridle hyprpolkitagent ghostty wl-clipboard cliphist curl jq libnotify \
+  hyprland uwsm mako hyprlock hypridle hyprpolkitagent hyprpicker ghostty wl-clipboard cliphist curl jq libnotify \
   networkmanager bluez upower power-profiles-daemon wireplumber brightnessctl quickshell \
   grim slurp hyprsunset \
   ttf-jetbrains-mono ttf-nerd-fonts-symbols-mono noto-fonts-emoji; do

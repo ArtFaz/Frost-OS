@@ -1,6 +1,6 @@
 pkgname=frost
 pkgver=0.2.0
-pkgrel=33
+pkgrel=34
 pkgdesc='Independent Frost desktop runtime and diagnostics CLI'
 arch=('x86_64')
 url='https://github.com/ArtFaz/Frost-OS'
@@ -19,6 +19,7 @@ depends=(
   'hypridle'
   'hyprland'
   'hyprlock'
+  'hyprpicker'
   'hyprpolkitagent'
   'hyprsunset'
   'jq'

@@ -101,6 +101,7 @@ for dependency in \
   hypridle \
   hyprland \
   hyprlock \
+  hyprpicker \
   hyprpolkitagent \
   hyprsunset \
   jq \
