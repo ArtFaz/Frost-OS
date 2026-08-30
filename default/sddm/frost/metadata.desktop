@@ -1,0 +1,14 @@
+[SddmGreeterTheme]
+Name=Frost
+Description=Frosted Glass greeter for the Frost desktop
+Author=Frost
+Copyright=Frost project
+License=MIT
+Type=qml
+Version=0.2.0
+Website=https://github.com/ArtFaz/Frost-OS
+Screenshot=
+MainScript=Main.qml
+ConfigFile=theme.conf
+Theme-Id=frost
+Theme-API=2.0

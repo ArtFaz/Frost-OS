@@ -1,0 +1,67 @@
+#!/bin/bash
+# Frost first-boot reconciliation. Runs once, as root, before the display
+# manager. Idempotent and defensive: every step is guarded so it degrades
+# cleanly on a base that lacks the tool or the filesystem it expects. It never
+# touches user data and never runs a user migration.
+
+set -euo pipefail
+export LC_ALL=C
+
+marker=/var/lib/frost/firstboot-done
+share=/usr/share/frost/default
+
+log() { printf 'frost-firstboot: %s\n' "$1"; }
+
+if [[ -f $marker ]]; then
+  log 'already done'
+  exit 0
+fi
+
+# 1. Harden the Hyprlock PAM stack over the hyprlock package's "include login"
+#    default. Keep a copy of whatever was there.
+if [[ -f $share/pam/hyprlock ]]; then
+  if ! cmp -s "$share/pam/hyprlock" /etc/pam.d/hyprlock 2>/dev/null; then
+    [[ -f /etc/pam.d/hyprlock ]] && cp -a /etc/pam.d/hyprlock /etc/pam.d/hyprlock.frost-saved
+    install -Dm644 "$share/pam/hyprlock" /etc/pam.d/hyprlock
+    log 'installed hardened /etc/pam.d/hyprlock'
+  fi
+fi
+
+# 2. Snapper on a Btrfs root: create the config once, point conf.d at it, and
+#    enable the timers. Skipped entirely if root is not Btrfs or snapper is
+#    absent.
+if command -v snapper >/dev/null && [[ $(findmnt -n -o FSTYPE / 2>/dev/null || true) == btrfs ]]; then
+  if [[ ! -f /etc/snapper/configs/root ]]; then
+    snapper -c root create-config / && log 'created snapper config: root'
+  fi
+  if [[ -f /etc/conf.d/snapper ]] && ! grep -q '^SNAPPER_CONFIGS=.*\broot\b' /etc/conf.d/snapper; then
+    if grep -q '^SNAPPER_CONFIGS=' /etc/conf.d/snapper; then
+      sed -i 's/^SNAPPER_CONFIGS="\(.*\)"/SNAPPER_CONFIGS="\1 root"/; s/"  */"/; s/ *"/"/' /etc/conf.d/snapper
+    else
+      printf 'SNAPPER_CONFIGS="root"\n' >> /etc/conf.d/snapper
+    fi
+    log 'registered snapper config in /etc/conf.d/snapper'
+  fi
+  for timer in snapper-timeline.timer snapper-cleanup.timer; do
+    systemctl list-unit-files "$timer" >/dev/null 2>&1 \
+      && systemctl enable --now "$timer" >/dev/null 2>&1 \
+      && log "enabled $timer"
+  done
+else
+  log 'snapper step skipped (no btrfs root or no snapper)'
+fi
+
+# 3. Firewall: default-deny inbound, enable at boot. Skipped if ufw is absent.
+if command -v ufw >/dev/null; then
+  ufw --force default deny incoming >/dev/null
+  ufw --force default allow outgoing >/dev/null
+  ufw --force enable >/dev/null
+  systemctl enable ufw >/dev/null 2>&1 || true
+  log 'ufw enabled, default deny incoming'
+fi
+
+# 4. zram tuning is delivered as package files; nothing to reconcile.
+
+install -d -m0755 "$(dirname -- "$marker")"
+: > "$marker"
+log 'complete'

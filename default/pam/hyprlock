@@ -1,0 +1,6 @@
+#%PAM-1.0
+# Frost Hyprlock authentication. Explicit stack, no nullok, no bypass: an empty
+# or wrong password is denied. Installed by frost-firstboot over the hyprlock
+# package's "auth include login" default.
+auth      required  pam_unix.so     try_first_pass
+account   required  pam_unix.so

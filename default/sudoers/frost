@@ -1,0 +1,5 @@
+# Frost privileged operations. The frost CLI is never elevated as a whole;
+# these two narrow helpers (built in Phase 7) are the audited boundary.
+# Password required; no NOPASSWD, no wildcards, no ALL command.
+%wheel ALL=(root) /usr/lib/frost/frost-update
+%wheel ALL=(root) /usr/lib/frost/frost-snapshot

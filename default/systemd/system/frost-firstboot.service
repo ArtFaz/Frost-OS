@@ -1,0 +1,13 @@
+[Unit]
+Description=Frost first-boot reconciliation
+ConditionPathExists=!/var/lib/frost/firstboot-done
+After=local-fs.target
+Before=sddm.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/frost/frost-firstboot
+RemainAfterExit=no
+
+[Install]
+WantedBy=multi-user.target
