@@ -21,7 +21,7 @@ export LC_ALL=C
 readonly FROST_FPR=9F8D63165ACC27A4FDCCED02FD40A38811EDD104
 readonly REPO_DEST=/var/lib/frost/repo
 readonly LOG_FILE=/var/log/frost-bootstrap.log
-readonly SUDOERS_DROPIN=/etc/sudoers.d/00-frost-bootstrap
+readonly SUDOERS_DROPIN=/etc/sudoers.d/zz-frost-bootstrap
 readonly MIN_FREE_KIB=$((15 * 1024 * 1024))
 readonly PACKAGES=(frost-keyring frost frost-settings frost-meta)
 
@@ -232,11 +232,14 @@ manual_aur_hint() {
   printf '  paru -S --needed %s\n' "$(aur_apps)"
 }
 
-# paru escalates through sudo, and before a transaction it runs `sudo -v` to
-# refresh the credential cache. A rule naming a single command does not satisfy
-# that: sudo asks for a password, this script has no controlling terminal, and
-# every AUR package fails — which is exactly what the first clean install did.
-# So the grant is unqualified. It is bounded the other three ways instead: one
+# paru escalates through sudo, so the invoking user needs to reach pacman without
+# a password. Two things about how sudo reads its rules decide the shape of this:
+# the LAST matching rule wins, and /etc/sudoers.d is read in filename order. The
+# CachyOS installer leaves /etc/sudoers.d/10-installer holding
+# `%wheel ALL=(ALL) ALL`, which matches every command for a user in wheel and
+# demands a password — so a grant must sort after it (hence zz-) or it is read
+# first and silently loses. paru also runs `sudo -v` before its transaction,
+# which a rule naming one command cannot satisfy. So the grant is unqualified. It is bounded the other three ways instead: one
 # named user, one file, validated before it takes effect, and handed back by the
 # trap on every exit including a failure or an interrupt. It exists only while
 # this stage runs. Decision recorded 2026-08-30; the alternative is dropping the

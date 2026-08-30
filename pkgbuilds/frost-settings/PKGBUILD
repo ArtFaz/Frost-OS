@@ -1,6 +1,6 @@
 pkgname=frost-settings
 pkgver=0.2.0
-pkgrel=3
+pkgrel=4
 pkgdesc='Frost privileged and global system configuration'
 arch=('any')
 url='https://github.com/ArtFaz/Frost-OS'

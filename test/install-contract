@@ -89,8 +89,10 @@ grep -qE 'su - "\$invoker" (-s /bin/bash )?-c' "$script" \
 # ALL=(ALL) blanket), one fixed path, validated before it takes effect, and
 # handed back by a trap on every exit.
 if grep -n 'sudoers' <<<"$rules" >/dev/null; then
-  grep -qE '^readonly SUDOERS_DROPIN=/etc/sudoers\.d/00-frost-bootstrap$' "$script" \
-    || fail 'the sudoers drop-in is not the fixed /etc/sudoers.d/00-frost-bootstrap'
+  # The name must sort last: sudo applies the last matching rule, and the CachyOS
+  # installer's 10-installer grants %wheel everything with a password.
+  grep -qE '^readonly SUDOERS_DROPIN=/etc/sudoers\.d/zz-frost-bootstrap$' "$script" \
+    || fail 'the sudoers drop-in must be /etc/sudoers.d/zz-frost-bootstrap so it is read last'
   grep -qE "printf '%s ALL=\(root\) NOPASSWD: ALL" "$script" \
     || fail 'the sudoers drop-in is not the reviewed single-user grant'
   grep -qE '"\$invoker" > "\$staged"' "$script" \

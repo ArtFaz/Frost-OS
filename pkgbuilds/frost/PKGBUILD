@@ -1,6 +1,6 @@
 pkgname=frost
 pkgver=0.2.0
-pkgrel=36
+pkgrel=37
 pkgdesc='Independent Frost desktop runtime and diagnostics CLI'
 arch=('x86_64')
 url='https://github.com/ArtFaz/Frost-OS'
@@ -103,6 +103,8 @@ package() {
     "$pkgdir/usr/share/frost/default/ghostty/config"
   install -Dm644 default/bash/bashrc \
     "$pkgdir/usr/share/frost/default/bash/bashrc"
+  install -Dm644 default/starship.toml \
+    "$pkgdir/usr/share/frost/default/starship.toml"
 
   for unit in default/systemd/user/*; do
     install -Dm644 "$unit" "$pkgdir/usr/lib/systemd/user/${unit##*/}"
