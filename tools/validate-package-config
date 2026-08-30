@@ -57,6 +57,31 @@ if rg -n '(default|graphical-session)\.target\.wants|systemctl[[:space:]]+--user
   fail 'Frost package may not globally enable session services'
 fi
 
+# Every QML namespace the shell imports must come from a declared runtime
+# dependency. A missing QML module is not a build error: quickshell exits 255 at
+# runtime and the user gets an empty session, which is how qt6-5compat was found
+# on the first clean CachyOS install. The map is reviewed, and an unknown
+# namespace fails so that a new import forces a dependency decision.
+frost_source=${FROST_SOURCE:-$root/../frost}
+if [[ -d $frost_source/shell ]]; then
+  declare -A qml_namespace_package=(
+    [qs]=''
+    [QtQuick]='qt6-declarative'
+    [QtQml]='qt6-declarative'
+    [Qt5Compat]='qt6-5compat'
+    [Quickshell]='quickshell'
+  )
+  while read -r namespace; do
+    [[ -v qml_namespace_package[$namespace] ]] \
+      || fail "the shell imports an unmapped QML namespace: $namespace"
+    qml_package=${qml_namespace_package[$namespace]}
+    [[ -n $qml_package ]] || continue
+    rg -q "^[[:space:]]*'${qml_package}'$" "$root/pkgbuilds/frost/PKGBUILD" \
+      || fail "the shell imports $namespace but frost does not depend on $qml_package"
+  done < <(rg -oN --no-filename '^[[:space:]]*import [A-Za-z0-9_.]+' "$frost_source/shell" \
+    | sed 's/.*import //; s/\..*//' | sort -u)
+fi
+
 # frost-meta and frost-settings are allowed from Phase 6 on (Gate 5 closed,
 # frost/docs/phase6-integration.md). frost-settings is still installed only by
 # the clean install, not enabled here.

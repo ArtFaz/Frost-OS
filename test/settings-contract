@@ -60,6 +60,13 @@ if rg -n 'import QtQuick\.Controls|import Qt\.labs|Qt\.openUrlExternally|Process
 fi
 rg -q 'sddm\.login\(' "$qml" || fail 'SDDM greeter does not call sddm.login'
 
+# The theme must declare Qt 6. Without QtVersion=6, SDDM 0.21 runs the legacy
+# /usr/bin/sddm-greeter, which links Qt5 libraries the Frost set does not
+# install: the greeter dies with exit 127 and the user gets a black screen.
+meta=$frost/default/sddm/frost/metadata.desktop
+rg -q '^QtVersion=6$' "$meta" || fail 'the SDDM greeter theme does not declare QtVersion=6'
+rg -q '^Type=sddm-theme$' "$meta" || fail 'the SDDM greeter theme has the wrong Type'
+
 # --- first-boot script: bounded ---
 bash -n "$frost/bin/frost-firstboot"
 if rg -n 'curl|wget|pacman -R|pacman -S|rm -rf /|chmod 777|eval |>\s*/dev/sd' "$frost/bin/frost-firstboot"; then

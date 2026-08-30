@@ -1,6 +1,6 @@
 pkgname=frost
 pkgver=0.2.0
-pkgrel=34
+pkgrel=35
 pkgdesc='Independent Frost desktop runtime and diagnostics CLI'
 arch=('x86_64')
 url='https://github.com/ArtFaz/Frost-OS'
@@ -28,6 +28,8 @@ depends=(
   'networkmanager'
   'noto-fonts-emoji'
   'power-profiles-daemon'
+  'qt6-5compat'
+  'qt6-declarative'
   'quickshell'
   'slurp'
   'systemd'
