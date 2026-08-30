@@ -32,10 +32,21 @@ install:
 
 ## Gate 6
 
-- complete package ownership; no unowned privileged write;
-- no AUR in `BOOTSTRAP`/`CORE`; `paru` builds AUR as the unprivileged user;
-- `bootstrap-cachyos` runs on a clean CachyOS Minimal and yields a system that
-  boots into Frost;
-- PAM, Polkit and notifications each have a single owner;
-- personal config survives an upgrade / reinstall;
-- `frost verify` and the security tests pass.
+- [x] complete package ownership; no unowned privileged write — `frost-settings`
+  ships nothing another package owns; `frost-firstboot` reconciles the rest;
+- [x] no AUR in `BOOTSTRAP`/`CORE` (`inventory-contract`); `paru` builds AUR as
+  the unprivileged user (no root helper, "Track B" dropped);
+- [ ] `bootstrap-cachyos` runs on a clean CachyOS Minimal and yields a system
+  that boots into Frost — **the VM run**; guarded statically by
+  `frost-pkgs/test/install-contract`;
+- [x] PAM, Polkit and notifications each have a single owner — hardened
+  `/etc/pam.d/hyprlock` via `frost-firstboot`, `hyprpolkitagent`, `mako`
+  (`session-contract` bars a second notification server);
+- [x] personal config survives an upgrade / reinstall — `backup=()` on every
+  `frost-settings` `/etc` file; user config lives under `~/.config/frost`;
+- [x] `frost verify` and the security tests pass — all `ok` on `0.2.0-34`;
+  `settings-contract`, `install-contract`, `meta-contract` green.
+
+Everything but the VM run is done. The bundle to carry:
+`frost-pkgs/tools/build-install-bundle` → `frost-install-bundle.tar.zst`
+(584 KB: the signed repo, `frost.gpg`, `bootstrap-cachyos`, the manifests).
