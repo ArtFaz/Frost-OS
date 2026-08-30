@@ -65,6 +65,22 @@ cp "$root/LICENSE" "$keyring_build/LICENSE"
   PKGDEST="$destination" makepkg --cleanbuild --force --noconfirm --sign --key "$key"
 )
 
+# frost-meta, if it exists (built once Gate 5 is closed). It is pure metadata,
+# so --nodeps: its depends() name packages the local repo does not hold.
+if [[ -f $root/pkgbuilds/frost-meta/PKGBUILD ]]; then
+  meta_build=$(mktemp -d /tmp/frost-meta-package.XXXXXX)
+  case $meta_build in
+    /tmp/frost-meta-package.*) ;;
+    *) exit 1 ;;
+  esac
+  trap 'rm -rf -- "$keyring_build" "$meta_build"' EXIT
+  cp -a "$root/pkgbuilds/frost-meta/." "$meta_build/"
+  (
+    cd "$meta_build"
+    PKGDEST="$destination" makepkg --cleanbuild --force --noconfirm --nodeps --sign --key "$key"
+  )
+fi
+
 for package in "$destination"/*.pkg.tar.*; do
   [[ $package == *.sig ]] && continue
   gpg --batch --yes --local-user "$key" --detach-sign "$package"

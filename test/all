@@ -14,5 +14,6 @@ done
 "$root/tools/validate-package-config"
 "$root/test/inventory-contract"
 "$root/test/selector-static"
+"$root/test/meta-contract"
 "$root/test/package-build"
 "$root/test/signatures"
