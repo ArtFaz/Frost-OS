@@ -79,7 +79,8 @@ done <<<"$rules"
 # The AUR step drops privileges to $SUDO_USER and never builds as root:
 # makepkg and paru appear only inside the su - "$invoker" -c block.
 grep -qE '\$\{SUDO_USER:-\}' "$script" || fail 'the AUR step does not derive its user from $SUDO_USER'
-grep -qE 'su - "\$invoker" -c' "$script" || fail 'the AUR step does not drop to the invoking user'
+grep -qE 'su - "\$invoker" (-s /bin/bash )?-c' "$script" \
+  || fail 'the AUR step does not drop to the invoking user'
 
 # The AUR stage may grant the invoking user passwordless pacman, because paru
 # installs through sudo. Exactly one fixed path, validated before it takes
@@ -93,6 +94,12 @@ if grep -n 'sudoers' <<<"$rules" >/dev/null; then
   grep -qE 'trap revoke_pacman_nopasswd EXIT' "$script" \
     || fail 'the sudoers drop-in is not revoked by a trap'
   grep -qE 'rm -f -- "\$SUDOERS_DROPIN"' "$script" || fail 'the sudoers drop-in is never removed'
+fi
+
+# The login shell change is bounded: the invoking user, and only to bash.
+if grep -q 'chsh' <<<"$rules"; then
+  grep -qE 'chsh -s /bin/bash "\$invoker"' "$script" \
+    || fail 'chsh is not bounded to bash for the invoking user'
 fi
 
 # The initramfs, the boot splash and the bootloader belong to CachyOS. Frost

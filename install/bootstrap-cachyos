@@ -63,6 +63,7 @@ readonly FROST_REPLACES=(
 readonly FROST_UNWANTED='^(jack2|pulseaudio|pipewire-media-session|nvidia(-[0-9a-z]+)?-utils|linux(-lts|-zen|-hardened)?)$'
 
 here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+invoker=${SUDO_USER:-}
 aur_failed=()
 
 die() { printf 'bootstrap-cachyos: %s\n' "$1" >&2; exit 1; }
@@ -175,6 +176,31 @@ if [[ -x /usr/lib/frost/frost-firstboot ]]; then
   /usr/lib/frost/frost-firstboot || note 'first-boot reconciliation reported an issue; it will retry on boot'
 fi
 
+step 'making bash the login shell'
+# CachyOS gives its first user fish. Frost's shell defaults, prompt and
+# keybindings are written for bash, so the invoking user is moved over — only
+# that user, only to bash, and only when they are not already there.
+if [[ -z $invoker ]] || ! id -u "$invoker" >/dev/null 2>&1; then
+  note 'no invoking user — leaving the login shell alone'
+else
+  current_shell=$(getent passwd "$invoker" | cut -d: -f7)
+  if [[ $current_shell == */bash ]]; then
+    note "$invoker already logs in with bash"
+  elif chsh -s /bin/bash "$invoker"; then
+    note "$invoker: $current_shell -> /bin/bash"
+  else
+    note "could not change the login shell; do it later with: chsh -s /bin/bash $invoker"
+  fi
+  # Arriving from fish there is usually no ~/.bashrc at all, and bash then
+  # starts bare. Created only when missing: an existing one is the user's.
+  su - "$invoker" -s /bin/bash -c '
+    set -eu
+    [ -f "$HOME/.bashrc" ] && exit 0
+    printf "# Frost defaults. This file is yours to edit.\n. /usr/share/frost/default/bash/bashrc\n" > "$HOME/.bashrc"
+  ' && note "seeded ~$invoker/.bashrc from the Frost defaults" \
+    || note 'left the existing ~/.bashrc alone'
+fi
+
 step 'building the AUR apps'
 # Best effort and never as root: paru comes from the repositories when they
 # carry it (CachyOS does) and from its AUR recipe otherwise, built as the
@@ -210,7 +236,6 @@ grant_pacman_nopasswd() {
   note "granted $invoker NOPASSWD pacman for the duration of this stage"
 }
 
-invoker=${SUDO_USER:-}
 apps=$(aur_apps)
 if [[ -z $invoker || $invoker == root ]] || ! id -u "$invoker" >/dev/null 2>&1; then
   note 'no unprivileged invoking user (use sudo, not a root shell) — skipping.'
@@ -230,7 +255,9 @@ else
     note "building paru from the AUR as $invoker"
     # Only the AUR recipe needs a compiler; the repository build does not.
     pacman -S --needed --noconfirm rust || note 'rust is unavailable; the paru build will likely fail'
-    su - "$invoker" -c '
+    # -s /bin/bash on purpose: su - uses the account's login shell, and a
+    # CachyOS user still on fish would be handed this bash script to run.
+    su - "$invoker" -s /bin/bash -c '
       set -eu
       d=$(mktemp -d)
       trap "rm -rf -- $d" EXIT
@@ -243,7 +270,8 @@ else
     # One at a time: a single broken recipe must not cost the other fourteen.
     for app in $apps; do
       printf '\n-- %s\n' "$app"
-      su - "$invoker" -c "paru -S --needed --noconfirm --skipreview -- $app" || aur_failed+=("$app")
+      su - "$invoker" -s /bin/bash -c "paru -S --needed --noconfirm --skipreview -- $app" \
+        || aur_failed+=("$app")
     done
   else
     manual_aur_hint

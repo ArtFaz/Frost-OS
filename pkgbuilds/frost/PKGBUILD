@@ -1,6 +1,6 @@
 pkgname=frost
 pkgver=0.2.0
-pkgrel=35
+pkgrel=36
 pkgdesc='Independent Frost desktop runtime and diagnostics CLI'
 arch=('x86_64')
 url='https://github.com/ArtFaz/Frost-OS'
@@ -12,8 +12,10 @@ depends=(
   'cliphist'
   'coreutils'
   'curl'
+  'dconf'
   'gawk'
   'ghostty'
+  'glib2'
   'glibc'
   'grim'
   'hypridle'
