@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "inventoryVersion": "2026-08-29.3",
+  "profiles": [
+    "this-machine"
+  ],
+  "features": {
+    "aur": true,
+    "bluetooth": true,
+    "development": true,
+    "gaming": true,
+    "input-method": true,
+    "media-production": true,
+    "printing": false,
+    "scanning": false,
+    "tailscale": true,
+    "virtualisation-guest": true
+  },
+  "packages": {
+    "include": [
+      "dkms",
+      "libva-utils"
+    ],
+    "exclude": [
+      "chromium",
+      "evince",
+      "foot",
+      "jetbrains-toolbox",
+      "kdenlive",
+      "localsend",
+      "moonlight-qt",
+      "pacsea-bin",
+      "parsec-bin",
+      "ruby",
+      "tmux",
+      "xournalpp",
+      "yt-dlp",
+      "zbar"
+    ],
+    "aur": [
+      "anydesk-bin",
+      "beekeeper-studio-bin",
+      "brave-bin",
+      "hyprmon-bin",
+      "paru",
+      "parui",
+      "vesktop-bin"
+    ]
+  },
+  "notes": {}
+}

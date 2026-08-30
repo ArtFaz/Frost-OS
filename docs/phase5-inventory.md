@@ -22,7 +22,7 @@ dropped by decision on 2026-08-29; subsequent installs go through the terminal.
 
 ## Reconciliation
 
-`inventory.json` (version `2026-08-29.2`, 276 packages) was built from:
+`inventory.json` (version `2026-08-29.4`, 286 packages) was built from:
 
 - `Definitive Frost-OS/omarchy/install/omarchy-base.packages` — `0ae1694830b6`
 - `Definitive Frost-OS/omarchy/install/omarchy-other.packages` — `0ae1694830b6`
@@ -56,6 +56,18 @@ justification Frost shares: `omarchy-keyring` (replaced by `frost-keyring`),
 The terminal package browsers `pacsea-bin` and `parui`, with `paru` as their
 backend, enter as `aur` `OPTIONAL` under the `aur` feature. The hardened AUR
 build flow is Phase 6; Phase 5 only lists the tools.
+
+### Editors, Spotify and the microcode fix (`2026-08-29.4`)
+
+Added by request: `visual-studio-code-bin` and `zed` (both in the `development`
+feature and the `this-machine` profile), `spotify-launcher` (the official Arch
+launcher, in `this-machine`).
+
+Fixed: a `hardware`-tagged package no longer rides a profile category, so
+`intel-ucode` stops being pulled onto an AMD machine (and vice versa). Every
+profile now lists the microcode it wants explicitly — `minimal`/`desktop`/
+`developer` carry both, `this-machine` carries `amd-ucode`. The rule is in
+`baseSelected` and `base_selected`, and the CLI now reads the `hardware` field.
 
 ### This-machine preset (`2026-08-29.3`)
 

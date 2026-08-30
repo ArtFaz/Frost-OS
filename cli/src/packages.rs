@@ -89,6 +89,7 @@ struct InvPkg {
     category: String,
     default_: String,
     feature: Option<String>,
+    hardware: Vec<String>,
     depends: Vec<String>,
     conflicts: Vec<String>,
     pkgbase: Option<String>,
@@ -161,7 +162,7 @@ fn load_inventory(path: &str) -> Result<Inventory, CliError> {
         r#"(.packages[] | "P\t" + .name + "\t" + .source + "\t" + .category + "\t" + .default"#,
         r#" + "\t" + (.feature // "") + "\t" + ((.dependsOn // []) | join(","))"#,
         r#" + "\t" + ((.conflictsWith // []) | join(",")) + "\t" + (.pkgbase // "")"#,
-        r#" + "\t" + (.recipeUrl // "")),"#,
+        r#" + "\t" + (.recipeUrl // "") + "\t" + ((.hardware // []) | join(","))),"#,
         r#"(.features | to_entries[] | "F\t" + .key + "\t" + (.value.default | tostring)"#,
         r#" + "\t" + ((.value.packages // []) | join(","))),"#,
         r#"(.profiles | to_entries[] | "R\t" + .key + "\t" + ((.value.includeCategories // []) | join(","))"#,
@@ -182,7 +183,7 @@ fn load_inventory(path: &str) -> Result<Inventory, CliError> {
             Some("V") => version = f.next().unwrap_or_default().to_owned(),
             Some("P") => {
                 let cols: Vec<&str> = f.collect();
-                if cols.len() < 9 {
+                if cols.len() < 10 {
                     return Err(CliError::Usage("inventory record is malformed".to_owned()));
                 }
                 packages.push(InvPkg {
@@ -195,6 +196,7 @@ fn load_inventory(path: &str) -> Result<Inventory, CliError> {
                     conflicts: split_list(cols[6]),
                     pkgbase: (!cols[7].is_empty()).then(|| cols[7].to_owned()),
                     recipe_url: (!cols[8].is_empty()).then(|| cols[8].to_owned()),
+                    hardware: split_list(cols[9]),
                 });
             }
             Some("F") => {
@@ -564,7 +566,13 @@ fn base_selected(inv: &Inventory, m: &Manifest, p: &InvPkg, profiles: &[&Profile
         if pr.include_packages.iter().any(|n| n == &p.name) {
             return true;
         }
-        if pr.include_categories.contains(&p.category) && p.default_ != "optional" {
+        // A hardware-tagged package never rides a profile category; it is chosen
+        // explicitly or pulled by a feature, so a CPU/GPU-specific package stays
+        // off machines it does not apply to.
+        if pr.include_categories.contains(&p.category)
+            && p.default_ != "optional"
+            && p.hardware.is_empty()
+        {
             match &p.feature {
                 None => return true,
                 Some(feat) if feature_on(inv, m, feat) => return true,
@@ -1085,6 +1093,7 @@ mod tests {
                 category: "BOOTSTRAP".into(),
                 default_: "required".into(),
                 feature: None,
+                hardware: vec![],
                 depends: vec![],
                 conflicts: vec![],
                 pkgbase: None,
@@ -1096,6 +1105,7 @@ mod tests {
                 category: "CORE".into(),
                 default_: "required".into(),
                 feature: None,
+                hardware: vec![],
                 depends: vec![],
                 conflicts: vec![],
                 pkgbase: None,
@@ -1107,6 +1117,7 @@ mod tests {
                 category: "CORE".into(),
                 default_: "required".into(),
                 feature: Some("bluetooth".into()),
+                hardware: vec![],
                 depends: vec![],
                 conflicts: vec![],
                 pkgbase: None,
@@ -1118,6 +1129,7 @@ mod tests {
                 category: "DESKTOP".into(),
                 default_: "optional".into(),
                 feature: None,
+                hardware: vec![],
                 depends: vec![],
                 conflicts: vec![],
                 pkgbase: None,
@@ -1129,6 +1141,7 @@ mod tests {
                 category: "DESKTOP".into(),
                 default_: "recommended".into(),
                 feature: None,
+                hardware: vec![],
                 depends: vec![],
                 conflicts: vec![],
                 pkgbase: None,
@@ -1140,6 +1153,7 @@ mod tests {
                 category: "OPTIONAL".into(),
                 default_: "recommended".into(),
                 feature: Some("aur".into()),
+                hardware: vec![],
                 depends: vec![],
                 conflicts: vec![],
                 pkgbase: Some("paru".into()),
@@ -1151,6 +1165,7 @@ mod tests {
                 category: "DROP".into(),
                 default_: "optional".into(),
                 feature: None,
+                hardware: vec![],
                 depends: vec![],
                 conflicts: vec![],
                 pkgbase: None,
