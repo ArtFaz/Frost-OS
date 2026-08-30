@@ -57,6 +57,26 @@ The terminal package browsers `pacsea-bin` and `parui`, with `paru` as their
 backend, enter as `aur` `OPTIONAL` under the `aur` feature. The hardened AUR
 build flow is Phase 6; Phase 5 only lists the tools.
 
+### This-machine preset (`2026-08-29.3`)
+
+A fourth profile, `this-machine`, seeded from `pacman -Qe` on the Vaio FE16
+(Ryzen 5 5825U, all-AMD): the desktop set, the eight features actually in use
+(`aur`, `bluetooth`, `development`, `gaming`, `input-method`,
+`media-production`, `printing`, `tailscale`), the AMD graphics stack
+(`vulkan-radeon`, `lib32-vulkan-radeon`, `bolt`, `ddcutil`,
+`kernel-modules-hook`), and seven AUR apps carried over from Omarchy
+(`brave-bin`, `vesktop-bin`, `anydesk-bin`, `parsec-bin`,
+`beekeeper-studio-bin`, `jetbrains-toolbox`, `hyprmon-bin`). The inventory's
+new `defaultProfile` field makes the selector open with it already applied, so
+nothing has to be re-picked by hand. It is a starting point; the donor tools
+(`omarchy-nvim`, `omacut`, …) stay `DROP`.
+
+Fixed alongside: feature membership. A package listed in a feature's `packages`
+is now pulled in when that feature is on, even if the package does not name the
+feature in its own `feature` field. `base_selected` in `packages.rs` and
+`baseSelected` in the selector were changed together and cross-checked to
+resolve the same 216 packages for this profile.
+
 ### Compatibility pass (`2026-08-29.2`)
 
 Frost is built for one machine but should install cleanly on others. This pass

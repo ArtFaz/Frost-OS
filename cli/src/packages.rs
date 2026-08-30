@@ -542,7 +542,10 @@ fn active_profiles<'a>(inv: &'a Inventory, m: &Manifest) -> Vec<&'a Profile> {
 }
 
 /// Mirror of the selector's `baseSelected`: default membership before the
-/// manifest's explicit include/exclude overrides.
+/// manifest's explicit include/exclude overrides. A profile's excludePackages
+/// wins; then any enabled feature that lists the package pulls it in; then a
+/// profile's includePackages or a matched includeCategory (skipping a package
+/// whose own `feature` gate is off).
 fn base_selected(inv: &Inventory, m: &Manifest, p: &InvPkg, profiles: &[&Profile]) -> bool {
     if p.category == "DROP" {
         return false;
@@ -552,13 +555,9 @@ fn base_selected(inv: &Inventory, m: &Manifest, p: &InvPkg, profiles: &[&Profile
             return false;
         }
     }
-    if let Some(feat) = &p.feature {
-        if feature_on(inv, m, feat) {
-            if let Some(f) = inv.feature(feat) {
-                if f.packages.iter().any(|n| n == &p.name) {
-                    return true;
-                }
-            }
+    for f in &inv.features {
+        if feature_on(inv, m, &f.key) && f.packages.iter().any(|n| n == &p.name) {
+            return true;
         }
     }
     for pr in profiles {
