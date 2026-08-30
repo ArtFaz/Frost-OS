@@ -1,0 +1,101 @@
+#!/usr/bin/env python3
+"""Regenerate config/data/emojis.json from the shipped colour emoji font.
+
+The picker must offer exactly what the session can draw, so the source of truth
+is the coverage of Noto Color Emoji itself, intersected with the Unicode
+character names used as search keywords. Hand-written keywords already in the
+file are preserved and appended, so "thumbs up approve" keeps finding it.
+
+Run it when the emoji font is updated:
+
+    tools/generate-emoji-data
+"""
+
+import json
+import pathlib
+import re
+import subprocess
+import sys
+import unicodedata
+
+DATA = pathlib.Path(__file__).resolve().parent.parent / "config/data/emojis.json"
+
+# Codepoints the font carries that are not standalone pickable emoji: joiners,
+# variation selectors, the keycap combiner, tag characters, skin-tone modifiers
+# and the regional indicators that only mean anything in pairs.
+EXCLUDED_RANGES = [
+    (0x0000, 0x00A8),
+    (0x200D, 0x200D),
+    (0x20E3, 0x20E3),
+    (0xFE0E, 0xFE0F),
+    (0x1F1E6, 0x1F1FF),
+    (0x1F3FB, 0x1F3FF),
+    (0xE0000, 0xE007F),
+]
+
+
+def font_file() -> str:
+    listing = subprocess.run(
+        ["fc-list", "--format=%{file}\n"], capture_output=True, text=True, check=True
+    ).stdout
+    for line in listing.splitlines():
+        if "NotoColorEmoji" in line:
+            return line
+    sys.exit("Noto Color Emoji is not installed; install noto-fonts-emoji first")
+
+
+def covered_codepoints(path: str) -> list[int]:
+    charset = subprocess.run(
+        ["fc-query", "--format=%{charset}", path], capture_output=True, text=True, check=True
+    ).stdout
+    points: list[int] = []
+    for token in charset.split():
+        if not re.fullmatch(r"[0-9a-fA-F]+(-[0-9a-fA-F]+)?", token):
+            continue
+        first, _, last = token.partition("-")
+        start = int(first, 16)
+        end = int(last, 16) if last else start
+        points.extend(range(start, end + 1))
+    return points
+
+
+def excluded(codepoint: int) -> bool:
+    return any(low <= codepoint <= high for low, high in EXCLUDED_RANGES)
+
+
+def main() -> None:
+    previous = {}
+    if DATA.exists():
+        for item in json.loads(DATA.read_text())["items"]:
+            previous[item["emoji"]] = item["keywords"]
+
+    items = []
+    for codepoint in covered_codepoints(font_file()):
+        if excluded(codepoint):
+            continue
+        character = chr(codepoint)
+        try:
+            name = unicodedata.name(character).lower()
+        except ValueError:
+            continue
+
+        keywords = [name]
+        # A curated phrase keeps working, and the emoji keeps whichever
+        # variation-selector form the old file used.
+        for form in (character, character + "️"):
+            if form in previous:
+                character = form
+                for word in previous[form].split():
+                    if word not in keywords[0]:
+                        keywords.append(word)
+                break
+        items.append({"emoji": character, "keywords": " ".join(keywords)})
+
+    DATA.write_text(
+        json.dumps({"schemaVersion": 1, "items": items}, ensure_ascii=False, indent=None) + "\n"
+    )
+    print(f"wrote {len(items)} emojis to {DATA}")
+
+
+if __name__ == "__main__":
+    main()
