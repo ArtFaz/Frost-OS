@@ -34,7 +34,11 @@ for database in frost.db.tar.gz frost.files.tar.gz; do
 done
 
 names=$(bsdtar -xOf "$repo/frost.db.tar.gz" '*/desc' | sed -n '/^%NAME%$/{n;p;}' | sort)
-if [[ $names != $'frost\nfrost-keyring' && $names != $'frost\nfrost-keyring\nfrost-meta' ]]; then
+allowed=$'frost\nfrost-keyring'
+allowed_meta=$'frost\nfrost-keyring\nfrost-meta'
+allowed_full=$'frost\nfrost-keyring\nfrost-meta\nfrost-settings'
+allowed_settings=$'frost\nfrost-keyring\nfrost-settings'
+if [[ $names != "$allowed" && $names != "$allowed_meta" && $names != "$allowed_full" && $names != "$allowed_settings" ]]; then
   printf 'unexpected repository package set:\n%s\n' "$names" >&2
   exit 1
 fi

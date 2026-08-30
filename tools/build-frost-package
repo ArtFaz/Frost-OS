@@ -8,9 +8,9 @@ destination=${PKGDEST:-$root/repo/unsigned}
 package=${1:-frost}
 
 case $package in
-  frost|frost-wallpapers) ;;
+  frost|frost-wallpapers|frost-settings) ;;
   *)
-    printf 'usage: build-frost-package [frost|frost-wallpapers]\n' >&2
+    printf 'usage: build-frost-package [frost|frost-wallpapers|frost-settings]\n' >&2
     exit 2
     ;;
 esac
@@ -39,6 +39,10 @@ trap 'rm -rf -- "$build_dir"' EXIT
 
 mkdir -p "$build_dir/pkg" "$destination"
 cp "$root/pkgbuilds/$package/PKGBUILD" "$build_dir/pkg/PKGBUILD"
+# Any .install script the PKGBUILD references travels with it.
+for extra in "$root/pkgbuilds/$package"/*.install; do
+  [[ -f $extra ]] && cp "$extra" "$build_dir/pkg/"
+done
 git -C "$source_repo" archive \
   --format=tar.gz \
   --prefix="frost-${version}/" \

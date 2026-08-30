@@ -51,6 +51,9 @@ done
 mkdir -p "$destination"
 
 FROST_SOURCE="$source_repo" PKGDEST="$destination" "$root/tools/build-frost-package" >/dev/null
+if [[ -f $root/pkgbuilds/frost-settings/PKGBUILD ]]; then
+  FROST_SOURCE="$source_repo" PKGDEST="$destination" "$root/tools/build-frost-package" frost-settings >/dev/null
+fi
 
 keyring_build=$(mktemp -d /tmp/frost-keyring-package.XXXXXX)
 case $keyring_build in
