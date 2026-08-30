@@ -71,10 +71,15 @@ step 'installing Frost'
 pacman -Sy --noconfirm
 
 # Drop base providers Frost replaces, so the install does not stop on a
-# conflict. Only names from the fixed FROST_REPLACES list, only if installed.
+# conflict. Only names from the fixed FROST_REPLACES list, and only when a
+# package is installed under that exact name — `pacman -Q <name>` also matches
+# a *provider* (jack2 provides jack), which -Rdd cannot then remove.
+mapfile -t installed_pkgs < <(pacman -Qq)
+declare -A is_installed=()
+for pkg in "${installed_pkgs[@]}"; do is_installed[$pkg]=1; done
 present=()
 for pkg in "${FROST_REPLACES[@]}"; do
-  pacman -Qq "$pkg" &>/dev/null && present+=("$pkg")
+  [[ -n ${is_installed[$pkg]:-} ]] && present+=("$pkg")
 done
 if ((${#present[@]})); then
   printf 'removing base providers Frost replaces: %s\n' "${present[*]}"
