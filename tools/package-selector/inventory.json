@@ -1,6 +1,10 @@
 {
-  "inventoryVersion": "2026-08-29.5",
+  "inventoryVersion": "2026-08-30.1",
   "generatedFrom": [
+    {
+      "source": "clean CachyOS/Arch repo audit",
+      "role": "2026-08-30.1: packages that exist only in the Omarchy repo or the AUR were reclassified arch->aur; nvim->neovim, mise-bin->mise, yaru-icon-theme->papirus-icon-theme, tobi-try->try; two Omarchy-custom packages with no clean equivalent moved to DROP."
+    },
     {
       "source": "arch extra/multilib",
       "role": "Compatibility pass 2026-08-29.2: mesa, vulkan loader/drivers, VM guest agents, firmware, laptop sensors and fonts, each name verified against the live pacman sync database."
@@ -69,7 +73,7 @@
         "lazygit",
         "clang",
         "llvm",
-        "mise-bin",
+        "mise",
         "tree-sitter-cli",
         "ruby",
         "lua51",
@@ -230,6 +234,7 @@
         "lib32-vulkan-radeon",
         "libreoffice-fresh",
         "libvips",
+        "limine-snapper-sync",
         "localsend",
         "nautilus-python",
         "obsidian",
@@ -243,7 +248,7 @@
         "tensaku",
         "tesseract",
         "tesseract-data-eng",
-        "tobi-try",
+        "try",
         "ttf-ia-writer",
         "ttf-jetbrains-mono-nerd-basic",
         "tzupdate",
@@ -611,11 +616,13 @@
     },
     {
       "name": "limine-snapper-sync",
-      "source": "arch",
-      "category": "CORE",
-      "default": "required",
-      "reason": "Adds boot entries for Snapper snapshots",
-      "sizeKib": 26736
+      "source": "aur",
+      "category": "OPTIONAL",
+      "default": "optional",
+      "reason": "Adds Limine boot entries for Snapper snapshots; installed with paru",
+      "sizeKib": 26736,
+      "pkgbase": "limine-snapper-sync",
+      "recipeUrl": "https://aur.archlinux.org/limine-snapper-sync.git"
     },
     {
       "name": "mako",
@@ -891,11 +898,13 @@
     },
     {
       "name": "xdg-terminal-exec",
-      "source": "arch",
-      "category": "CORE",
-      "default": "recommended",
+      "source": "aur",
+      "category": "DESKTOP",
+      "default": "optional",
       "reason": "Resolves the preferred terminal for xdg-open",
-      "sizeKib": 46
+      "sizeKib": 46,
+      "pkgbase": "xdg-terminal-exec",
+      "recipeUrl": "https://aur.archlinux.org/xdg-terminal-exec.git"
     },
     {
       "name": "xdg-user-dirs",
@@ -962,11 +971,13 @@
     },
     {
       "name": "cliamp",
-      "source": "arch",
+      "source": "aur",
       "category": "DESKTOP",
       "default": "optional",
       "reason": "Retro terminal music player",
-      "sizeKib": 35932
+      "sizeKib": 35932,
+      "pkgbase": "cliamp",
+      "recipeUrl": "https://aur.archlinux.org/cliamp.git"
     },
     {
       "name": "cups",
@@ -1191,9 +1202,9 @@
     {
       "name": "hyprland-preview-share-picker",
       "source": "arch",
-      "category": "DESKTOP",
-      "default": "recommended",
-      "reason": "Picker UI for screen-share source selection",
+      "category": "DROP",
+      "default": "optional",
+      "reason": "Omarchy-custom; the share picker ships with xdg-desktop-portal-hyprland now",
       "sizeKib": 6461
     },
     {
@@ -1294,11 +1305,13 @@
     },
     {
       "name": "localsend",
-      "source": "arch",
+      "source": "aur",
       "category": "DESKTOP",
       "default": "optional",
       "reason": "Local-network file sharing",
-      "sizeKib": 68597
+      "sizeKib": 68597,
+      "pkgbase": "localsend",
+      "recipeUrl": "https://aur.archlinux.org/localsend.git"
     },
     {
       "name": "man-db",
@@ -1372,7 +1385,7 @@
       "reason": "Read and write NTFS drives from Windows machines"
     },
     {
-      "name": "nvim",
+      "name": "neovim",
       "source": "arch",
       "category": "DESKTOP",
       "default": "recommended",
@@ -1557,11 +1570,13 @@
     },
     {
       "name": "tensaku",
-      "source": "arch",
+      "source": "aur",
       "category": "DESKTOP",
       "default": "optional",
       "reason": "Screenshot annotation tool for Wayland",
-      "sizeKib": 7311
+      "sizeKib": 7311,
+      "pkgbase": "tensaku",
+      "recipeUrl": "https://aur.archlinux.org/tensaku.git"
     },
     {
       "name": "tesseract",
@@ -1596,12 +1611,14 @@
       "sizeKib": 1244
     },
     {
-      "name": "tobi-try",
-      "source": "arch",
+      "name": "try",
+      "source": "aur",
       "category": "DESKTOP",
       "default": "optional",
       "reason": "Throwaway project directories",
-      "sizeKib": 70
+      "sizeKib": 70,
+      "pkgbase": "try",
+      "recipeUrl": "https://aur.archlinux.org/try.git"
     },
     {
       "name": "ttf-dejavu",
@@ -1612,18 +1629,20 @@
     },
     {
       "name": "ttf-ia-writer",
-      "source": "arch",
+      "source": "aur",
       "category": "DESKTOP",
       "default": "optional",
       "reason": "iA Writer duospace font",
-      "sizeKib": 2088
+      "sizeKib": 2088,
+      "pkgbase": "ttf-ia-writer",
+      "recipeUrl": "https://aur.archlinux.org/ttf-ia-writer.git"
     },
     {
       "name": "ttf-jetbrains-mono-nerd-basic",
       "source": "arch",
-      "category": "DESKTOP",
+      "category": "DROP",
       "default": "optional",
-      "reason": "JetBrains Mono with a reduced Nerd Font patch",
+      "reason": "Omarchy-custom font; ttf-jetbrains-mono + ttf-nerd-fonts-symbols-mono already cover it",
       "sizeKib": 9912
     },
     {
@@ -1635,11 +1654,13 @@
     },
     {
       "name": "tzupdate",
-      "source": "arch",
+      "source": "aur",
       "category": "DESKTOP",
       "default": "optional",
       "reason": "Sets the timezone from geolocation on first boot",
-      "sizeKib": 2549
+      "sizeKib": 2549,
+      "pkgbase": "tzupdate",
+      "recipeUrl": "https://aur.archlinux.org/tzupdate.git"
     },
     {
       "name": "udiskie",
@@ -1711,7 +1732,7 @@
       "sizeKib": 8273
     },
     {
-      "name": "yaru-icon-theme",
+      "name": "papirus-icon-theme",
       "source": "arch",
       "category": "DESKTOP",
       "default": "recommended",
@@ -1859,7 +1880,7 @@
       "sizeKib": 24207
     },
     {
-      "name": "mise-bin",
+      "name": "mise",
       "source": "arch",
       "category": "DEVELOPMENT",
       "default": "optional",
@@ -2012,44 +2033,52 @@
     },
     {
       "name": "apple-bcm-firmware",
-      "source": "arch",
+      "source": "aur",
       "category": "HARDWARE",
       "default": "optional",
       "reason": "Broadcom Wi-Fi and Bluetooth firmware for T2 Macs",
       "hardware": [
         "mac-t2"
-      ]
+      ],
+      "pkgbase": "apple-bcm-firmware",
+      "recipeUrl": "https://aur.archlinux.org/apple-bcm-firmware.git"
     },
     {
       "name": "apple-t2-audio-config",
-      "source": "arch",
+      "source": "aur",
       "category": "HARDWARE",
       "default": "optional",
       "reason": "Audio routing config for T2 Mac speakers",
       "hardware": [
         "mac-t2"
-      ]
+      ],
+      "pkgbase": "apple-t2-audio-config",
+      "recipeUrl": "https://aur.archlinux.org/apple-t2-audio-config.git"
     },
     {
       "name": "asdcontrol",
-      "source": "arch",
+      "source": "aur",
       "category": "HARDWARE",
       "default": "optional",
       "reason": "Brightness control for Apple displays",
       "hardware": [
         "apple-display"
       ],
-      "sizeKib": 30
+      "sizeKib": 30,
+      "pkgbase": "asdcontrol",
+      "recipeUrl": "https://aur.archlinux.org/asdcontrol.git"
     },
     {
       "name": "asusctl",
-      "source": "arch",
+      "source": "aur",
       "category": "HARDWARE",
       "default": "optional",
       "reason": "ASUS laptop hardware control",
       "hardware": [
         "asus"
-      ]
+      ],
+      "pkgbase": "asusctl",
+      "recipeUrl": "https://aur.archlinux.org/asusctl.git"
     },
     {
       "name": "bolt",
@@ -2085,23 +2114,27 @@
     },
     {
       "name": "dell-xps-touchpad-haptics",
-      "source": "arch",
+      "source": "aur",
       "category": "HARDWARE",
       "default": "optional",
       "reason": "Haptic touchpad support for Dell XPS",
       "hardware": [
         "dell-xps"
-      ]
+      ],
+      "pkgbase": "dell-xps-touchpad-haptics",
+      "recipeUrl": "https://aur.archlinux.org/dell-xps-touchpad-haptics.git"
     },
     {
       "name": "dell-xps13-sidecar-amps",
-      "source": "arch",
+      "source": "aur",
       "category": "HARDWARE",
       "default": "optional",
       "reason": "Speaker amp init for Dell XPS 13",
       "hardware": [
         "dell-xps"
-      ]
+      ],
+      "pkgbase": "dell-xps13-sidecar-amps",
+      "recipeUrl": "https://aur.archlinux.org/dell-xps13-sidecar-amps.git"
     },
     {
       "name": "dkms",
@@ -2135,13 +2168,15 @@
     },
     {
       "name": "intel-ipu7-camera",
-      "source": "arch",
+      "source": "aur",
       "category": "HARDWARE",
       "default": "optional",
       "reason": "Driver stack for Intel IPU7 MIPI webcams",
       "hardware": [
         "intel-ipu-camera"
-      ]
+      ],
+      "pkgbase": "intel-ipu7-camera",
+      "recipeUrl": "https://aur.archlinux.org/intel-ipu7-camera.git"
     },
     {
       "name": "intel-lpmd",
@@ -2187,14 +2222,16 @@
     },
     {
       "name": "lib32-nvidia-580xx-utils",
-      "source": "arch",
+      "source": "aur",
       "category": "HARDWARE",
       "default": "optional",
       "reason": "32-bit NVIDIA 580 legacy driver",
       "hardware": [
         "gpu-nvidia-legacy",
         "gaming"
-      ]
+      ],
+      "pkgbase": "lib32-nvidia-580xx-utils",
+      "recipeUrl": "https://aur.archlinux.org/lib32-nvidia-580xx-utils.git"
     },
     {
       "name": "lib32-nvidia-utils",
@@ -2283,43 +2320,51 @@
     },
     {
       "name": "linux-ptl",
-      "source": "arch",
+      "source": "aur",
       "category": "HARDWARE",
       "default": "optional",
       "reason": "Panther Lake preview kernel",
       "hardware": [
         "ptl-kernel"
-      ]
+      ],
+      "pkgbase": "linux-ptl",
+      "recipeUrl": "https://aur.archlinux.org/linux-ptl.git"
     },
     {
       "name": "linux-ptl-headers",
-      "source": "arch",
+      "source": "aur",
       "category": "HARDWARE",
       "default": "optional",
       "reason": "Headers for the Panther Lake preview kernel",
       "hardware": [
         "ptl-kernel"
-      ]
+      ],
+      "pkgbase": "linux-ptl-headers",
+      "recipeUrl": "https://aur.archlinux.org/linux-ptl-headers.git"
     },
     {
       "name": "linux-t2",
-      "source": "arch",
+      "source": "aur",
       "category": "HARDWARE",
       "default": "optional",
       "reason": "Kernel with T2 Mac patches",
       "hardware": [
         "mac-t2"
-      ]
+      ],
+      "pkgbase": "linux-t2",
+      "recipeUrl": "https://aur.archlinux.org/linux-t2.git"
     },
     {
       "name": "linux-t2-headers",
-      "source": "arch",
+      "source": "aur",
       "category": "HARDWARE",
       "default": "optional",
       "reason": "Headers for the T2 patched kernel",
       "hardware": [
         "mac-t2"
-      ]
+      ],
+      "pkgbase": "linux-t2-headers",
+      "recipeUrl": "https://aur.archlinux.org/linux-t2-headers.git"
     },
     {
       "name": "lsp-plugins-lv2",
@@ -2333,13 +2378,15 @@
     },
     {
       "name": "macbook12-spi-driver-dkms",
-      "source": "arch",
+      "source": "aur",
       "category": "HARDWARE",
       "default": "optional",
       "reason": "SPI keyboard and trackpad driver for 2015-2017 MacBooks",
       "hardware": [
         "macbook"
-      ]
+      ],
+      "pkgbase": "macbook12-spi-driver-dkms",
+      "recipeUrl": "https://aur.archlinux.org/macbook12-spi-driver-dkms.git"
     },
     {
       "name": "modemmanager",
@@ -2353,23 +2400,27 @@
     },
     {
       "name": "nvidia-580xx-dkms",
-      "source": "arch",
+      "source": "aur",
       "category": "HARDWARE",
       "default": "optional",
       "reason": "NVIDIA 580 legacy kernel modules",
       "hardware": [
         "gpu-nvidia-legacy"
-      ]
+      ],
+      "pkgbase": "nvidia-580xx-dkms",
+      "recipeUrl": "https://aur.archlinux.org/nvidia-580xx-dkms.git"
     },
     {
       "name": "nvidia-580xx-utils",
-      "source": "arch",
+      "source": "aur",
       "category": "HARDWARE",
       "default": "optional",
       "reason": "NVIDIA 580 legacy userspace driver",
       "hardware": [
         "gpu-nvidia-legacy"
-      ]
+      ],
+      "pkgbase": "nvidia-580xx-utils",
+      "recipeUrl": "https://aur.archlinux.org/nvidia-580xx-utils.git"
     },
     {
       "name": "nvidia-dkms",
@@ -2404,13 +2455,15 @@
     },
     {
       "name": "qmk-hid",
-      "source": "arch",
+      "source": "aur",
       "category": "HARDWARE",
       "default": "optional",
       "reason": "QMK HID tools for Framework input modules",
       "hardware": [
         "framework"
-      ]
+      ],
+      "pkgbase": "qmk-hid",
+      "recipeUrl": "https://aur.archlinux.org/qmk-hid.git"
     },
     {
       "name": "sbctl",
@@ -2424,13 +2477,15 @@
     },
     {
       "name": "t2fanrd",
-      "source": "arch",
+      "source": "aur",
       "category": "HARDWARE",
       "default": "optional",
       "reason": "Fan control daemon for T2 Macs",
       "hardware": [
         "mac-t2"
-      ]
+      ],
+      "pkgbase": "t2fanrd",
+      "recipeUrl": "https://aur.archlinux.org/t2fanrd.git"
     },
     {
       "name": "thermald",
@@ -2454,13 +2509,15 @@
     },
     {
       "name": "tuxedo-drivers-nocompatcheck-dkms",
-      "source": "arch",
+      "source": "aur",
       "category": "HARDWARE",
       "default": "optional",
       "reason": "TUXEDO laptop drivers",
       "hardware": [
         "tuxedo"
-      ]
+      ],
+      "pkgbase": "tuxedo-drivers-nocompatcheck-dkms",
+      "recipeUrl": "https://aur.archlinux.org/tuxedo-drivers-nocompatcheck-dkms.git"
     },
     {
       "name": "vpl-gpu-rt",
@@ -2535,13 +2592,15 @@
     },
     {
       "name": "yt6801-dkms",
-      "source": "arch",
+      "source": "aur",
       "category": "HARDWARE",
       "default": "optional",
       "reason": "Motorcomm YT6801 2.5G Ethernet driver",
       "hardware": [
         "yt6801-nic"
-      ]
+      ],
+      "pkgbase": "yt6801-dkms",
+      "recipeUrl": "https://aur.archlinux.org/yt6801-dkms.git"
     },
     {
       "name": "anydesk-bin",
@@ -2668,12 +2727,14 @@
     },
     {
       "name": "ufw-docker",
-      "source": "arch",
+      "source": "aur",
       "category": "OPTIONAL",
       "default": "optional",
       "reason": "Firewall rule helper for Docker published ports",
       "feature": "development",
-      "sizeKib": 65
+      "sizeKib": 65,
+      "pkgbase": "ufw-docker",
+      "recipeUrl": "https://aur.archlinux.org/ufw-docker.git"
     },
     {
       "name": "vesktop-bin",
@@ -2695,12 +2756,14 @@
     },
     {
       "name": "yay",
-      "source": "arch",
+      "source": "aur",
       "category": "OPTIONAL",
       "default": "recommended",
       "reason": "AUR helper and pacman wrapper for terminal package work",
       "feature": "aur",
-      "sizeKib": 11612
+      "sizeKib": 11612,
+      "pkgbase": "yay",
+      "recipeUrl": "https://aur.archlinux.org/yay.git"
     }
   ]
 }
