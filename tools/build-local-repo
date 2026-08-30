@@ -50,51 +50,61 @@ done
 "$root/tools/validate-package-config"
 mkdir -p "$destination"
 
-FROST_SOURCE="$source_repo" PKGDEST="$destination" "$root/tools/build-frost-package" >/dev/null
+# Everything is built into a fresh staging directory so the database is rebuilt
+# from exactly this run's packages. $destination keeps every past build as an
+# archive, but only the current versions go into frost.db.
+staging=$(mktemp -d /tmp/frost-repo-staging.XXXXXX)
+case $staging in /tmp/frost-repo-staging.*) ;; *) exit 1 ;; esac
+trap 'rm -rf -- "$staging"' EXIT
+
+FROST_SOURCE="$source_repo" PKGDEST="$staging" "$root/tools/build-frost-package" >/dev/null
 if [[ -f $root/pkgbuilds/frost-settings/PKGBUILD ]]; then
-  FROST_SOURCE="$source_repo" PKGDEST="$destination" "$root/tools/build-frost-package" frost-settings >/dev/null
+  FROST_SOURCE="$source_repo" PKGDEST="$staging" "$root/tools/build-frost-package" frost-settings >/dev/null
 fi
 
 keyring_build=$(mktemp -d /tmp/frost-keyring-package.XXXXXX)
-case $keyring_build in
-  /tmp/frost-keyring-package.*) ;;
-  *) exit 1 ;;
-esac
-trap 'rm -rf -- "$keyring_build"' EXIT
+case $keyring_build in /tmp/frost-keyring-package.*) ;; *) exit 1 ;; esac
+trap 'rm -rf -- "$staging" "$keyring_build"' EXIT
 cp -a "$root/pkgbuilds/frost-keyring/." "$keyring_build/"
 cp "$root/LICENSE" "$keyring_build/LICENSE"
 (
   cd "$keyring_build"
-  PKGDEST="$destination" makepkg --cleanbuild --force --noconfirm --sign --key "$key"
+  PKGDEST="$staging" makepkg --cleanbuild --force --noconfirm --sign --key "$key"
 )
 
-# frost-meta, if it exists (built once Gate 5 is closed). It is pure metadata,
-# so --nodeps: its depends() name packages the local repo does not hold.
+# frost-meta / frost-settings gates are handled by validate-package-config.
+# frost-meta is pure metadata, so --nodeps: its depends() name packages this
+# repo does not carry.
 if [[ -f $root/pkgbuilds/frost-meta/PKGBUILD ]]; then
   meta_build=$(mktemp -d /tmp/frost-meta-package.XXXXXX)
-  case $meta_build in
-    /tmp/frost-meta-package.*) ;;
-    *) exit 1 ;;
-  esac
-  trap 'rm -rf -- "$keyring_build" "$meta_build"' EXIT
+  case $meta_build in /tmp/frost-meta-package.*) ;; *) exit 1 ;; esac
+  trap 'rm -rf -- "$staging" "$keyring_build" "$meta_build"' EXIT
   cp -a "$root/pkgbuilds/frost-meta/." "$meta_build/"
   (
     cd "$meta_build"
-    PKGDEST="$destination" makepkg --cleanbuild --force --noconfirm --nodeps --sign --key "$key"
+    PKGDEST="$staging" makepkg --cleanbuild --force --noconfirm --nodeps --sign --key "$key"
   )
 fi
 
-for package in "$destination"/*.pkg.tar.*; do
+for package in "$staging"/*.pkg.tar.*; do
   [[ $package == *.sig ]] && continue
-  gpg --batch --yes --local-user "$key" --detach-sign "$package"
+  [[ -f $package.sig ]] || gpg --batch --yes --local-user "$key" --detach-sign "$package"
 done
 
-mapfile -t packages < <(find "$destination" -maxdepth 1 -type f -name '*.pkg.tar.*' ! -name '*.sig' -print | sort)
-if ((${#packages[@]} == 0)); then
+mapfile -t staged < <(find "$staging" -maxdepth 1 -type f -name '*.pkg.tar.*' ! -name '*.sig' -print | sort)
+if ((${#staged[@]} == 0)); then
   printf '%s\n' 'No packages were built.' >&2
   exit 1
 fi
 
+cp -f "$staging"/*.pkg.tar.* "$destination/"
+packages=()
+for package in "${staged[@]}"; do
+  packages+=( "$destination/$(basename -- "$package")" )
+done
+
+# Rebuild the database from this run's packages only.
+rm -f "$destination"/frost.db* "$destination"/frost.files*
 repo-add --verify --sign --key "$key" "$destination/frost.db.tar.gz" "${packages[@]}"
 
 for package in "${packages[@]}"; do

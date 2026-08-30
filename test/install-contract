@@ -1,0 +1,62 @@
+#!/bin/bash
+# Static checks on install/bootstrap-cachyos. It runs as root on a fresh
+# machine, so it must be tightly bounded: no network, no removals, a fixed
+# package set, the real trust root, and signature enforcement on the repo it
+# adds.
+
+set -euo pipefail
+
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+script=$root/install/bootstrap-cachyos
+keyring=$root/pkgbuilds/frost-keyring/frost.gpg
+
+fail() { printf 'install contract: %s\n' "$1" >&2; exit 1; }
+
+[[ -f $script ]] || fail 'install/bootstrap-cachyos is missing'
+bash -n "$script"
+
+rules=$(grep -v '^[[:space:]]*#' "$script" | grep -v '^[[:space:]]*$')
+
+# No network fetches — the bundle is offline.
+if grep -n -E '\b(curl|wget|rsync|scp|nc)\b' <<<"$rules"; then
+  fail 'bootstrap fetches over the network'
+fi
+# Never removes packages or wipes anything.
+if grep -n -E 'pacman +-R|rm +-rf +/|mkfs|dd +if=|:> */(etc|boot|usr)' <<<"$rules"; then
+  fail 'bootstrap removes packages or destroys data'
+fi
+# git only appears in the printed hint, never executed.
+if grep -n -E '^\s*git ' <<<"$rules"; then
+  fail 'bootstrap runs git directly'
+fi
+
+# The trust root in the script matches the shipped keyring.
+fpr=$(gpg --with-colons --show-keys "$keyring" 2>/dev/null | awk -F: '/^fpr:/{print $10; exit}')
+grep -q "FROST_FPR=$fpr\$" "$script" || fail "FROST_FPR does not match frost.gpg ($fpr)"
+
+# Exactly the four Frost packages, no more.
+grep -qE "^readonly PACKAGES=\(frost-keyring frost frost-settings frost-meta\)$" "$script" \
+  || fail 'the installed package set is not the four Frost packages'
+
+# The repo it writes enforces signatures.
+if grep -qE '^\[frost\]' "$script"; then
+  grep -qE '^SigLevel = Required$' "$script" || fail 'the [frost] repo stanza does not require signatures'
+fi
+
+# Runs as root, refuses otherwise.
+grep -qE '\$EUID -eq 0' "$script" || fail 'bootstrap does not check for root'
+
+# Only enables, never disables or masks.
+if grep -n -E 'systemctl +(disable|mask|stop)' <<<"$rules"; then
+  fail 'bootstrap disables or masks a unit'
+fi
+grep -qE 'systemctl enable sddm\.service' "$script" || fail 'bootstrap does not enable sddm'
+grep -qE 'systemctl enable frost-firstboot\.service' "$script" || fail 'bootstrap does not enable frost-firstboot'
+
+# The bundle assembler and its output path guard.
+bundle=$root/tools/build-install-bundle
+[[ -f $bundle ]] || fail 'tools/build-install-bundle is missing'
+bash -n "$bundle"
+grep -q 'frost-install-bundle\.\*' "$bundle" || fail 'bundle staging dir is not path-guarded'
+
+printf 'install contract: ok\n'

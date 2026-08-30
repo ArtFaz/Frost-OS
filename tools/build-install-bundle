@@ -1,0 +1,53 @@
+#!/bin/bash
+# Assemble the offline install bundle: the signed Frost repository, the public
+# keyring, bootstrap-cachyos and the approved manifests, as one tarball to carry
+# on the install media. Run build-local-repo first.
+
+set -euo pipefail
+
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+repo=$root/repo/x86_64
+out=${1:-$root/frost-install-bundle.tar.zst}
+
+[[ -d $repo ]] || { printf 'no signed repo at %s — run tools/build-local-repo first\n' "$repo" >&2; exit 1; }
+[[ -f $repo/frost.db.tar.gz.sig ]] || { printf 'repo database is unsigned\n' >&2; exit 1; }
+
+stage=$(mktemp -d /tmp/frost-install-bundle.XXXXXX)
+case $stage in /tmp/frost-install-bundle.*) ;; *) exit 1 ;; esac
+trap 'rm -rf -- "$stage"' EXIT
+
+b=$stage/frost-install-bundle
+mkdir -p "$b/repo/x86_64"
+
+# Only the packages the current database references, not every past build.
+mapfile -t current < <(bsdtar -xOf "$repo/frost.db.tar.gz" '*/desc' | sed -n '/^%FILENAME%$/{n;p;}')
+((${#current[@]} > 0)) || { printf 'database lists no packages\n' >&2; exit 1; }
+for pkg in "${current[@]}"; do
+  [[ -f $repo/$pkg ]] || { printf 'database references a missing package: %s\n' "$pkg" >&2; exit 1; }
+  cp "$repo/$pkg" "$repo/$pkg.sig" "$b/repo/x86_64/"
+done
+for db in frost.db frost.db.tar.gz frost.files frost.files.tar.gz; do
+  cp "$repo/$db" "$repo/$db.sig" "$b/repo/x86_64/"
+done
+
+cp "$root/pkgbuilds/frost-keyring/frost.gpg" "$b/frost.gpg"
+install -m755 "$root/install/bootstrap-cachyos" "$b/bootstrap-cachyos"
+for extra in "$root/../frost/frost-packages.json" "$root/../frost/aur.lock.json"; do
+  [[ -f $extra ]] && cp "$extra" "$b/"
+done
+cat > "$b/README" <<'EOF'
+Frost offline install bundle.
+
+  1. Install CachyOS Minimal on the target machine (Btrfs root).
+  2. Copy this directory across, or extract the tarball.
+  3. cd frost-install-bundle && sudo ./bootstrap-cachyos
+  4. Reboot into Frost, then add the AUR apps with paru (see aur.lock.json).
+
+The package repository here is signed by the Frost trust root
+9F8D63165ACC27A4FDCCED02FD40A38811EDD104; bootstrap-cachyos imports it.
+EOF
+
+tar --zstd -C "$stage" -cf "$out" frost-install-bundle
+printf 'wrote %s\n' "$out"
+printf '  sha256 %s\n' "$(sha256sum "$out" | cut -d' ' -f1)"
+printf '  size   %s\n' "$(du -h "$out" | cut -f1)"

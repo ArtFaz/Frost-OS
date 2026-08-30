@@ -1,0 +1,90 @@
+#!/bin/bash
+# Turn a freshly installed CachyOS Minimal into a Frost system. Run as root
+# from inside the extracted frost-install-bundle directory:
+#
+#   sudo ./bootstrap-cachyos
+#
+# It carries its own signed package repository, so it needs no network. It only
+# adds packages and enables two services; it removes nothing.
+
+set -euo pipefail
+export LC_ALL=C
+
+readonly FROST_FPR=9F8D63165ACC27A4FDCCED02FD40A38811EDD104
+readonly REPO_DEST=/var/lib/frost/repo
+readonly PACKAGES=(frost-keyring frost frost-settings frost-meta)
+
+here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+
+die() { printf 'bootstrap-cachyos: %s\n' "$1" >&2; exit 1; }
+step() { printf '\n== %s\n' "$1"; }
+
+[[ $EUID -eq 0 ]] || die 'run as root (sudo ./bootstrap-cachyos)'
+command -v pacman >/dev/null || die 'pacman not found — this is not an Arch/CachyOS base'
+command -v pacman-key >/dev/null || die 'pacman-key not found'
+[[ -f $here/frost.gpg ]] || die 'frost.gpg is not next to this script'
+[[ -d $here/repo/x86_64 ]] || die 'repo/x86_64 is not next to this script'
+
+if [[ $(findmnt -n -o FSTYPE / 2>/dev/null || true) != btrfs ]]; then
+  printf 'bootstrap-cachyos: note — root is not Btrfs; snapshots and rollback will be unavailable.\n'
+fi
+
+step 'trusting the Frost signing key'
+pacman-key --add "$here/frost.gpg"
+pacman-key --lsign-key "$FROST_FPR"
+
+step 'installing the Frost repository under '"$REPO_DEST"
+install -d -m0755 "$REPO_DEST"
+cp -a "$here/repo/x86_64" "$REPO_DEST/"
+if ! grep -q '^\[frost\]' /etc/pacman.conf; then
+  cat >> /etc/pacman.conf <<EOF
+
+[frost]
+SigLevel = Required
+Server = file://$REPO_DEST/\$arch
+EOF
+  printf 'added the [frost] repository to /etc/pacman.conf\n'
+fi
+
+step 'installing Frost'
+pacman -Sy --noconfirm
+pacman -S --needed --noconfirm base-devel git "${PACKAGES[@]}"
+
+step 'reconciling the initramfs hooks'
+HOOKS_CHANGED=0
+add_hook() {
+  local hook=$1 after=$2 conf=/etc/mkinitcpio.conf
+  if grep -qE "^HOOKS=.*\b${hook}\b" "$conf"; then
+    return 0
+  fi
+  if grep -qE "^HOOKS=.*\b${after}\b" "$conf"; then
+    sed -i -E "s/^(HOOKS=\(.*\b${after}\b)/\1 ${hook}/" "$conf"
+  else
+    sed -i -E "s/^(HOOKS=\()/\1${hook} /" "$conf"
+  fi
+  HOOKS_CHANGED=1
+  printf 'added %s hook\n' "$hook"
+}
+add_hook plymouth keyboard
+add_hook btrfs filesystems
+if ((HOOKS_CHANGED)); then
+  mkinitcpio -P
+fi
+
+step 'enabling the display manager and first-boot reconciliation'
+systemctl enable sddm.service
+systemctl enable frost-firstboot.service
+
+if [[ -x /usr/lib/frost/frost-firstboot ]]; then
+  step 'running first-boot reconciliation now'
+  /usr/lib/frost/frost-firstboot || printf 'first-boot reconciliation reported an issue; it will retry on boot\n'
+fi
+
+step 'done'
+printf 'Reboot into Frost. Then, as your user, add the AUR apps:\n\n'
+if [[ -f $here/aur.lock.json ]] && command -v jq >/dev/null; then
+  printf '  git clone https://aur.archlinux.org/paru.git && (cd paru && makepkg -si)\n'
+  printf '  paru -S %s\n\n' "$(jq -r '[.packages[].name] | join(" ")' "$here/aur.lock.json")"
+else
+  printf '  see aur.lock.json for the AUR package list\n\n'
+fi
