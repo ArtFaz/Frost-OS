@@ -239,7 +239,6 @@ Item {
             return;
 
         root.selectedIndex = ((root.selectedIndex + delta) % count + count) % count;
-        rowList.positionViewAtIndex(root.selectedIndex, ListView.Contain);
     }
 
     function editFilter(mode) {
@@ -435,6 +434,19 @@ Item {
                         clip: true
                         boundsBehavior: Flickable.StopAtBounds
                         model: root.rows
+
+                        // Keyboard navigation drives the view through the current
+                        // index and a highlight range, not by repositioning it after
+                        // the fact. positionViewAtIndex(Contain) had to guess where
+                        // to land against the peeking row at the bottom and jumped a
+                        // block at a time; a range scrolls by exactly the row that
+                        // left it.
+                        currentIndex: root.selectedIndex
+                        highlightRangeMode: ListView.ApplyRange
+                        preferredHighlightBegin: 0
+                        preferredHighlightEnd: Math.max(0, height - root.rowPeek - root.rowUnit)
+                        highlightMoveDuration: 130
+                        highlightMoveVelocity: -1
 
                         transform: Translate {
                             id: listTranslate

@@ -22,6 +22,7 @@ required_files=(
   default/mako/config
   default/ghostty/config
   default/bash/bashrc
+  default/starship.toml
   default/systemd/user/frost-session.target
   default/systemd/user/frost-theme.service
   default/systemd/user/frost-shell.service

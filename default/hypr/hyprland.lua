@@ -114,6 +114,11 @@ hl.config({
     },
     misc = {
         disable_hyprland_logo = true,
+        -- uwsm sets XDG_CURRENT_DESKTOP to "Frost:Hyprland" on purpose, so the
+        -- session is identifiable as Frost to portals and desktop files. Hyprland
+        -- warns on every login that the value is not plain "Hyprland"; the value
+        -- is deliberate, so the check is off rather than the identity changed.
+        disable_xdg_env_checks = true,
         disable_splash_rendering = true,
         -- The configuration is package-owned and only ever changes through a
         -- pacman transaction, which replaces the file rather than editing it.

@@ -10,4 +10,14 @@ HISTSIZE=10000
 HISTFILESIZE=20000
 shopt -s histappend checkwinsize
 
-PS1='\[\e[38;5;117m\]\u\[\e[0m\]@\[\e[38;5;153m\]\h\[\e[0m\] \[\e[38;5;110m\]\w\[\e[0m\] \\$ '
+# Starship draws the prompt. The plain PS1 below is only what is left if it is
+# missing, so a broken install still gets a usable shell.
+PS1='\[\e[38;5;110m\]\w\[\e[0m\] \\$ '
+
+if command -v starship >/dev/null 2>&1; then
+    # Frost's own preset, unless the user has written their own.
+    if [ -z "${STARSHIP_CONFIG:-}" ] && [ ! -f "${XDG_CONFIG_HOME:-$HOME/.config}/starship.toml" ]; then
+        export STARSHIP_CONFIG=/usr/share/frost/default/starship.toml
+    fi
+    eval "$(starship init bash)"
+fi
