@@ -82,17 +82,24 @@ grep -qE '\$\{SUDO_USER:-\}' "$script" || fail 'the AUR step does not derive its
 grep -qE 'su - "\$invoker" (-s /bin/bash )?-c' "$script" \
   || fail 'the AUR step does not drop to the invoking user'
 
-# The AUR stage may grant the invoking user passwordless pacman, because paru
-# installs through sudo. Exactly one fixed path, validated before it takes
-# effect, and handed back by a trap on every exit.
+# The AUR stage grants the invoking user passwordless sudo, because paru runs
+# `sudo -v` before its transaction and a rule naming one command does not
+# satisfy that. The grant itself is unqualified, so the bounds the contract can
+# still enforce are the ones that matter: a single named user (never a group or
+# ALL=(ALL) blanket), one fixed path, validated before it takes effect, and
+# handed back by a trap on every exit.
 if grep -n 'sudoers' <<<"$rules" >/dev/null; then
   grep -qE '^readonly SUDOERS_DROPIN=/etc/sudoers\.d/00-frost-bootstrap$' "$script" \
     || fail 'the sudoers drop-in is not the fixed /etc/sudoers.d/00-frost-bootstrap'
-  grep -qE 'NOPASSWD: /usr/bin/pacman' "$script" \
-    || fail 'the sudoers drop-in grants more than pacman'
+  grep -qE "printf '%s ALL=\(root\) NOPASSWD: ALL" "$script" \
+    || fail 'the sudoers drop-in is not the reviewed single-user grant'
+  grep -qE '"\$invoker" > "\$staged"' "$script" \
+    || fail 'the sudoers grant is not scoped to the invoking user'
   grep -qE 'visudo -cqf' "$script" || fail 'the sudoers drop-in is installed without visudo validation'
   grep -qE 'trap revoke_pacman_nopasswd EXIT' "$script" \
     || fail 'the sudoers drop-in is not revoked by a trap'
+  grep -qE "trap 'revoke_pacman_nopasswd; exit 130' INT TERM" "$script" \
+    || fail 'an interrupt would leave the sudoers drop-in behind'
   grep -qE 'rm -f -- "\$SUDOERS_DROPIN"' "$script" || fail 'the sudoers drop-in is never removed'
 fi
 

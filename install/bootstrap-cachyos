@@ -176,7 +176,7 @@ if [[ -x /usr/lib/frost/frost-firstboot ]]; then
   /usr/lib/frost/frost-firstboot || note 'first-boot reconciliation reported an issue; it will retry on boot'
 fi
 
-step 'making bash the login shell'
+step 'preparing the user account'
 # CachyOS gives its first user fish. Frost's shell defaults, prompt and
 # keybindings are written for bash, so the invoking user is moved over — only
 # that user, only to bash, and only when they are not already there.
@@ -199,6 +199,18 @@ else
     printf "# Frost defaults. This file is yours to edit.\n. /usr/share/frost/default/bash/bashrc\n" > "$HOME/.bashrc"
   ' && note "seeded ~$invoker/.bashrc from the Frost defaults" \
     || note 'left the existing ~/.bashrc alone'
+
+  # CachyOS Hello is copied out of /etc/skel into the user's own autostart
+  # directory, so it is their file and no package owns it. Hidden=true is the
+  # XDG way to switch an entry off, and deleting that one line brings it back.
+  su - "$invoker" -s /bin/bash -c '
+    set -eu
+    entry="$HOME/.config/autostart/cachyos-hello.desktop"
+    [ -f "$entry" ] || exit 1
+    grep -q "^Hidden=true$" "$entry" && exit 1
+    printf "Hidden=true\n" >> "$entry"
+  ' && note 'disabled the CachyOS Hello autostart' \
+    || note 'CachyOS Hello autostart not present or already disabled'
 fi
 
 step 'building the AUR apps'
@@ -220,20 +232,26 @@ manual_aur_hint() {
   printf '  paru -S --needed %s\n' "$(aur_apps)"
 }
 
-# paru runs pacman through sudo for every package it installs. Granting exactly
-# that, for exactly this user, keeps the run unattended; the trap gives it back
-# on any exit, including a failure.
+# paru escalates through sudo, and before a transaction it runs `sudo -v` to
+# refresh the credential cache. A rule naming a single command does not satisfy
+# that: sudo asks for a password, this script has no controlling terminal, and
+# every AUR package fails — which is exactly what the first clean install did.
+# So the grant is unqualified. It is bounded the other three ways instead: one
+# named user, one file, validated before it takes effect, and handed back by the
+# trap on every exit including a failure or an interrupt. It exists only while
+# this stage runs. Decision recorded 2026-08-30; the alternative is dropping the
+# AUR stage and printing the command for the user to run after first login.
 revoke_pacman_nopasswd() { rm -f -- "$SUDOERS_DROPIN"; }
 grant_pacman_nopasswd() {
   local staged
   trap revoke_pacman_nopasswd EXIT
   trap 'revoke_pacman_nopasswd; exit 130' INT TERM
   staged=$(mktemp)
-  printf '%s ALL=(root) NOPASSWD: /usr/bin/pacman\n' "$invoker" > "$staged"
+  printf '%s ALL=(root) NOPASSWD: ALL\n' "$invoker" > "$staged"
   visudo -cqf "$staged" || { rm -f -- "$staged"; die 'the generated sudoers drop-in is invalid'; }
   install -m0440 -o root -g root "$staged" "$SUDOERS_DROPIN"
   rm -f -- "$staged"
-  note "granted $invoker NOPASSWD pacman for the duration of this stage"
+  note "granted $invoker passwordless sudo for this stage only; revoked on exit"
 }
 
 apps=$(aur_apps)
