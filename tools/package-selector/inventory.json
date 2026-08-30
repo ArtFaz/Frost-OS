@@ -1,5 +1,5 @@
 {
-  "inventoryVersion": "2026-08-29.3",
+  "inventoryVersion": "2026-08-29.4",
   "generatedFrom": [
     {
       "source": "arch extra/multilib",
@@ -92,7 +92,9 @@
         "mariadb-libs",
         "autoconf-archive",
         "usage",
-        "ufw-docker"
+        "ufw-docker",
+        "visual-studio-code-bin",
+        "zed"
       ]
     },
     "gaming": {
@@ -163,7 +165,11 @@
         "BOOTSTRAP",
         "CORE"
       ],
-      "features": []
+      "features": [],
+      "includePackages": [
+        "amd-ucode",
+        "intel-ucode"
+      ]
     },
     "desktop": {
       "label": "Desktop",
@@ -176,6 +182,10 @@
       "features": [
         "bluetooth",
         "aur"
+      ],
+      "includePackages": [
+        "amd-ucode",
+        "intel-ucode"
       ]
     },
     "developer": {
@@ -191,6 +201,10 @@
         "bluetooth",
         "aur",
         "development"
+      ],
+      "includePackages": [
+        "amd-ucode",
+        "intel-ucode"
       ]
     },
     "this-machine": {
@@ -202,6 +216,7 @@
         "DESKTOP"
       ],
       "includePackages": [
+        "amd-ucode",
         "anydesk-bin",
         "beekeeper-studio-bin",
         "bolt",
@@ -234,6 +249,7 @@
         "qemu-user-static-binfmt",
         "qrencode",
         "socat",
+        "spotify-launcher",
         "sushi",
         "tensaku",
         "tesseract",
@@ -243,13 +259,15 @@
         "ttf-jetbrains-mono-nerd-basic",
         "tzupdate",
         "vesktop-bin",
+        "visual-studio-code-bin",
         "vulkan-radeon",
         "whois",
         "woff2-font-awesome",
         "wtype",
         "xournalpp",
         "yt-dlp",
-        "zbar"
+        "zbar",
+        "zed"
       ],
       "features": [
         "aur",
@@ -1521,6 +1539,13 @@
       "sizeKib": 580
     },
     {
+      "name": "spotify-launcher",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Official Spotify client, fetched and kept updated by the Arch launcher"
+    },
+    {
       "name": "starship",
       "source": "arch",
       "category": "DESKTOP",
@@ -1900,6 +1925,24 @@
       "reason": "CLI spec tool that mise depends on",
       "feature": "development",
       "sizeKib": 8366
+    },
+    {
+      "name": "visual-studio-code-bin",
+      "source": "aur",
+      "category": "DEVELOPMENT",
+      "default": "optional",
+      "reason": "Visual Studio Code (Microsoft build with the marketplace)",
+      "feature": "development",
+      "pkgbase": "visual-studio-code-bin",
+      "recipeUrl": "https://aur.archlinux.org/visual-studio-code-bin.git"
+    },
+    {
+      "name": "zed",
+      "source": "arch",
+      "category": "DEVELOPMENT",
+      "default": "optional",
+      "reason": "Zed high-performance collaborative code editor",
+      "feature": "development"
     },
     {
       "name": "aether",

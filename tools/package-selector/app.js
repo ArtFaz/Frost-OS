@@ -92,7 +92,12 @@ function baseSelected(p) {
   }
   for (const pr of profs) {
     if ((pr.includePackages || []).includes(p.name)) return true;
-    if ((pr.includeCategories || []).includes(p.category) && p.default !== 'optional') {
+    // A hardware-tagged package never rides a profile category; it is chosen
+    // explicitly (includePackages) or pulled by a feature. This keeps a
+    // CPU/GPU-specific package (amd-ucode, intel-ucode, ...) off machines it
+    // does not apply to.
+    if ((pr.includeCategories || []).includes(p.category) && p.default !== 'optional'
+        && !(p.hardware && p.hardware.length)) {
       if (!p.feature || state.features[p.feature]) return true;
     }
   }
