@@ -1,14 +1,22 @@
 {
   "schemaVersion": 1,
-  "inventoryVersion": "2026-08-29.5",
+  "inventoryVersion": "2026-08-30.1",
   "packages": [
     {"name":"anydesk-bin","pkgbase":"anydesk-bin","recipeUrl":"https://aur.archlinux.org/anydesk-bin.git","commit":"1ab396f348300d9b0559abc962e4f2d67d793c87"},
     {"name":"beekeeper-studio-bin","pkgbase":"beekeeper-studio-bin","recipeUrl":"https://aur.archlinux.org/beekeeper-studio-bin.git","commit":"0b88d8d382e131bef6ecf855a6b55e6a49197c6d"},
     {"name":"brave-bin","pkgbase":"brave-bin","recipeUrl":"https://aur.archlinux.org/brave-bin.git","commit":"7b85edf5694c59dd523fabfdec2cedbd525b5e37"},
+    {"name":"cliamp","pkgbase":"cliamp","recipeUrl":"https://aur.archlinux.org/cliamp.git","commit":"76b9ce02837a49de0fa50cfa3da5d1c0c692ece5"},
     {"name":"hyprmon-bin","pkgbase":"hyprmon-bin","recipeUrl":"https://aur.archlinux.org/hyprmon-bin.git","commit":"612430ba613b89cc6b8fde924311a4593ff6f6ad"},
+    {"name":"limine-snapper-sync","pkgbase":"limine-snapper-sync","recipeUrl":"https://aur.archlinux.org/limine-snapper-sync.git","commit":"35aff513bf1f0284380c8592d3de213f00bb6a7b"},
     {"name":"paru","pkgbase":"paru","recipeUrl":"https://aur.archlinux.org/paru.git","commit":"329be2113c590046cb29858c23d9b96a8d7bd586"},
     {"name":"parui","pkgbase":"parui","recipeUrl":"https://aur.archlinux.org/parui.git","commit":"29a25a8585059e3e88efde2acdd554d274f0dba3"},
+    {"name":"tensaku","pkgbase":"tensaku","recipeUrl":"https://aur.archlinux.org/tensaku.git","commit":"c6fe8f2c6dc43a5c2f0c95df5656037b351dacb7"},
+    {"name":"try","pkgbase":"try","recipeUrl":"https://aur.archlinux.org/try.git","commit":"67413544a10b60eaa49d7aa35c596560feb5c431"},
+    {"name":"ttf-ia-writer","pkgbase":"ttf-ia-writer","recipeUrl":"https://aur.archlinux.org/ttf-ia-writer.git","commit":"e9aa94080338d7a7f83a561ce64bf30ab4fb24e4"},
+    {"name":"tzupdate","pkgbase":"tzupdate","recipeUrl":"https://aur.archlinux.org/tzupdate.git","commit":"1b3c3bdf6289a348da09eed57d653d3f6dce1956"},
+    {"name":"ufw-docker","pkgbase":"ufw-docker","recipeUrl":"https://aur.archlinux.org/ufw-docker.git","commit":"76e18ac8c40a4e8f018f4b35289718a29eca3d6d"},
     {"name":"vesktop-bin","pkgbase":"vesktop-bin","recipeUrl":"https://aur.archlinux.org/vesktop-bin.git","commit":"d386cbde2502bdaeea10280f6881c6ec1b5b8c2e"},
-    {"name":"visual-studio-code-bin","pkgbase":"visual-studio-code-bin","recipeUrl":"https://aur.archlinux.org/visual-studio-code-bin.git","commit":"69b361eca02a84aa97c43c885e23d463eec96770"}
+    {"name":"visual-studio-code-bin","pkgbase":"visual-studio-code-bin","recipeUrl":"https://aur.archlinux.org/visual-studio-code-bin.git","commit":"69b361eca02a84aa97c43c885e23d463eec96770"},
+    {"name":"yay","pkgbase":"yay","recipeUrl":"https://aur.archlinux.org/yay.git","commit":"cb43f84828ab4f9700f7c6f9c6d7a923d4cfaff0"}
   ]
 }

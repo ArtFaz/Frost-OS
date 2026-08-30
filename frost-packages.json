@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "inventoryVersion": "2026-08-29.5",
+  "inventoryVersion": "2026-08-30.1",
   "profiles": [
     "this-machine"
   ],
@@ -39,11 +39,19 @@
       "anydesk-bin",
       "beekeeper-studio-bin",
       "brave-bin",
+      "cliamp",
       "hyprmon-bin",
+      "limine-snapper-sync",
       "paru",
       "parui",
+      "tensaku",
+      "try",
+      "ttf-ia-writer",
+      "tzupdate",
+      "ufw-docker",
       "vesktop-bin",
-      "visual-studio-code-bin"
+      "visual-studio-code-bin",
+      "yay"
     ]
   },
   "notes": {}

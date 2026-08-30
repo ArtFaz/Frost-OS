@@ -22,7 +22,7 @@ dropped by decision on 2026-08-29; subsequent installs go through the terminal.
 
 ## Reconciliation
 
-`inventory.json` (version `2026-08-29.4`, 286 packages) was built from:
+`inventory.json` (version `2026-08-30.1`, 286 packages) was built from:
 
 - `Definitive Frost-OS/omarchy/install/omarchy-base.packages` — `0ae1694830b6`
 - `Definitive Frost-OS/omarchy/install/omarchy-other.packages` — `0ae1694830b6`
@@ -56,6 +56,20 @@ justification Frost shares: `omarchy-keyring` (replaced by `frost-keyring`),
 The terminal package browsers `pacsea-bin` and `parui`, with `paru` as their
 backend, enter as `aur` `OPTIONAL` under the `aur` feature. The hardened AUR
 build flow is Phase 6; Phase 5 only lists the tools.
+
+### Repo-source audit (`2026-08-30.1`)
+
+The VM install of `bootstrap-cachyos` failed: `frost-meta` hard-depended on
+packages that exist only in the Omarchy repo or the AUR, so a clean CachyOS
+could not resolve them. Every `arch`-sourced package was checked against the
+real Arch repos. `nvim`→`neovim`, `mise-bin`→`mise`, `yaru-icon-theme`→
+`papirus-icon-theme`, `tobi-try`→`try`; `cliamp`, `tensaku`, `ttf-ia-writer`,
+`tzupdate`, `ufw-docker`, `yay`, `xdg-terminal-exec`, `limine-snapper-sync` and
+the legacy-hardware drivers moved to `source: aur`; `hyprland-preview-share-picker`
+and `ttf-jetbrains-mono-nerd-basic` (Omarchy-custom, no clean equivalent) moved
+to `DROP`. `limine-snapper-sync` (was `CORE`) is now `OPTIONAL` `aur` and sits in
+the `this-machine` profile so `paru` installs it. `frost-meta` dropped from 177
+to 166 dependencies.
 
 ### Editors, Spotify and the microcode fix (`2026-08-29.4`)
 
@@ -139,11 +153,15 @@ Only after that may `frost-meta` be generated or changed (Phase 6).
 
 ### Record
 
-- **Manifest:** `frost-packages.json` at the repo root, `inventoryVersion 2026-08-29.5`.
-- **SHA-256:** `e7b2e221beb311dbd6a66c5901267fd1a7b5ee5a75d80a0b16372e6131247d82`
+- **Manifest:** `frost-packages.json` at the repo root, `inventoryVersion 2026-08-30.1`.
+- **SHA-256:** `db0a42b206f0080ba27d087283a94076513d5a6b7c2db09888ecff2653d652db`
+  (superseded `2026-08-29.5` / `e7b2e221…` after a repo-source audit reclassified
+  packages that exist only in the Omarchy repo or the AUR — `nvim`→`neovim`,
+  `mise-bin`→`mise`, `yaru-icon-theme`→`papirus-icon-theme`, `tobi-try`→`try`,
+  `xdg-terminal-exec`/`limine-snapper-sync`/`yay`/`cliamp`/… moved to `aur`.)
 - **Lockfile:** `aur.lock.json` — 8 AUR selections, each pinned to a `git ls-remote`
   commit on 2026-08-30.
-- **Resolution:** 200 packages, no risks, no auto-added dependencies, no
+- **Resolution:** 197 packages, no risks, no auto-added dependencies, no
   excluded-but-required packages. Against the donor base list: +83 / −31.
 - **Profile:** `this-machine` (Vaio FE16, Ryzen 5 5825U, all-AMD).
 - **Features on:** `aur`, `bluetooth`, `development`, `gaming`, `media-production`,
