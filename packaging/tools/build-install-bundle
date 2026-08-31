@@ -9,7 +9,26 @@ set -euo pipefail
 
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 repo=$root/repo/x86_64
-out=${1:-$root/frost-install-bundle.tar.zst}
+out=$root/frost-install-bundle.tar.zst
+# --stage DIR writes the layout into DIR and stops, without tarring it. That is
+# how install.sh runs the bootstrap straight from a checkout: the bootstrap keeps
+# expecting the one layout it has always expected, and the tool that knows how to
+# assemble it is the one that assembles it.
+stage_only=""
+
+while (($#)); do
+  case $1 in
+    --stage)
+      (($# >= 2)) || { printf 'usage: build-install-bundle [--stage DIR | OUTPUT.tar.zst]\n' >&2; exit 2; }
+      stage_only=$2
+      shift 2
+      ;;
+    *)
+      out=$1
+      shift
+      ;;
+  esac
+done
 
 [[ -d $repo ]] || { printf 'no repository at %s — run tools/build-local-repo first\n' "$repo" >&2; exit 1; }
 
@@ -51,6 +70,15 @@ The run is logged to /var/log/frost-bootstrap.log and every stage is idempotent:
 re-running the script is how an interrupted install is finished. The AUR apps in
 aur.lock.json are built last, as the invoking user, best effort.
 EOF
+
+if [[ -n $stage_only ]]; then
+  # Never delete a caller-named path: refuse instead.
+  [[ -e $stage_only ]] && { printf 'stage target already exists: %s\n' "$stage_only" >&2; exit 1; }
+  mkdir -p -- "$(dirname -- "$stage_only")"
+  cp -a "$b" "$stage_only"
+  printf 'staged %s\n' "$stage_only"
+  exit 0
+fi
 
 tar --zstd -C "$stage" -cf "$out" frost-install-bundle
 printf 'wrote %s\n' "$out"

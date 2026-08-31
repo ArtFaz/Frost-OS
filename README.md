@@ -4,7 +4,36 @@ Frost is an independent Arch Linux desktop built around UWSM, Hyprland, a static
 
 This repository is the Frost runtime and user-facing CLI. It has a new history and no operational dependency on any donor distribution or repository.
 
-Current status: private implementation, Phase 4 shell development. Gate 2 is closed after two consecutive graphical Frost cycles, and Gate 3 has been validated from an installed, signed package in a live session. The island, its surfaces, the theme system and the session dialogs are implemented; Phase 6 (the privileged settings package) and the bootstrap have not started. Publication is blocked until every reused source and asset has complete provenance and redistribution terms.
+Current status: private implementation. Gate 6 is closed — `install.sh` turns a clean CachyOS Minimal into a working Frost system in one command. Publication is still blocked until every reused source and asset has complete provenance and redistribution terms.
+
+## Install
+
+On a fresh CachyOS Minimal, with a Btrfs root and `[multilib]` enabled:
+
+```
+curl -fsSL https://raw.githubusercontent.com/ArtFaz/Frost-OS/main/install.sh | bash
+```
+
+Or read it first, which is the same thing with one more step:
+
+```
+git clone https://github.com/ArtFaz/Frost-OS.git frost
+./frost/install.sh --dry-run   # prints every step without running any of them
+./frost/install.sh
+```
+
+It installs `base-devel git rust`, builds the Frost packages on the machine, and
+hands off to `packaging/install/bootstrap-cachyos`. Nothing is downloaded but the
+repository itself: the Frost CLI has no crate dependencies, so it compiles
+anywhere `rust` is installed, and the packages are never signed because they are
+built and consumed on the same machine — see `docs/security-boundaries.md`.
+
+The clone it leaves behind is the source tree. Build new packages from it with
+`packaging/tools/build-local-repo`, and re-run `install.sh` to update: it pulls,
+rebuilds and re-runs the bootstrap, all of which are idempotent.
+
+For a machine with no network, `packaging/tools/build-install-bundle` packs the
+built repository and the bootstrap into one tarball to carry across.
 
 ## Base
 

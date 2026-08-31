@@ -1,0 +1,53 @@
+#!/bin/bash
+# Static checks on install.sh. It is the one thing people run before they have
+# any reason to trust this project — typically as `curl … | bash` — so what it is
+# allowed to do has to be legible without reading it: refuse to be root, escalate
+# only at two named points, clone only its own repository, and never fetch and
+# execute anything.
+
+set -euo pipefail
+
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+script=$root/install.sh
+
+fail() { printf 'installer contract: %s\n' "$1" >&2; exit 1; }
+
+[[ -f $script ]] || fail 'install.sh is missing'
+[[ -x $script ]] || fail 'install.sh is not executable'
+bash -n "$script"
+
+rules=$(grep -v '^[[:space:]]*#' "$script" | grep -v '^[[:space:]]*$')
+
+# Runs as the user; the bootstrap is what needs root, and it asks for itself.
+grep -qE '\$EUID -eq 0' "$script" || fail 'install.sh does not refuse to run as root'
+
+# Exactly two escalations, both named. `sudo` inside a message is not one.
+while IFS= read -r line; do
+  grep -qE '(^|\brun )sudo ' <<<"$line" || continue
+  grep -qE '^run sudo (pacman -S --needed --noconfirm "\$\{BUILD_DEPS\[@\]\}"|"\$staging/frost-install-bundle/bootstrap-cachyos")$' \
+    <<<"$line" || fail "unexpected privilege escalation: $line"
+done <<<"$rules"
+
+# Clones its own repository and nothing else.
+while IFS= read -r line; do
+  grep -qE '\bgit clone\b' <<<"$line" || continue
+  grep -qE 'git clone "\$REPO_URL" "\$src"$' <<<"$line" || fail "unexpected git clone: $line"
+done <<<"$rules"
+grep -qE '^readonly REPO_URL=\$\{FROST_REPO_URL:-https://github\.com/' "$script" \
+  || fail 'REPO_URL does not default to an https GitHub repository'
+
+# Never fetches and executes. The curl invocation in the header is the documented
+# way to *reach* this script; the script itself must not pull anything in.
+if grep -n -E '\|[[:space:]]*(ba)?sh\b|\bcurl\b|\bwget\b|\beval\b' <<<"$rules"; then
+  fail 'install.sh fetches something or pipes into a shell'
+fi
+
+# Writes only inside the source tree and its own staging directory.
+if grep -n -E 'rm +-rf +/|>[[:space:]]*/(etc|usr|boot)|mkfs|dd +if=' <<<"$rules"; then
+  fail 'install.sh writes outside its own tree'
+fi
+
+# A dry run has to exist, so the curl-piped form can be inspected by running it.
+grep -qE '^\s*--dry-run\)' "$script" || fail 'install.sh has no --dry-run'
+
+printf 'installer contract: ok\n'
