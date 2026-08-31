@@ -52,7 +52,7 @@ dependencies because `frost-capture` checks `-x` before calling them.
 `frost-firstboot` calls `snapper` and `ufw`, both `frost-settings` dependencies,
 each guarded (`command -v`, `findmnt` for a Btrfs root) so the script no-ops on a
 base that lacks them. `bootstrap-cachyos` calls only `pacman`, `pacman-key`,
-`systemctl` and `mkinitcpio` — enforced by `frost-pkgs/test/install-contract`.
+`systemctl` and `mkinitcpio` — enforced by `packaging/test/install-contract`.
 
 ## Result
 

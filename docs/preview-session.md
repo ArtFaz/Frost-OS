@@ -1,6 +1,11 @@
 # Frost parallel-session preview
 
-Status: signed release and installation runbook. Live-system actions still require explicit operator authorization.
+Status: **superseded** — this records the Phase 2 preview install of
+`frost 0.2.0-11`, when the local repository was still signed. Signing was removed
+on 2026-08-30 (`docs/security-boundaries.md`), and installation now goes through
+`install.sh`. Kept as the record of what was done then.
+
+Original status: signed release and installation runbook. Live-system actions still require explicit operator authorization.
 
 ## Scope
 

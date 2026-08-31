@@ -9,7 +9,6 @@ set -euo pipefail
 
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 script=$root/install/bootstrap-cachyos
-keyring=$root/pkgbuilds/frost-keyring/frost.gpg
 
 fail() { printf 'install contract: %s\n' "$1" >&2; exit 1; }
 
@@ -138,17 +137,23 @@ if grep -n -E '(mkinitcpio|dracut|booster|limine|grub|/boot/)' <<<"$rules"; then
   fail 'bootstrap touches the initramfs or the bootloader'
 fi
 
-# The trust root in the script matches the shipped keyring.
-fpr=$(gpg --with-colons --show-keys "$keyring" 2>/dev/null | awk -F: '/^fpr:/{print $10; exit}')
-grep -q "FROST_FPR=$fpr\$" "$script" || fail "FROST_FPR does not match frost.gpg ($fpr)"
+# Exactly the three Frost packages, no more.
+grep -qE "^readonly PACKAGES=\(frost frost-settings frost-meta\)$" "$script" \
+  || fail 'the installed package set is not the three Frost packages'
 
-# Exactly the four Frost packages, no more.
-grep -qE "^readonly PACKAGES=\(frost-keyring frost frost-settings frost-meta\)$" "$script" \
-  || fail 'the installed package set is not the four Frost packages'
-
-# The repo it writes enforces signatures.
+# The repository is local and unsigned by decision, and the stanza says so in
+# the strongest form: Never, not `Optional TrustAll`, which would silently
+# accept any signature that ever turned up. docs/security-boundaries.md carries
+# the reasoning and the condition that would reverse it.
 if grep -qE '^\[frost\]' "$script"; then
-  grep -qE '^SigLevel = Required$' "$script" || fail 'the [frost] repo stanza does not require signatures'
+  grep -qE '^SigLevel = Never$' "$script" \
+    || fail 'the [frost] repo stanza does not state SigLevel = Never'
+fi
+
+# Signing is gone. It must not come back half-applied — a trust root the
+# repository no longer carries would fail at install time, not here.
+if grep -n -E '(pacman-key|FROST_FPR|frost-keyring|--sign\b)' <<<"$rules"; then
+  fail 'the bootstrap refers to package signing, which Frost no longer does'
 fi
 
 # Runs as root, refuses otherwise.

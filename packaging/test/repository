@@ -1,0 +1,39 @@
+#!/bin/bash
+# The local repository holds Frost packages and nothing else. Signatures are not
+# part of this any more — the repository is built on the machine that consumes it
+# and reached through a file:// URL, so there is no transit to protect (see
+# docs/security-boundaries.md). What still matters is that a stray package can
+# never end up in a repository pacman is configured to trust.
+
+set -euo pipefail
+
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+repo=${FROST_REPO_DIR:-$root/repo/x86_64}
+
+if [[ ! -d $repo ]]; then
+  printf '%s\n' 'repository: skipped (no local repository)'
+  exit 0
+fi
+
+for database in frost.db.tar.gz frost.files.tar.gz; do
+  [[ -f $repo/$database ]] || {
+    printf 'missing database: %s\n' "$database" >&2
+    exit 1
+  }
+done
+
+# Every package the database names must actually be there, and be one of ours.
+readonly KNOWN=' frost frost-meta frost-settings frost-wallpapers '
+mapfile -t names < <(bsdtar -xOf "$repo/frost.db.tar.gz" '*/desc' | sed -n '/^%NAME%$/{n;p;}' | sort)
+mapfile -t files < <(bsdtar -xOf "$repo/frost.db.tar.gz" '*/desc' | sed -n '/^%FILENAME%$/{n;p;}' | sort)
+
+((${#names[@]} > 0)) || { printf 'the database lists no packages\n' >&2; exit 1; }
+for name in "${names[@]}"; do
+  [[ $KNOWN == *" $name "* ]] || { printf 'unexpected repository package: %s\n' "$name" >&2; exit 1; }
+done
+printf '%s\n' "${names[@]}" | grep -qx frost || { printf 'repository is missing frost\n' >&2; exit 1; }
+for file in "${files[@]}"; do
+  [[ -f $repo/$file ]] || { printf 'database references a missing package: %s\n' "$file" >&2; exit 1; }
+done
+
+printf 'repository: ok (%s packages)\n' "${#names[@]}"

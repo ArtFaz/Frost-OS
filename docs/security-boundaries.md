@@ -12,10 +12,10 @@ Status: initial Phase 0 threat model and implementation contract.
 | hyprpolkitagent | Polkit requests | Authenticate policy requests | Sharing an agent implementation with Quickshell |
 | Frost user CLI | Validated Frost config/state and fixed subcommands | User-scoped inspection and actions; call narrow privileged helpers | Elevating the whole CLI, arbitrary package installation, arbitrary shell execution |
 | Privileged helpers | Exact versioned request schema and canonicalized paths | One documented machine action per helper | Generic command execution, broad path writes, caller-supplied shell or executable paths |
-| Package transaction | Arch and Frost signed repositories | Modify package-owned paths and create `.pacnew` where applicable | Fetch donor code, overwrite foreign package files, execute user migrations as root |
+| Package transaction | Signed Arch/CachyOS repositories and the locally built Frost repository | Modify package-owned paths and create `.pacnew` where applicable | Fetch donor code, overwrite foreign package files, execute user migrations as root |
 | Update orchestrator | Package plan, Snapper health, migration manifests | Snapshot, pacman transaction, idempotent migration, verify | Starting a transaction without a valid snapshot or continuing after incompatible failure |
 | Theme/config loader | Regular files below permitted roots | Parse data matching a versioned schema; materialize private runtime configs for the external UI authorities | Symlinks, executable bits, QML/JS/hooks, path escape, unknown fields, theme-controlled geometry or commands |
-| Bootstrap | Signed CachyOS/Arch and Frost repositories, signed installation media, and a validated bootstrap model | Take a Snapper snapshot, run one pacman transaction over Frost's own packages, enable SDDM and the Frost session entry | Change the root password, create a privileged group, enable autologin, install passwordless sudo, overwrite personal configuration, add a third-party repository other than Frost's own, touch the kernel or bootloader, enable a unit in `default.target` |
+| Bootstrap | Signed CachyOS/Arch repositories, the locally built Frost repository, and a validated bootstrap model | Take a Snapper snapshot, run one pacman transaction over Frost's own packages, enable SDDM and the Frost session entry | Change the root password, create a privileged group, enable autologin, install passwordless sudo, overwrite personal configuration, add a third-party repository other than Frost's own, touch the kernel or bootloader, enable a unit in `default.target` |
 
 ### Bootstrap trust zone
 
@@ -30,8 +30,31 @@ The forbidden list in the table above is the substance of the zone. Every entry
 is a change the donor installer makes and Frost does not: it will not weaken
 authentication, will not grant standing privilege, will not overwrite anything
 the user owns, and will not add an upstream beyond the declared base and Frost's
-own signed repository. A base is upstream; a donor is not, and the bootstrap may
+own local repository. A base is upstream; a donor is not, and the bootstrap may
 not reach a donor endpoint under any circumstance.
+
+### Why the Frost repository is not signed
+
+Decision, 2026-08-30. The Frost packages are built by `packaging/tools/build-local-repo`
+on the machine that installs them, written to `/var/lib/frost/repo`, and read by
+pacman through a `file://` URL. There is one author, one machine, and no
+transport: a signature would attest that a package survived a journey it never
+takes. Carrying one cost a private key that could not be replaced without
+changing the trust root, a `frost-keyring` package, and a `--key` argument on
+every tool — controls with no threat behind them, which is its own kind of
+weakness, because ceremony that protects nothing still has to be maintained and
+still teaches that key handling is routine.
+
+The `[frost]` stanza therefore says `SigLevel = Never`, not `Optional TrustAll`:
+the latter would silently accept any signature that ever appeared.
+`install-contract` pins both that stanza and the absence of any signing
+machinery, so the decision cannot half-return.
+
+**What reverses it:** serving the Frost packages over a network — a repository on
+GitHub Pages, a mirror, anything `pacman -Syu` fetches from infrastructure that
+is not the machine itself. At that moment the packages are in transit, the
+signature has something to attest, and the keyring comes back with it. Until
+then it does not.
 
 ## Security authorities
 

@@ -1,7 +1,9 @@
 #!/bin/bash
-# Assemble the offline install bundle: the signed Frost repository, the public
-# keyring, bootstrap-cachyos and the approved manifests, as one tarball to carry
-# on the install media. Run build-local-repo first.
+# Assemble the offline install bundle: the Frost repository, bootstrap-cachyos
+# and the approved manifests, as one tarball to carry on the install media. The
+# normal install builds on the target instead — see install.sh at the repository
+# root; this is the route for a machine with no network. Run build-local-repo
+# first.
 
 set -euo pipefail
 
@@ -9,8 +11,7 @@ root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 repo=$root/repo/x86_64
 out=${1:-$root/frost-install-bundle.tar.zst}
 
-[[ -d $repo ]] || { printf 'no signed repo at %s — run tools/build-local-repo first\n' "$repo" >&2; exit 1; }
-[[ -f $repo/frost.db.tar.gz.sig ]] || { printf 'repo database is unsigned\n' >&2; exit 1; }
+[[ -d $repo ]] || { printf 'no repository at %s — run tools/build-local-repo first\n' "$repo" >&2; exit 1; }
 
 stage=$(mktemp -d /tmp/frost-install-bundle.XXXXXX)
 case $stage in /tmp/frost-install-bundle.*) ;; *) exit 1 ;; esac
@@ -24,15 +25,14 @@ mapfile -t current < <(bsdtar -xOf "$repo/frost.db.tar.gz" '*/desc' | sed -n '/^
 ((${#current[@]} > 0)) || { printf 'database lists no packages\n' >&2; exit 1; }
 for pkg in "${current[@]}"; do
   [[ -f $repo/$pkg ]] || { printf 'database references a missing package: %s\n' "$pkg" >&2; exit 1; }
-  cp "$repo/$pkg" "$repo/$pkg.sig" "$b/repo/x86_64/"
+  cp "$repo/$pkg" "$b/repo/x86_64/"
 done
 for db in frost.db frost.db.tar.gz frost.files frost.files.tar.gz; do
-  cp "$repo/$db" "$repo/$db.sig" "$b/repo/x86_64/"
+  cp "$repo/$db" "$b/repo/x86_64/"
 done
 
-cp "$root/pkgbuilds/frost-keyring/frost.gpg" "$b/frost.gpg"
 install -m755 "$root/install/bootstrap-cachyos" "$b/bootstrap-cachyos"
-for extra in "$root/..-packages.json" "$root/../aur.lock.json"; do
+for extra in "$root/../frost-packages.json" "$root/../aur.lock.json"; do
   [[ -f $extra ]] && cp "$extra" "$b/"
 done
 cat > "$b/README" <<'EOF'
@@ -43,10 +43,9 @@ Frost offline install bundle.
   3. cd frost-install-bundle && sudo ./bootstrap-cachyos
   4. Reboot into Frost.
 
-The Frost packages are carried here and signed by the trust root
-9F8D63165ACC27A4FDCCED02FD40A38811EDD104, which bootstrap-cachyos imports. The
-rest of the set comes from the CachyOS repositories, so the machine needs a
-network.
+The Frost packages are carried here, built from the repository this bundle came
+from. The rest of the set comes from the CachyOS repositories, so the machine
+still needs a network for those.
 
 The run is logged to /var/log/frost-bootstrap.log and every stage is idempotent:
 re-running the script is how an interrupted install is finished. The AUR apps in

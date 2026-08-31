@@ -38,9 +38,6 @@ fi
 if [[ ! -f $root/pkgbuilds/frost/PKGBUILD ]]; then
   fail 'frost PKGBUILD is missing'
 fi
-if [[ ! -f $root/pkgbuilds/frost-keyring/PKGBUILD ]]; then
-  fail 'frost-keyring PKGBUILD is missing'
-fi
 
 for required_dependency in \
   hyprland uwsm mako hyprlock hypridle hyprpolkitagent hyprpicker ghostty wl-clipboard cliphist curl jq libnotify \

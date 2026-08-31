@@ -12,7 +12,11 @@
 # fails. Every stage is idempotent: re-running this on a half-finished machine is
 # the way to repair it.
 #
-# What it changes: pacman trust and configuration, the base providers Frost
+# The repository it adds is built on this machine and read through a file://
+# URL, so its packages are not signed — nothing is in transit to protect. See
+# docs/security-boundaries.md.
+#
+# What it changes: pacman configuration, the base providers Frost
 # replaces (FROST_REPLACES), the package set, the SDDM and frost-firstboot units,
 # the invoking user's login shell and shell rc, and — only while the AUR apps
 # build — one sudoers drop-in. The initramfs, the boot splash and the bootloader
@@ -21,13 +25,12 @@
 set -euo pipefail
 export LC_ALL=C
 
-readonly FROST_FPR=9F8D63165ACC27A4FDCCED02FD40A38811EDD104
 readonly REPO_DEST=/var/lib/frost/repo
 readonly LOG_FILE=/var/log/frost-bootstrap.log
 readonly SUDOERS_DROPIN=/etc/sudoers.d/zz-frost-bootstrap
 readonly BASHRC_LINE='. /usr/share/frost/default/bash/bashrc'
 readonly MIN_FREE_KIB=$((15 * 1024 * 1024))
-readonly PACKAGES=(frost-keyring frost frost-settings frost-meta)
+readonly PACKAGES=(frost frost-settings frost-meta)
 
 # The providers Frost chooses, installed as their own transaction before
 # anything that depends on them. Without this, pacman resolves each virtual
@@ -114,10 +117,8 @@ printf '\n=== bootstrap-cachyos %s\n' "$(date -Is)" >&3
 
 step 'preflight'
 command -v pacman >/dev/null || die 'pacman not found — this is not an Arch/CachyOS base'
-command -v pacman-key >/dev/null || die 'pacman-key not found'
 command -v pacman-conf >/dev/null || die 'pacman-conf not found'
 [[ $(uname -m) == x86_64 ]] || die "the Frost repository is x86_64 only (this is $(uname -m))"
-[[ -f $here/frost.gpg ]] || die 'frost.gpg is not next to this script'
 [[ -d $here/repo/x86_64 ]] || die 'repo/x86_64 is not next to this script'
 
 # lib32-mesa is part of the set, so multilib is not optional.
@@ -141,14 +142,6 @@ if [[ $(findmnt -n -o FSTYPE / 2>/dev/null || true) != btrfs ]]; then
 fi
 note "$(df -h / | awk 'NR == 2 { print $4 }') free on /, logging to $LOG_FILE"
 
-step 'trusting the Frost signing key'
-run pacman-key --add "$here/frost.gpg" || die 'could not import frost.gpg into the pacman keyring'
-if try_run pacman-key --lsign-key "$FROST_FPR"; then
-  note 'signing key trusted'
-else
-  note 'the Frost key was already trusted'
-fi
-
 step "installing the Frost repository under $REPO_DEST"
 install -d -m0755 "$REPO_DEST"
 # Replace rather than copy into: cp -a of a directory onto an existing one of
@@ -162,7 +155,7 @@ else
   cat >> /etc/pacman.conf <<EOF
 
 [frost]
-SigLevel = Required
+SigLevel = Never
 Server = file://$REPO_DEST/\$arch
 EOF
   note 'added the [frost] repository to /etc/pacman.conf'

@@ -10,14 +10,14 @@ dropped by decision on 2026-08-29; subsequent installs go through the terminal.
 
 | Piece | Path |
 |---|---|
-| Inventory | `frost-pkgs/tools/package-selector/inventory.json` |
-| Selector | `frost-pkgs/tools/package-selector/{index.html,app.js,style.css}` |
-| Standalone build | `frost-pkgs/tools/package-selector/build-standalone` → `package-selector.html` |
-| Reconciliation aid | `frost-pkgs/tools/package-selector/build-inventory` (read-only) |
-| Schemas | `frost-pkgs/tools/package-selector/schema/*.json` |
+| Inventory | `packaging/tools/package-selector/inventory.json` |
+| Selector | `packaging/tools/package-selector/{index.html,app.js,style.css}` |
+| Standalone build | `packaging/tools/package-selector/build-standalone` → `package-selector.html` |
+| Reconciliation aid | `packaging/tools/package-selector/build-inventory` (read-only) |
+| Schemas | `packaging/tools/package-selector/schema/*.json` |
 | Resolver | `frost/cli/src/packages.rs` — `frost packages validate|plan` |
-| Inventory contract | `frost-pkgs/test/inventory-contract` |
-| Selector contract | `frost-pkgs/test/selector-static` |
+| Inventory contract | `packaging/test/inventory-contract` |
+| Selector contract | `packaging/test/selector-static` |
 | Resolver contract | `frost/test/packages-contract` + `cargo test` (`packages::tests`) |
 
 ## Reconciliation
@@ -27,7 +27,7 @@ dropped by decision on 2026-08-29; subsequent installs go through the terminal.
 - `Definitive Frost-OS/omarchy/install/omarchy-base.packages` — `0ae1694830b6`
 - `Definitive Frost-OS/omarchy/install/omarchy-other.packages` — `0ae1694830b6`
 - `Definitive Frost-OS/omarchy-iso/builder/archinstall.packages` — `268bac16d351`
-- `frost-pkgs/pkgbuilds/frost/PKGBUILD` `depends()` — the executables the shell
+- `packaging/pkgbuilds/frost/PKGBUILD` `depends()` — the executables the shell
   and CLI actually call
 - the local `pacman` database, for installed size and comparison only
 
@@ -49,7 +49,8 @@ Seven decision categories (`inventory.json` `.categories`): `BOOTSTRAP` `CORE`
   target and every profile/feature package list resolves to a real entry.
 
 `DROP` records nine packages that came from the donor lists without a
-justification Frost shares: `omarchy-keyring` (replaced by `frost-keyring`),
+justification Frost shares: `omarchy-keyring` (Frost signs nothing; see
+`docs/security-boundaries.md`),
 `omarchy-nvim`, `omacut`, `omacalc`, `omawrite`, `herdr`, `ttfx` (donor-authored),
 `aether` (a second theming engine), `yay-debug` (debug symbols).
 

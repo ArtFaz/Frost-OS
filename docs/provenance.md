@@ -64,7 +64,7 @@ Allowed transformation values are `original`, `adapted`, `rewritten-from-concept
 
 ## Phase 5 package inventory
 
-`frost-pkgs/tools/package-selector/inventory.json` is Frost-authored decision
+`packaging/tools/package-selector/inventory.json` is Frost-authored decision
 data, not a donor port. It reconciles the donor package lists —
 `omarchy/install/omarchy-base.packages` and `omarchy-other.packages` at
 `0ae1694830b6`, `omarchy-iso/builder/archinstall.packages` at `268bac16d351` —

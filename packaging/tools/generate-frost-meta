@@ -8,7 +8,7 @@
 set -euo pipefail
 
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
-manifest=$root/..-packages.json
+manifest=$root/../frost-packages.json
 inventory=$root/tools/package-selector/inventory.json
 frost_bin=${FROST_BIN:-}
 
@@ -48,7 +48,7 @@ inv_cs=$(jq -r '.packages[] | [.name, .category, .source] | @tsv' "$inventory" |
 
 mapfile -t depends < <(
   LC_ALL=C join -t$'\t' <(printf '%s\n' "$resolved") <(printf '%s\n' "$inv_cs") \
-    | awk -F'\t' '$3 != "aur" && $2 != "BOOTSTRAP" && $1 != "frost-keyring" { print $1 }' \
+    | awk -F'\t' '$3 != "aur" && $2 != "BOOTSTRAP" { print $1 }' \
     | LC_ALL=C sort -u
 )
 ((${#depends[@]} > 0)) || { printf 'no dependencies resolved\n' >&2; exit 1; }

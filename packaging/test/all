@@ -19,4 +19,4 @@ done
 "$root/test/install-contract"
 "$root/test/resolve-plan"
 "$root/test/package-build"
-"$root/test/signatures"
+"$root/test/repository"
