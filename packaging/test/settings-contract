@@ -1,0 +1,89 @@
+#!/bin/bash
+# Static checks on the frost-settings source (which lives in the frost repo).
+# The privileged bits — PAM, sudoers, the SDDM greeter and the first-boot
+# script — must not carry a bypass, a wildcard, or a way to run arbitrary code.
+
+set -euo pipefail
+
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+frost=$root/../frost
+pkgbuild=$root/pkgbuilds/frost-settings/PKGBUILD
+
+fail() { printf 'settings contract: %s\n' "$1" >&2; exit 1; }
+
+[[ -f $pkgbuild ]] || { printf 'settings contract: not built yet (skipped)\n'; exit 0; }
+[[ -d $frost ]] || fail 'frost source repo not found beside frost-pkgs'
+
+for rel in \
+  default/sddm/frost/metadata.desktop \
+  default/sddm/frost/theme.conf \
+  default/sddm/frost/Main.qml \
+  default/pam/hyprlock \
+  default/etc/sddm.conf.d/10-frost.conf \
+  default/etc/sysctl.d/99-frost.conf \
+  default/etc/systemd/zram-generator.conf \
+  default/sudoers/frost \
+  default/systemd/system/frost-firstboot.service \
+  bin/frost-firstboot; do
+  [[ -f $frost/$rel ]] || fail "missing source file: $rel"
+done
+
+# --- PAM: no nullok, no bypass (comment lines excluded) ---
+pam=$frost/default/pam/hyprlock
+pam_rules=$(grep -v '^[[:space:]]*#' "$pam")
+if grep -n -i -E 'nullok|pam_permit\.so|pam_succeed_if|\bdebug\b' <<<"$pam_rules"; then
+  fail 'hyprlock PAM stack carries a bypass or unsafe token'
+fi
+grep -q -E '^auth[[:space:]]+required[[:space:]]+pam_unix\.so' <<<"$pam_rules" \
+  || fail 'hyprlock PAM auth is not "required pam_unix.so"'
+
+# --- sudoers: exact commands, password required, no wildcard (comments out) ---
+sudoers=$frost/default/sudoers/frost
+command -v visudo >/dev/null && { visudo -c -f "$sudoers" >/dev/null || fail 'sudoers does not parse'; }
+sudo_rules=$(grep -v '^[[:space:]]*#' "$sudoers" | grep -v '^[[:space:]]*$')
+if grep -n -E 'NOPASSWD|!authenticate' <<<"$sudo_rules"; then
+  fail 'sudoers grants a password-free privileged action'
+fi
+if grep -n -E '\(root\)[[:space:]]*ALL|[[:space:]]ALL[[:space:]]*$|\*' <<<"$sudo_rules"; then
+  fail 'sudoers grants ALL or uses a wildcard command'
+fi
+mapfile -t sudo_cmds < <(grep -o -E '\(root\) [^ ]+$' <<<"$sudo_rules" | awk '{print $2}')
+((${#sudo_cmds[@]} >= 1)) || fail 'sudoers defines no command'
+for cmd in "${sudo_cmds[@]}"; do
+  [[ $cmd == /usr/lib/frost/frost-* ]] || fail "sudoers command is not a narrow Frost helper: $cmd"
+done
+
+# --- SDDM greeter: no process spawn, no controls import, no url open ---
+qml=$frost/default/sddm/frost/Main.qml
+if rg -n 'import QtQuick\.Controls|import Qt\.labs|Qt\.openUrlExternally|Process\s*\{|\.exec\(|executeCommand|Qt\.createQmlObject' "$qml"; then
+  fail 'SDDM greeter QML can run code or opens a URL'
+fi
+rg -q 'sddm\.login\(' "$qml" || fail 'SDDM greeter does not call sddm.login'
+
+# The theme must declare Qt 6. Without QtVersion=6, SDDM 0.21 runs the legacy
+# /usr/bin/sddm-greeter, which links Qt5 libraries the Frost set does not
+# install: the greeter dies with exit 127 and the user gets a black screen.
+meta=$frost/default/sddm/frost/metadata.desktop
+rg -q '^QtVersion=6$' "$meta" || fail 'the SDDM greeter theme does not declare QtVersion=6'
+rg -q '^Type=sddm-theme$' "$meta" || fail 'the SDDM greeter theme has the wrong Type'
+
+# --- first-boot script: bounded ---
+bash -n "$frost/bin/frost-firstboot"
+if rg -n 'curl|wget|pacman -R|pacman -S|rm -rf /|chmod 777|eval |>\s*/dev/sd' "$frost/bin/frost-firstboot"; then
+  fail 'frost-firstboot does something it must not'
+fi
+rg -q '^\s*if \[\[ -f \$marker \]\]; then' "$frost/bin/frost-firstboot" || fail 'frost-firstboot is not guarded by its marker'
+
+# --- unit: oneshot, self-disabling ---
+unit=$frost/default/systemd/system/frost-firstboot.service
+rg -q '^Type=oneshot$' "$unit" || fail 'frost-firstboot.service is not oneshot'
+rg -q '^ConditionPathExists=!/var/lib/frost/firstboot-done$' "$unit" || fail 'frost-firstboot.service is not marker-guarded'
+
+# --- PKGBUILD: config-only, backs up its /etc files ---
+rg -q "^arch=\('any'\)$" "$pkgbuild" || fail 'frost-settings must be arch=any'
+rg -q '^build\(\)' "$pkgbuild" && fail 'frost-settings must not have a build step'
+for b in etc/sudoers.d/frost etc/sddm.conf.d/10-frost.conf etc/sysctl.d/99-frost.conf etc/systemd/zram-generator.conf; do
+  rg -q "'$b'" "$pkgbuild" || fail "backup() is missing $b"
+done
+
+printf 'settings contract: ok\n'

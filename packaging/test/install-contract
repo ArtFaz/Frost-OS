@@ -1,0 +1,170 @@
+#!/bin/bash
+# Static checks on install/bootstrap-cachyos. It runs as root on a fresh
+# machine, so it must be tightly bounded: the Frost package install is offline,
+# removals are limited to the fixed FROST_REPLACES provider swap, the package
+# set is fixed, the trust root is real, and the repo it adds enforces
+# signatures.
+
+set -euo pipefail
+
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+script=$root/install/bootstrap-cachyos
+keyring=$root/pkgbuilds/frost-keyring/frost.gpg
+
+fail() { printf 'install contract: %s\n' "$1" >&2; exit 1; }
+
+[[ -f $script ]] || fail 'install/bootstrap-cachyos is missing'
+bash -n "$script"
+
+rules=$(grep -v '^[[:space:]]*#' "$script" | grep -v '^[[:space:]]*$')
+
+# The Frost package install is offline — carried in the bundle. The only
+# network use is the best-effort AUR step: a curl HEAD reachability probe and
+# git clones of AUR recipes, both run as the unprivileged invoking user.
+if grep -n -E '\b(wget|rsync|scp|nc)\b' <<<"$rules"; then
+  fail 'bootstrap fetches with wget/rsync/scp/nc'
+fi
+while IFS= read -r line; do
+  case $line in
+    *curl*)
+      grep -qE 'curl .*( -I\b| --head\b)' <<<"$line" \
+        || fail "curl is used for more than a HEAD reachability probe: $line"
+      ;;
+  esac
+done <<<"$rules"
+# Never wipes anything.
+if grep -n -E 'rm +-rf +/|mkfs|dd +if=|:> */(etc|boot|usr)' <<<"$rules"; then
+  fail 'bootstrap destroys data'
+fi
+# The only removal permitted is the FROST_REPLACES provider swap: a fixed,
+# reviewed list of CachyOS-base packages Frost supplies its own version of.
+while IFS= read -r line; do
+  grep -qE 'pacman +-R' <<<"$line" || continue
+  grep -qE 'pacman -Rdd --noconfirm "\$\{present\[@\]\}"( \|\| die .*)?$' <<<"$line" \
+    || fail "package removal outside the FROST_REPLACES swap: $line"
+done <<<"$rules"
+grep -qE '^readonly FROST_REPLACES=\(' "$script" || fail 'FROST_REPLACES list is missing'
+grep -qE 'for pkg in "\$\{FROST_REPLACES\[@\]\}"' "$script" \
+  || fail 'the removal is not driven from FROST_REPLACES'
+# sudo-rs must not be pre-removed: that deletes /usr/bin/sudo and only the next
+# transaction puts it back. pacman swaps it for `sudo` atomically instead.
+if sed -n '/^readonly FROST_REPLACES=(/,/^)/p' "$script" | grep -qw 'sudo-rs'; then
+  fail 'sudo-rs is in FROST_REPLACES; it must be swapped inside a transaction, not pre-removed'
+fi
+# Any conflict the list did not foresee is auto-resolved, never left to abort.
+grep -qE 'pacman -S .*--ask=4' "$script" || fail 'the install does not pass --ask=4 to resolve conflicts'
+# Every provider Frost picks is named and installed up front. Left to itself,
+# --noconfirm answers the provider question with the first candidate, which for
+# `jack` is jack2 — an unresolvable conflict against pipewire-jack.
+grep -qE '^readonly FROST_PROVIDERS=\(' "$script" || fail 'FROST_PROVIDERS list is missing'
+providers=$(sed -n '/^readonly FROST_PROVIDERS=(/,/^)/p' "$script")
+for provider in pipewire-jack wireplumber mesa vulkan-radeon ttf-dejavu tesseract-data-eng openbsd-netcat; do
+  grep -qw "$provider" <<<"$providers" || fail "FROST_PROVIDERS does not pin $provider"
+done
+grep -qE 'pacman -S .*"\$\{FROST_PROVIDERS\[@\]\}"' "$script" \
+  || fail 'FROST_PROVIDERS is never installed'
+# Installing onto a stale base is a partial upgrade, which Arch does not support.
+grep -qE 'pacman -Syu ' "$script" || fail 'the base system is never fully upgraded'
+# The resolution is inspected before the transaction runs, so a bad provider
+# choice costs a message instead of a half-installed system.
+grep -qE 'pacman -S .*--print' "$script" || fail 'the install does not check the resolved plan first'
+grep -qE '^readonly FROST_UNWANTED=' "$script" || fail 'the rejected-package pattern is missing'
+# git is only ever a shallow clone of an AUR recipe (never a fetch of anything
+# else); "git" as a pacman package name is not an invocation.
+while IFS= read -r line; do
+  grep -qE '\bgit (clone|pull|fetch|remote|checkout|init|submodule|-C)\b' <<<"$line" || continue
+  grep -qE 'git clone (--depth [0-9]+ )?https://aur\.archlinux\.org/' <<<"$line" \
+    || fail "unexpected git invocation: $line"
+done <<<"$rules"
+# The AUR step drops privileges to $SUDO_USER and never builds as root:
+# makepkg and paru appear only inside the su - "$invoker" -c block.
+grep -qE '\$\{SUDO_USER:-\}' "$script" || fail 'the AUR step does not derive its user from $SUDO_USER'
+grep -qE 'su - "\$invoker" (-s /bin/bash )?-c' "$script" \
+  || fail 'the AUR step does not drop to the invoking user'
+
+# The AUR stage grants the invoking user passwordless sudo, because paru runs
+# `sudo -v` before its transaction and a rule naming one command does not
+# satisfy that. The grant itself is unqualified, so the bounds the contract can
+# still enforce are the ones that matter: a single named user (never a group or
+# ALL=(ALL) blanket), one fixed path, validated before it takes effect, and
+# handed back by a trap on every exit.
+if grep -n 'sudoers' <<<"$rules" >/dev/null; then
+  # The name must sort last: sudo applies the last matching rule, and the CachyOS
+  # installer's 10-installer grants %wheel everything with a password.
+  grep -qE '^readonly SUDOERS_DROPIN=/etc/sudoers\.d/zz-frost-bootstrap$' "$script" \
+    || fail 'the sudoers drop-in must be /etc/sudoers.d/zz-frost-bootstrap so it is read last'
+  grep -qE "printf '%s ALL=\(root\) NOPASSWD: ALL" "$script" \
+    || fail 'the sudoers drop-in is not the reviewed single-user grant'
+  grep -qE '"\$invoker" > "\$staged"' "$script" \
+    || fail 'the sudoers grant is not scoped to the invoking user'
+  grep -qE 'visudo -cqf' "$script" || fail 'the sudoers drop-in is installed without visudo validation'
+  grep -qE 'trap revoke_pacman_nopasswd EXIT' "$script" \
+    || fail 'the sudoers drop-in is not revoked by a trap'
+  grep -qE "trap 'revoke_pacman_nopasswd; exit 130' INT TERM" "$script" \
+    || fail 'an interrupt would leave the sudoers drop-in behind'
+  grep -qE 'rm -f -- "\$SUDOERS_DROPIN"' "$script" || fail 'the sudoers drop-in is never removed'
+fi
+
+# The screen stays readable and nothing is lost: command output goes to the log
+# through the runners, and a failure prints the tail rather than vanishing.
+grep -qE '^run\(\) \{' "$script" || fail 'the logging runner is missing'
+grep -qE '^try_run\(\) \{' "$script" || fail 'the best-effort runner is missing'
+grep -qE 'tail -n [0-9]+ "\$LOG_FILE"' "$script" || fail 'a failed command never shows its output'
+if grep -nE '^[[:space:]]*pacman +-(S[^i]|R)' <<<"$rules"; then
+  fail 'a pacman transaction runs outside the logging runner'
+fi
+
+# No success line may come from a path that did nothing: the stage helpers report
+# three distinct states instead of collapsing them onto && / ||.
+grep -qE '^report\(\) \{' "$script" || fail 'the three-state stage reporter is missing'
+
+# The bash package ships /etc/skel/.bashrc, so a new account always has one and a
+# conditional create never fires. The Frost line is appended and guarded by
+# itself, which is also what makes the stage idempotent.
+grep -qE '^readonly BASHRC_LINE=' "$script" || fail 'the sourced bashrc line is not a fixed constant'
+grep -qE 'grep -qxF "\$line" "\$rc"' "$script" \
+  || fail 'the bashrc seed is not guarded by the line it adds'
+grep -qE '>> "\$rc"' "$script" || fail 'the bashrc seed replaces the file instead of appending'
+
+# The login shell change is bounded: the invoking user, and only to bash.
+if grep -q 'chsh' <<<"$rules"; then
+  grep -qE 'chsh -s /bin/bash "\$invoker"' "$script" \
+    || fail 'chsh is not bounded to bash for the invoking user'
+fi
+
+# The initramfs, the boot splash and the bootloader belong to CachyOS. Frost
+# ships no Plymouth theme, so touching them was risk without a return.
+if grep -n -E '(mkinitcpio|dracut|booster|limine|grub|/boot/)' <<<"$rules"; then
+  fail 'bootstrap touches the initramfs or the bootloader'
+fi
+
+# The trust root in the script matches the shipped keyring.
+fpr=$(gpg --with-colons --show-keys "$keyring" 2>/dev/null | awk -F: '/^fpr:/{print $10; exit}')
+grep -q "FROST_FPR=$fpr\$" "$script" || fail "FROST_FPR does not match frost.gpg ($fpr)"
+
+# Exactly the four Frost packages, no more.
+grep -qE "^readonly PACKAGES=\(frost-keyring frost frost-settings frost-meta\)$" "$script" \
+  || fail 'the installed package set is not the four Frost packages'
+
+# The repo it writes enforces signatures.
+if grep -qE '^\[frost\]' "$script"; then
+  grep -qE '^SigLevel = Required$' "$script" || fail 'the [frost] repo stanza does not require signatures'
+fi
+
+# Runs as root, refuses otherwise.
+grep -qE '\$EUID -eq 0' "$script" || fail 'bootstrap does not check for root'
+
+# Only enables, never disables or masks.
+if grep -n -E 'systemctl +(disable|mask|stop)' <<<"$rules"; then
+  fail 'bootstrap disables or masks a unit'
+fi
+grep -qE 'systemctl enable (--force )?sddm\.service' "$script" || fail 'bootstrap does not enable sddm'
+grep -qE 'systemctl enable frost-firstboot\.service' "$script" || fail 'bootstrap does not enable frost-firstboot'
+
+# The bundle assembler and its output path guard.
+bundle=$root/tools/build-install-bundle
+[[ -f $bundle ]] || fail 'tools/build-install-bundle is missing'
+bash -n "$bundle"
+grep -q 'frost-install-bundle\.\*' "$bundle" || fail 'bundle staging dir is not path-guarded'
+
+printf 'install contract: ok\n'

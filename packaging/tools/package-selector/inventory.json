@@ -1,0 +1,2769 @@
+{
+  "inventoryVersion": "2026-08-30.1",
+  "generatedFrom": [
+    {
+      "source": "clean CachyOS/Arch repo audit",
+      "role": "2026-08-30.1: packages that exist only in the Omarchy repo or the AUR were reclassified arch->aur; nvim->neovim, mise-bin->mise, yaru-icon-theme->papirus-icon-theme, tobi-try->try; two Omarchy-custom packages with no clean equivalent moved to DROP."
+    },
+    {
+      "source": "arch extra/multilib",
+      "role": "Compatibility pass 2026-08-29.2: mesa, vulkan loader/drivers, VM guest agents, firmware, laptop sensors and fonts, each name verified against the live pacman sync database."
+    },
+    {
+      "source": "Definitive Frost-OS/omarchy",
+      "commit": "0ae1694830b6",
+      "role": "Donor base and other package lists (install/omarchy-base.packages, install/omarchy-other.packages). Evidence only."
+    },
+    {
+      "source": "Definitive Frost-OS/omarchy-iso",
+      "commit": "268bac16d351",
+      "role": "Donor ISO archinstall.packages, the minimal pacstrap set. Evidence only."
+    },
+    {
+      "source": "Frost-OS",
+      "commit": "f4a8cc9cd413",
+      "role": "Earlier Nix package/option lists, cross-checked for anything unique. Evidence only."
+    },
+    {
+      "source": "frost-pkgs/pkgbuilds/frost/PKGBUILD",
+      "role": "The depends() array: every executable the Frost shell and CLI actually call."
+    }
+  ],
+  "categories": [
+    "BOOTSTRAP",
+    "CORE",
+    "DESKTOP",
+    "HARDWARE",
+    "OPTIONAL",
+    "DEVELOPMENT",
+    "DROP"
+  ],
+  "features": {
+    "bluetooth": {
+      "label": "Bluetooth",
+      "description": "Bluetooth stack and management tools. The island Bluetooth panel needs this.",
+      "default": true,
+      "packages": [
+        "bluez",
+        "bluez-utils",
+        "bluez-tools"
+      ]
+    },
+    "printing": {
+      "label": "Printing",
+      "description": "CUPS print server, network printer discovery and a setup GUI.",
+      "default": false,
+      "packages": [
+        "cups",
+        "cups-browsed",
+        "cups-filters",
+        "cups-pdf",
+        "system-config-printer"
+      ]
+    },
+    "development": {
+      "label": "Development tools",
+      "description": "Containers, compilers, language runtimes and terminal Git/Docker UIs.",
+      "default": false,
+      "packages": [
+        "docker",
+        "docker-buildx",
+        "docker-compose",
+        "lazydocker",
+        "lazygit",
+        "clang",
+        "llvm",
+        "mise",
+        "tree-sitter-cli",
+        "ruby",
+        "lua51",
+        "luarocks",
+        "libyaml",
+        "dotnet-runtime",
+        "python-poetry-core",
+        "postgresql-libs",
+        "mariadb-libs",
+        "autoconf-archive",
+        "usage",
+        "ufw-docker",
+        "visual-studio-code-bin",
+        "zed"
+      ]
+    },
+    "gaming": {
+      "label": "Gaming",
+      "description": "A game streaming client and 32-bit OpenGL. The vendor 32-bit Vulkan driver comes from your hardware selection; Steam and launchers are installed per-title from the terminal.",
+      "default": false,
+      "packages": [
+        "moonlight-qt",
+        "lib32-mesa"
+      ]
+    },
+    "scanning": {
+      "label": "Scanning",
+      "description": "Document scanner support, including driverless network and USB scanners.",
+      "default": false,
+      "packages": [
+        "sane",
+        "sane-airscan"
+      ]
+    },
+    "virtualisation-guest": {
+      "label": "Run as a VM guest",
+      "description": "Guest agents so Frost integrates with its host when it runs inside QEMU/KVM, SPICE, VMware or VirtualBox.",
+      "default": false,
+      "packages": [
+        "qemu-guest-agent",
+        "spice-vdagent",
+        "open-vm-tools",
+        "virtualbox-guest-utils"
+      ]
+    },
+    "media-production": {
+      "label": "Media production",
+      "description": "Screen recording, streaming and video editing.",
+      "default": false,
+      "packages": [
+        "obs-studio",
+        "kdenlive",
+        "gpu-screen-recorder",
+        "pipewire-jack"
+      ]
+    },
+    "tailscale": {
+      "label": "Tailscale",
+      "description": "Mesh VPN. The shell only shows the Tailscale control when this is on.",
+      "default": false,
+      "packages": [
+        "tailscale"
+      ]
+    },
+    "aur": {
+      "label": "AUR access",
+      "description": "An AUR helper and terminal package browsers. The hardened AUR build flow lands in Phase 6; this only installs the tools.",
+      "default": true,
+      "packages": [
+        "paru",
+        "yay",
+        "pacsea-bin",
+        "parui"
+      ]
+    }
+  },
+  "profiles": {
+    "minimal": {
+      "label": "Minimal",
+      "description": "Boot, session, audio, network, security and recovery. No desktop applications.",
+      "includeCategories": [
+        "BOOTSTRAP",
+        "CORE"
+      ],
+      "features": [],
+      "includePackages": [
+        "amd-ucode",
+        "intel-ucode"
+      ]
+    },
+    "desktop": {
+      "label": "Desktop",
+      "description": "The full Frost desktop: everything in Minimal plus the recommended application set.",
+      "includeCategories": [
+        "BOOTSTRAP",
+        "CORE",
+        "DESKTOP"
+      ],
+      "features": [
+        "bluetooth",
+        "aur"
+      ],
+      "includePackages": [
+        "amd-ucode",
+        "intel-ucode"
+      ]
+    },
+    "developer": {
+      "label": "Developer",
+      "description": "The Desktop profile plus the development toolchain and container stack.",
+      "includeCategories": [
+        "BOOTSTRAP",
+        "CORE",
+        "DESKTOP",
+        "DEVELOPMENT"
+      ],
+      "features": [
+        "bluetooth",
+        "aur",
+        "development"
+      ],
+      "includePackages": [
+        "amd-ucode",
+        "intel-ucode"
+      ]
+    },
+    "this-machine": {
+      "label": "This machine",
+      "description": "Seeded on 2026-08-29 from the packages installed on the Vaio FE16 (Ryzen 5 5825U, all-AMD): the desktop set, the features actually in use, the AMD graphics stack, and the AUR apps carried over from Omarchy. A starting point — adjust and re-review before Gate 5.",
+      "includeCategories": [
+        "BOOTSTRAP",
+        "CORE",
+        "DESKTOP"
+      ],
+      "includePackages": [
+        "amd-ucode",
+        "anydesk-bin",
+        "beekeeper-studio-bin",
+        "bolt",
+        "brave-bin",
+        "chromium",
+        "cliamp",
+        "ddcutil",
+        "dua-cli",
+        "exfatprogs",
+        "expac",
+        "foot",
+        "gum",
+        "gvfs-mtp",
+        "gvfs-nfs",
+        "gvfs-smb",
+        "hyprmon-bin",
+        "inetutils",
+        "inotify-tools",
+        "inxi",
+        "jetbrains-toolbox",
+        "kernel-modules-hook",
+        "lib32-vulkan-radeon",
+        "libreoffice-fresh",
+        "libvips",
+        "limine-snapper-sync",
+        "localsend",
+        "nautilus-python",
+        "obsidian",
+        "parsec-bin",
+        "pinta",
+        "qemu-user-static-binfmt",
+        "qrencode",
+        "socat",
+        "spotify-launcher",
+        "sushi",
+        "tensaku",
+        "tesseract",
+        "tesseract-data-eng",
+        "try",
+        "ttf-ia-writer",
+        "ttf-jetbrains-mono-nerd-basic",
+        "tzupdate",
+        "vesktop-bin",
+        "visual-studio-code-bin",
+        "vulkan-radeon",
+        "whois",
+        "woff2-font-awesome",
+        "wtype",
+        "xournalpp",
+        "yt-dlp",
+        "zbar",
+        "zed"
+      ],
+      "features": [
+        "aur",
+        "bluetooth",
+        "development",
+        "gaming",
+        "media-production",
+        "printing",
+        "tailscale"
+      ]
+    }
+  },
+  "defaultProfile": "this-machine",
+  "packages": [
+    {
+      "name": "alsa-firmware",
+      "source": "arch",
+      "category": "BOOTSTRAP",
+      "default": "recommended",
+      "reason": "Firmware for some ALSA audio hardware"
+    },
+    {
+      "name": "amd-ucode",
+      "source": "arch",
+      "category": "BOOTSTRAP",
+      "default": "recommended",
+      "reason": "AMD CPU microcode updates loaded at boot",
+      "hardware": [
+        "cpu-amd"
+      ],
+      "sizeKib": 602
+    },
+    {
+      "name": "base",
+      "source": "arch",
+      "category": "BOOTSTRAP",
+      "default": "required",
+      "reason": "Core Arch system group; the floor every package sits on"
+    },
+    {
+      "name": "base-devel",
+      "source": "arch",
+      "category": "BOOTSTRAP",
+      "default": "required",
+      "reason": "Build toolchain for makepkg and any local or AUR build"
+    },
+    {
+      "name": "btrfs-progs",
+      "source": "arch",
+      "category": "BOOTSTRAP",
+      "default": "required",
+      "reason": "Btrfs tooling; Frost installs on Btrfs for snapshots",
+      "sizeKib": 6912
+    },
+    {
+      "name": "dosfstools",
+      "source": "arch",
+      "category": "BOOTSTRAP",
+      "default": "required",
+      "reason": "Tools for the FAT EFI system partition",
+      "sizeKib": 409
+    },
+    {
+      "name": "efibootmgr",
+      "source": "arch",
+      "category": "BOOTSTRAP",
+      "default": "required",
+      "reason": "Creates and edits UEFI boot entries",
+      "sizeKib": 83
+    },
+    {
+      "name": "frost-keyring",
+      "source": "frost",
+      "category": "BOOTSTRAP",
+      "default": "required",
+      "reason": "Trust anchor for the signed Frost package repository"
+    },
+    {
+      "name": "intel-ucode",
+      "source": "arch",
+      "category": "BOOTSTRAP",
+      "default": "recommended",
+      "reason": "Intel CPU microcode updates loaded at boot",
+      "hardware": [
+        "cpu-intel"
+      ]
+    },
+    {
+      "name": "limine",
+      "source": "arch",
+      "category": "BOOTSTRAP",
+      "default": "required",
+      "reason": "The bootloader Frost uses",
+      "sizeKib": 5232
+    },
+    {
+      "name": "limine-mkinitcpio-hook",
+      "source": "arch",
+      "category": "BOOTSTRAP",
+      "default": "required",
+      "reason": "Keeps Limine entries in sync on kernel changes",
+      "sizeKib": 19630
+    },
+    {
+      "name": "linux",
+      "source": "arch",
+      "category": "BOOTSTRAP",
+      "default": "required",
+      "reason": "The Linux kernel",
+      "sizeKib": 151265
+    },
+    {
+      "name": "linux-firmware",
+      "source": "arch",
+      "category": "BOOTSTRAP",
+      "default": "required",
+      "reason": "Firmware blobs the kernel loads for common devices"
+    },
+    {
+      "name": "linux-headers",
+      "source": "arch",
+      "category": "BOOTSTRAP",
+      "default": "recommended",
+      "reason": "Kernel headers, required to build any DKMS module"
+    },
+    {
+      "name": "mkinitcpio",
+      "source": "arch",
+      "category": "BOOTSTRAP",
+      "default": "required",
+      "reason": "Builds the initramfs that boots the system"
+    },
+    {
+      "name": "sof-firmware",
+      "source": "arch",
+      "category": "BOOTSTRAP",
+      "default": "recommended",
+      "reason": "Sound Open Firmware for modern Intel and AMD audio DSPs",
+      "sizeKib": 43827
+    },
+    {
+      "name": "alsa-ucm-conf",
+      "source": "arch",
+      "category": "CORE",
+      "default": "recommended",
+      "reason": "Use-case profiles many modern laptop audio codecs need to route correctly"
+    },
+    {
+      "name": "alsa-utils",
+      "source": "arch",
+      "category": "CORE",
+      "default": "recommended",
+      "reason": "alsamixer and card tools for debugging audio",
+      "sizeKib": 2529
+    },
+    {
+      "name": "avahi",
+      "source": "arch",
+      "category": "CORE",
+      "default": "recommended",
+      "reason": "mDNS and DNS-SD for local names and printer discovery",
+      "sizeKib": 2088
+    },
+    {
+      "name": "brightnessctl",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "Backlight control the shell OSD calls",
+      "sizeKib": 28
+    },
+    {
+      "name": "cliphist",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "Clipboard history store the shell reads",
+      "sizeKib": 2365
+    },
+    {
+      "name": "coreutils",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "GNU core utilities",
+      "sizeKib": 17889
+    },
+    {
+      "name": "curl",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "HTTP client the CLI uses for weather and fetches",
+      "sizeKib": 2273
+    },
+    {
+      "name": "egl-wayland",
+      "source": "arch",
+      "category": "CORE",
+      "default": "recommended",
+      "reason": "EGLStream Wayland support needed by NVIDIA GL clients",
+      "sizeKib": 97
+    },
+    {
+      "name": "fontconfig",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "Font discovery and matching",
+      "sizeKib": 1366
+    },
+    {
+      "name": "frost",
+      "source": "frost",
+      "category": "CORE",
+      "default": "required",
+      "reason": "The Frost desktop runtime, static shell and diagnostics CLI"
+    },
+    {
+      "name": "frost-settings",
+      "source": "frost",
+      "category": "CORE",
+      "default": "required",
+      "reason": "Privileged Frost session integration; lands at cutover after an ownership audit"
+    },
+    {
+      "name": "fwupd",
+      "source": "arch",
+      "category": "CORE",
+      "default": "recommended",
+      "reason": "Firmware updates over LVFS for UEFI, SSDs, docks and peripherals"
+    },
+    {
+      "name": "gawk",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "AWK implementation the CLI parsing relies on",
+      "sizeKib": 4188
+    },
+    {
+      "name": "ghostty",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "The Frost terminal emulator",
+      "sizeKib": 30136
+    },
+    {
+      "name": "glibc",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "C library",
+      "sizeKib": 51875
+    },
+    {
+      "name": "gnome-keyring",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "Secret store for the session",
+      "sizeKib": 3287
+    },
+    {
+      "name": "gst-plugin-pipewire",
+      "source": "arch",
+      "category": "CORE",
+      "default": "recommended",
+      "reason": "GStreamer bridge so apps capture through PipeWire",
+      "sizeKib": 175
+    },
+    {
+      "name": "gtk4-layer-shell",
+      "source": "arch",
+      "category": "CORE",
+      "default": "recommended",
+      "reason": "Layer-shell support for GTK4 panels and launchers",
+      "sizeKib": 300
+    },
+    {
+      "name": "hypridle",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "Idle daemon that drives Frost lock and DPMS",
+      "sizeKib": 274
+    },
+    {
+      "name": "hyprland",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "The Wayland compositor the Frost session runs on",
+      "sizeKib": 66088
+    },
+    {
+      "name": "hyprland-guiutils",
+      "source": "arch",
+      "category": "CORE",
+      "default": "recommended",
+      "reason": "Qt dialogs Hyprland calls for update and error prompts",
+      "sizeKib": 796
+    },
+    {
+      "name": "hyprlock",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "Screen locker; a Frost security authority",
+      "sizeKib": 844
+    },
+    {
+      "name": "hyprpolkitagent",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "Polkit authentication agent for the session",
+      "sizeKib": 216
+    },
+    {
+      "name": "jq",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "JSON processor the CLI and scripts depend on",
+      "sizeKib": 480
+    },
+    {
+      "name": "libnotify",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "notify-send and the client notification API",
+      "sizeKib": 172
+    },
+    {
+      "name": "libpulse",
+      "source": "arch",
+      "category": "CORE",
+      "default": "recommended",
+      "reason": "PulseAudio client library many apps link against",
+      "sizeKib": 1499
+    },
+    {
+      "name": "libsecret",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "Client library apps use to reach the keyring",
+      "sizeKib": 1189
+    },
+    {
+      "name": "limine-snapper-sync",
+      "source": "aur",
+      "category": "OPTIONAL",
+      "default": "optional",
+      "reason": "Adds Limine boot entries for Snapper snapshots; installed with paru",
+      "sizeKib": 26736,
+      "pkgbase": "limine-snapper-sync",
+      "recipeUrl": "https://aur.archlinux.org/limine-snapper-sync.git"
+    },
+    {
+      "name": "mako",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "Notification daemon; the Frost notification authority",
+      "sizeKib": 140
+    },
+    {
+      "name": "mesa",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "OpenGL and generic GPU driver for the whole session, and AMD/Intel VA-API video decode"
+    },
+    {
+      "name": "networkmanager",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "Network configuration daemon the shell reads and drives",
+      "sizeKib": 18534
+    },
+    {
+      "name": "noto-fonts",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "Base Latin and symbol font coverage",
+      "sizeKib": 109373
+    },
+    {
+      "name": "noto-fonts-emoji",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "Colour emoji the shell and apps render",
+      "sizeKib": 10424
+    },
+    {
+      "name": "nss-mdns",
+      "source": "arch",
+      "category": "CORE",
+      "default": "recommended",
+      "reason": "Glue so .local names resolve through Avahi",
+      "sizeKib": 107
+    },
+    {
+      "name": "nvme-cli",
+      "source": "arch",
+      "category": "CORE",
+      "default": "recommended",
+      "reason": "Management and health queries for NVMe SSDs"
+    },
+    {
+      "name": "openssh",
+      "source": "arch",
+      "category": "CORE",
+      "default": "recommended",
+      "reason": "SSH client and server for remote access",
+      "sizeKib": 6912
+    },
+    {
+      "name": "pipewire",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "Audio and video server for the session",
+      "sizeKib": 3031
+    },
+    {
+      "name": "pipewire-alsa",
+      "source": "arch",
+      "category": "CORE",
+      "default": "recommended",
+      "reason": "ALSA compatibility layer for PipeWire",
+      "sizeKib": 1218
+    },
+    {
+      "name": "pipewire-pulse",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "PulseAudio replacement layer on PipeWire",
+      "sizeKib": 561
+    },
+    {
+      "name": "plymouth",
+      "source": "arch",
+      "category": "CORE",
+      "default": "recommended",
+      "reason": "Boot splash",
+      "sizeKib": 2242
+    },
+    {
+      "name": "polkit",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "System policy toolkit for privileged actions"
+    },
+    {
+      "name": "power-profiles-daemon",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "Power profile switching the shell exposes",
+      "sizeKib": 141
+    },
+    {
+      "name": "qt6-wayland",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "Wayland platform plugin for every Qt app including the shell",
+      "sizeKib": 5068
+    },
+    {
+      "name": "quickshell",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "QtQuick shell runtime hosting the Frost bar, island and surfaces",
+      "sizeKib": 6184
+    },
+    {
+      "name": "reflector",
+      "source": "arch",
+      "category": "CORE",
+      "default": "recommended",
+      "reason": "Ranks and refreshes the pacman mirror list"
+    },
+    {
+      "name": "rsync",
+      "source": "arch",
+      "category": "CORE",
+      "default": "recommended",
+      "reason": "File sync and copy tool many scripts and backups rely on"
+    },
+    {
+      "name": "sddm",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "Display manager and login screen",
+      "sizeKib": 5468
+    },
+    {
+      "name": "snapper",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "Btrfs snapshot management for rollback",
+      "sizeKib": 3696
+    },
+    {
+      "name": "sudo",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "Privilege escalation; Frost narrows the sudoers rules rather than dropping it"
+    },
+    {
+      "name": "systemd",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "init, logind and the user session lifecycle",
+      "sizeKib": 40427
+    },
+    {
+      "name": "ttf-jetbrains-mono",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "Primary UI and terminal typeface",
+      "sizeKib": 7618
+    },
+    {
+      "name": "ttf-nerd-fonts-symbols-mono",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "Glyph icons the bar and shell render",
+      "sizeKib": 2447
+    },
+    {
+      "name": "ufw",
+      "source": "arch",
+      "category": "CORE",
+      "default": "recommended",
+      "reason": "Host firewall, enabled by default",
+      "sizeKib": 528
+    },
+    {
+      "name": "upower",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "Battery and power device information for the shell",
+      "sizeKib": 871
+    },
+    {
+      "name": "util-linux",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "rfkill, lsblk and core system utilities",
+      "sizeKib": 20172
+    },
+    {
+      "name": "uwsm",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "Universal Wayland session manager that starts the Frost session",
+      "sizeKib": 328
+    },
+    {
+      "name": "vulkan-icd-loader",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "Vulkan loader that every Vulkan driver and app goes through"
+    },
+    {
+      "name": "wireless-regdb",
+      "source": "arch",
+      "category": "CORE",
+      "default": "recommended",
+      "reason": "Wireless regulatory database for correct Wi-Fi channels",
+      "sizeKib": 21
+    },
+    {
+      "name": "wireplumber",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "PipeWire session and policy manager",
+      "sizeKib": 1247
+    },
+    {
+      "name": "wl-clipboard",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "wl-copy and wl-paste, used by the shell and terminal",
+      "sizeKib": 100
+    },
+    {
+      "name": "xdg-desktop-portal",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "Portal frontend the Hyprland and GTK backends plug into"
+    },
+    {
+      "name": "xdg-desktop-portal-gtk",
+      "source": "arch",
+      "category": "CORE",
+      "default": "recommended",
+      "reason": "GTK portal backend for file chooser and settings",
+      "sizeKib": 427
+    },
+    {
+      "name": "xdg-desktop-portal-hyprland",
+      "source": "arch",
+      "category": "CORE",
+      "default": "required",
+      "reason": "Screen share and file portal backend for Hyprland",
+      "sizeKib": 816
+    },
+    {
+      "name": "xdg-terminal-exec",
+      "source": "aur",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Resolves the preferred terminal for xdg-open",
+      "sizeKib": 46,
+      "pkgbase": "xdg-terminal-exec",
+      "recipeUrl": "https://aur.archlinux.org/xdg-terminal-exec.git"
+    },
+    {
+      "name": "xdg-user-dirs",
+      "source": "arch",
+      "category": "CORE",
+      "default": "recommended",
+      "reason": "Standard home folders (Downloads, Pictures, ...)"
+    },
+    {
+      "name": "xdg-utils",
+      "source": "arch",
+      "category": "CORE",
+      "default": "recommended",
+      "reason": "xdg-open and the desktop helper scripts apps shell out to"
+    },
+    {
+      "name": "zram-generator",
+      "source": "arch",
+      "category": "CORE",
+      "default": "recommended",
+      "reason": "Compressed RAM swap, sized as a fraction of memory",
+      "sizeKib": 767
+    },
+    {
+      "name": "bash-completion",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Completion scripts for bash",
+      "sizeKib": 1018
+    },
+    {
+      "name": "bat",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "cat with syntax highlighting",
+      "sizeKib": 5785
+    },
+    {
+      "name": "bluez-tools",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Extra Bluetooth command-line tools",
+      "feature": "bluetooth",
+      "sizeKib": 265
+    },
+    {
+      "name": "btop",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Resource monitor",
+      "sizeKib": 1737
+    },
+    {
+      "name": "chromium",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Chromium browser and the runtime for local web apps",
+      "sizeKib": 426199
+    },
+    {
+      "name": "cliamp",
+      "source": "aur",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Retro terminal music player",
+      "sizeKib": 35932,
+      "pkgbase": "cliamp",
+      "recipeUrl": "https://aur.archlinux.org/cliamp.git"
+    },
+    {
+      "name": "cups",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Print server",
+      "feature": "printing",
+      "sizeKib": 13086
+    },
+    {
+      "name": "cups-browsed",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Automatic network printer discovery",
+      "feature": "printing",
+      "sizeKib": 565
+    },
+    {
+      "name": "cups-filters",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Print filter chain",
+      "feature": "printing",
+      "sizeKib": 1212
+    },
+    {
+      "name": "cups-pdf",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Print-to-PDF virtual printer",
+      "feature": "printing",
+      "sizeKib": 197
+    },
+    {
+      "name": "dua-cli",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Disk usage analyser",
+      "sizeKib": 3758
+    },
+    {
+      "name": "evince",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "PDF and document viewer",
+      "sizeKib": 12748
+    },
+    {
+      "name": "exfatprogs",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "exFAT filesystem tools for external media",
+      "sizeKib": 347
+    },
+    {
+      "name": "expac",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "pacman database query tool used by scripts",
+      "sizeKib": 33
+    },
+    {
+      "name": "eza",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Modern ls replacement",
+      "sizeKib": 1873
+    },
+    {
+      "name": "fastfetch",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "System information tool",
+      "sizeKib": 1982
+    },
+    {
+      "name": "fcitx5",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Input method framework for CJK and compose layouts",
+      "sizeKib": 18810
+    },
+    {
+      "name": "fcitx5-gtk",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "GTK integration for Fcitx5",
+      "sizeKib": 319
+    },
+    {
+      "name": "fcitx5-qt",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Qt integration for Fcitx5",
+      "sizeKib": 1789
+    },
+    {
+      "name": "fd",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Fast find replacement",
+      "sizeKib": 3512
+    },
+    {
+      "name": "ffmpegthumbnailer",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Video thumbnails in the file manager",
+      "sizeKib": 284
+    },
+    {
+      "name": "foot",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Lightweight Wayland terminal, kept available though ghostty is the Frost default",
+      "sizeKib": 793
+    },
+    {
+      "name": "frost-wallpapers",
+      "source": "frost",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Frost wallpaper set for the themes"
+    },
+    {
+      "name": "fzf",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Fuzzy finder used across the shell config",
+      "sizeKib": 5038
+    },
+    {
+      "name": "git",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Version control",
+      "sizeKib": 32081
+    },
+    {
+      "name": "gnome-disk-utility",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Disk and partition manager",
+      "sizeKib": 6707
+    },
+    {
+      "name": "gnome-themes-extra",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "GTK theme and Adwaita legacy assets",
+      "sizeKib": 4331
+    },
+    {
+      "name": "gpu-screen-recorder",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Low-overhead screen recorder",
+      "feature": "media-production",
+      "sizeKib": 492
+    },
+    {
+      "name": "grim",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "required",
+      "reason": "Wayland screenshot capture used by the shell",
+      "sizeKib": 45
+    },
+    {
+      "name": "gum",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Shell-script UI toolkit",
+      "sizeKib": 13527
+    },
+    {
+      "name": "gvfs-mtp",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "MTP phone mounting for the file manager",
+      "sizeKib": 156
+    },
+    {
+      "name": "gvfs-nfs",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "NFS share mounting for the file manager",
+      "sizeKib": 50
+    },
+    {
+      "name": "gvfs-smb",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "SMB share mounting for the file manager",
+      "sizeKib": 85
+    },
+    {
+      "name": "hyprland-preview-share-picker",
+      "source": "arch",
+      "category": "DROP",
+      "default": "optional",
+      "reason": "Omarchy-custom; the share picker ships with xdg-desktop-portal-hyprland now",
+      "sizeKib": 6461
+    },
+    {
+      "name": "hyprpicker",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Colour picker",
+      "sizeKib": 230
+    },
+    {
+      "name": "hyprsunset",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Night-light colour temperature",
+      "sizeKib": 261
+    },
+    {
+      "name": "imagemagick",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Image conversion CLI used by the theme tools",
+      "sizeKib": 22282
+    },
+    {
+      "name": "imv",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Image viewer",
+      "sizeKib": 239
+    },
+    {
+      "name": "inetutils",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "hostname, ping and small network tools",
+      "sizeKib": 1102
+    },
+    {
+      "name": "inotify-tools",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "File-watch CLI used by scripts",
+      "sizeKib": 858
+    },
+    {
+      "name": "inxi",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "System report tool for support threads",
+      "sizeKib": 1388
+    },
+    {
+      "name": "kdenlive",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Video editor",
+      "feature": "media-production",
+      "sizeKib": 94894
+    },
+    {
+      "name": "less",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Pager",
+      "sizeKib": 330
+    },
+    {
+      "name": "libreoffice-fresh",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Office suite",
+      "sizeKib": 431503
+    },
+    {
+      "name": "libva-utils",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "vainfo and VA-API diagnostics"
+    },
+    {
+      "name": "libvips",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Fast image processing library used by some tools",
+      "sizeKib": 31610
+    },
+    {
+      "name": "localsend",
+      "source": "aur",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Local-network file sharing",
+      "sizeKib": 68597,
+      "pkgbase": "localsend",
+      "recipeUrl": "https://aur.archlinux.org/localsend.git"
+    },
+    {
+      "name": "man-db",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Manual page reader and index",
+      "sizeKib": 2488
+    },
+    {
+      "name": "moonlight-qt",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Game streaming client",
+      "feature": "gaming",
+      "sizeKib": 1980
+    },
+    {
+      "name": "mpv",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Video and audio player",
+      "sizeKib": 6492
+    },
+    {
+      "name": "mpv-mpris",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "MPRIS control so the shell media widget sees mpv",
+      "sizeKib": 35
+    },
+    {
+      "name": "nautilus",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "File manager",
+      "sizeKib": 14008
+    },
+    {
+      "name": "nautilus-python",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Python extension support for Nautilus",
+      "sizeKib": 217
+    },
+    {
+      "name": "noto-fonts-cjk",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Chinese, Japanese and Korean font coverage",
+      "sizeKib": 305960
+    },
+    {
+      "name": "noto-fonts-extra",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Extended Noto coverage for less common scripts"
+    },
+    {
+      "name": "ntfs-3g",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Read and write NTFS drives from Windows machines"
+    },
+    {
+      "name": "neovim",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Neovim text editor",
+      "sizeKib": 31252
+    },
+    {
+      "name": "obs-studio",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Streaming and recording studio",
+      "feature": "media-production",
+      "sizeKib": 25303
+    },
+    {
+      "name": "obsidian",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Markdown knowledge base",
+      "sizeKib": 25825
+    },
+    {
+      "name": "pacman-contrib",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "paccache, checkupdates and pactree",
+      "sizeKib": 129
+    },
+    {
+      "name": "pamixer",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "CLI volume control used by scripts",
+      "sizeKib": 271
+    },
+    {
+      "name": "pavucontrol",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Per-app volume and audio routing GUI"
+    },
+    {
+      "name": "pinta",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Simple raster image editor",
+      "sizeKib": 20490
+    },
+    {
+      "name": "pipewire-jack",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "JACK compatibility on PipeWire",
+      "feature": "media-production",
+      "sizeKib": 701
+    },
+    {
+      "name": "plocate",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Fast file locate database",
+      "sizeKib": 515
+    },
+    {
+      "name": "python-gobject",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "GObject introspection for GTK Python apps",
+      "sizeKib": 1541
+    },
+    {
+      "name": "qemu-user-static-binfmt",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Run foreign-arch binaries for cross builds",
+      "sizeKib": 55
+    },
+    {
+      "name": "qrencode",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "QR code generation",
+      "sizeKib": 110
+    },
+    {
+      "name": "qt6-imageformats",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Extra image format plugins for Qt apps",
+      "sizeKib": 364
+    },
+    {
+      "name": "ripgrep",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Fast recursive search",
+      "sizeKib": 4392
+    },
+    {
+      "name": "sane",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Scanner access backend",
+      "feature": "scanning"
+    },
+    {
+      "name": "sane-airscan",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Driverless network and USB scanning (eSCL, WSD)",
+      "feature": "scanning"
+    },
+    {
+      "name": "slurp",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "required",
+      "reason": "Region select for screenshots",
+      "sizeKib": 38
+    },
+    {
+      "name": "smartmontools",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "SMART disk health monitoring"
+    },
+    {
+      "name": "socat",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Socket relay used by some scripts",
+      "sizeKib": 580
+    },
+    {
+      "name": "spotify-launcher",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Official Spotify client, fetched and kept updated by the Arch launcher"
+    },
+    {
+      "name": "starship",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Shell prompt",
+      "sizeKib": 11857
+    },
+    {
+      "name": "sushi",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Quick-look previews for Nautilus",
+      "sizeKib": 385
+    },
+    {
+      "name": "system-config-printer",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Printer setup GUI",
+      "feature": "printing",
+      "sizeKib": 8386
+    },
+    {
+      "name": "tensaku",
+      "source": "aur",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Screenshot annotation tool for Wayland",
+      "sizeKib": 7311,
+      "pkgbase": "tensaku",
+      "recipeUrl": "https://aur.archlinux.org/tensaku.git"
+    },
+    {
+      "name": "tesseract",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "OCR engine for the screenshot text grab",
+      "sizeKib": 4771
+    },
+    {
+      "name": "tesseract-data-eng",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "English OCR training data",
+      "sizeKib": 22917
+    },
+    {
+      "name": "tldr",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Concise command examples",
+      "sizeKib": 126
+    },
+    {
+      "name": "tmux",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Terminal multiplexer",
+      "sizeKib": 1244
+    },
+    {
+      "name": "try",
+      "source": "aur",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Throwaway project directories",
+      "sizeKib": 70,
+      "pkgbase": "try",
+      "recipeUrl": "https://aur.archlinux.org/try.git"
+    },
+    {
+      "name": "ttf-dejavu",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Broad Latin and symbol fallback font"
+    },
+    {
+      "name": "ttf-ia-writer",
+      "source": "aur",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "iA Writer duospace font",
+      "sizeKib": 2088,
+      "pkgbase": "ttf-ia-writer",
+      "recipeUrl": "https://aur.archlinux.org/ttf-ia-writer.git"
+    },
+    {
+      "name": "ttf-jetbrains-mono-nerd-basic",
+      "source": "arch",
+      "category": "DROP",
+      "default": "optional",
+      "reason": "Omarchy-custom font; ttf-jetbrains-mono + ttf-nerd-fonts-symbols-mono already cover it",
+      "sizeKib": 9912
+    },
+    {
+      "name": "ttf-liberation",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Metric-compatible Arial and Times substitutes for documents and the web"
+    },
+    {
+      "name": "tzupdate",
+      "source": "aur",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Sets the timezone from geolocation on first boot",
+      "sizeKib": 2549,
+      "pkgbase": "tzupdate",
+      "recipeUrl": "https://aur.archlinux.org/tzupdate.git"
+    },
+    {
+      "name": "udiskie",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Automount for removable media",
+      "sizeKib": 941
+    },
+    {
+      "name": "unzip",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Zip extraction",
+      "sizeKib": 308
+    },
+    {
+      "name": "vulkan-mesa-layers",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Optional Mesa Vulkan layers for debugging and overlays"
+    },
+    {
+      "name": "webp-pixbuf-loader",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "WebP thumbnails and previews"
+    },
+    {
+      "name": "whois",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Domain lookup",
+      "sizeKib": 244
+    },
+    {
+      "name": "wireguard-tools",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "WireGuard VPN configuration tools"
+    },
+    {
+      "name": "woff2-font-awesome",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Font Awesome web font for local web apps",
+      "sizeKib": 259
+    },
+    {
+      "name": "wtype",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Wayland keystroke injection used by scripts",
+      "sizeKib": 23
+    },
+    {
+      "name": "xournalpp",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Handwritten notes and PDF annotation",
+      "sizeKib": 8273
+    },
+    {
+      "name": "papirus-icon-theme",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Icon theme",
+      "sizeKib": 64931
+    },
+    {
+      "name": "yt-dlp",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Media downloader",
+      "sizeKib": 32440
+    },
+    {
+      "name": "zbar",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "optional",
+      "reason": "Barcode and QR decoding",
+      "sizeKib": 786
+    },
+    {
+      "name": "zoxide",
+      "source": "arch",
+      "category": "DESKTOP",
+      "default": "recommended",
+      "reason": "Directory jumper",
+      "sizeKib": 1149
+    },
+    {
+      "name": "autoconf-archive",
+      "source": "arch",
+      "category": "DEVELOPMENT",
+      "default": "optional",
+      "reason": "Extra Autoconf macros for building software",
+      "feature": "development"
+    },
+    {
+      "name": "clang",
+      "source": "arch",
+      "category": "DEVELOPMENT",
+      "default": "optional",
+      "reason": "C and C++ compiler front end",
+      "feature": "development",
+      "sizeKib": 260526
+    },
+    {
+      "name": "docker",
+      "source": "arch",
+      "category": "DEVELOPMENT",
+      "default": "optional",
+      "reason": "Container engine",
+      "feature": "development",
+      "sizeKib": 119828
+    },
+    {
+      "name": "docker-buildx",
+      "source": "arch",
+      "category": "DEVELOPMENT",
+      "default": "optional",
+      "reason": "Extended build backend for Docker",
+      "feature": "development",
+      "sizeKib": 64020
+    },
+    {
+      "name": "docker-compose",
+      "source": "arch",
+      "category": "DEVELOPMENT",
+      "default": "optional",
+      "reason": "Multi-container orchestration",
+      "feature": "development",
+      "sizeKib": 43735
+    },
+    {
+      "name": "dotnet-runtime",
+      "source": "arch",
+      "category": "DEVELOPMENT",
+      "default": "optional",
+      "reason": ".NET runtime",
+      "feature": "development",
+      "sizeKib": 75356
+    },
+    {
+      "name": "lazydocker",
+      "source": "arch",
+      "category": "DEVELOPMENT",
+      "default": "optional",
+      "reason": "Terminal UI for Docker",
+      "feature": "development",
+      "sizeKib": 12912
+    },
+    {
+      "name": "lazygit",
+      "source": "arch",
+      "category": "DEVELOPMENT",
+      "default": "optional",
+      "reason": "Terminal UI for Git",
+      "feature": "development",
+      "sizeKib": 19527
+    },
+    {
+      "name": "libyaml",
+      "source": "arch",
+      "category": "DEVELOPMENT",
+      "default": "optional",
+      "reason": "YAML library many language toolchains need",
+      "feature": "development",
+      "sizeKib": 184
+    },
+    {
+      "name": "llvm",
+      "source": "arch",
+      "category": "DEVELOPMENT",
+      "default": "optional",
+      "reason": "LLVM toolchain libraries and tools",
+      "feature": "development",
+      "sizeKib": 133928
+    },
+    {
+      "name": "lua51",
+      "source": "arch",
+      "category": "DEVELOPMENT",
+      "default": "optional",
+      "reason": "Lua 5.1 runtime",
+      "feature": "development",
+      "sizeKib": 887
+    },
+    {
+      "name": "luarocks",
+      "source": "arch",
+      "category": "DEVELOPMENT",
+      "default": "optional",
+      "reason": "Lua package manager",
+      "feature": "development",
+      "sizeKib": 6
+    },
+    {
+      "name": "mariadb-libs",
+      "source": "arch",
+      "category": "DEVELOPMENT",
+      "default": "optional",
+      "reason": "MariaDB and MySQL client libraries",
+      "feature": "development",
+      "sizeKib": 24207
+    },
+    {
+      "name": "mise",
+      "source": "arch",
+      "category": "DEVELOPMENT",
+      "default": "optional",
+      "reason": "Runtime and tool version manager",
+      "feature": "development"
+    },
+    {
+      "name": "postgresql-libs",
+      "source": "arch",
+      "category": "DEVELOPMENT",
+      "default": "optional",
+      "reason": "PostgreSQL client libraries",
+      "feature": "development",
+      "sizeKib": 10977
+    },
+    {
+      "name": "python-poetry-core",
+      "source": "arch",
+      "category": "DEVELOPMENT",
+      "default": "optional",
+      "reason": "Build backend for Python Poetry projects",
+      "feature": "development",
+      "sizeKib": 1722
+    },
+    {
+      "name": "ruby",
+      "source": "arch",
+      "category": "DEVELOPMENT",
+      "default": "optional",
+      "reason": "Ruby language runtime",
+      "feature": "development",
+      "sizeKib": 17367
+    },
+    {
+      "name": "tree-sitter-cli",
+      "source": "arch",
+      "category": "DEVELOPMENT",
+      "default": "optional",
+      "reason": "Parser generator used by editor tooling",
+      "feature": "development",
+      "sizeKib": 9359
+    },
+    {
+      "name": "usage",
+      "source": "arch",
+      "category": "DEVELOPMENT",
+      "default": "optional",
+      "reason": "CLI spec tool that mise depends on",
+      "feature": "development",
+      "sizeKib": 8366
+    },
+    {
+      "name": "visual-studio-code-bin",
+      "source": "aur",
+      "category": "DEVELOPMENT",
+      "default": "optional",
+      "reason": "Visual Studio Code (Microsoft build with the marketplace)",
+      "feature": "development",
+      "pkgbase": "visual-studio-code-bin",
+      "recipeUrl": "https://aur.archlinux.org/visual-studio-code-bin.git"
+    },
+    {
+      "name": "zed",
+      "source": "arch",
+      "category": "DEVELOPMENT",
+      "default": "optional",
+      "reason": "Zed high-performance collaborative code editor",
+      "feature": "development"
+    },
+    {
+      "name": "aether",
+      "source": "arch",
+      "category": "DROP",
+      "default": "optional",
+      "reason": "Second theming engine that would fight the Frost theme system",
+      "sizeKib": 19200
+    },
+    {
+      "name": "herdr",
+      "source": "arch",
+      "category": "DROP",
+      "default": "optional",
+      "reason": "Donor-authored terminal workspace manager outside the Frost set",
+      "sizeKib": 18319
+    },
+    {
+      "name": "omacalc",
+      "source": "arch",
+      "category": "DROP",
+      "default": "optional",
+      "reason": "Donor-authored Qt utility outside the Frost set",
+      "sizeKib": 297
+    },
+    {
+      "name": "omacut",
+      "source": "arch",
+      "category": "DROP",
+      "default": "optional",
+      "reason": "Donor-authored Qt utility outside the Frost set",
+      "sizeKib": 191
+    },
+    {
+      "name": "omarchy-keyring",
+      "source": "arch",
+      "category": "DROP",
+      "default": "optional",
+      "reason": "Donor package keyring; Frost trust comes from frost-keyring",
+      "sizeKib": 676
+    },
+    {
+      "name": "omarchy-nvim",
+      "source": "arch",
+      "category": "DROP",
+      "default": "optional",
+      "reason": "Donor-namespaced LazyVim bundle; install LazyVim directly if wanted",
+      "sizeKib": 63877
+    },
+    {
+      "name": "omawrite",
+      "source": "arch",
+      "category": "DROP",
+      "default": "optional",
+      "reason": "Donor-authored Qt utility outside the Frost set",
+      "sizeKib": 564
+    },
+    {
+      "name": "ttfx",
+      "source": "arch",
+      "category": "DROP",
+      "default": "optional",
+      "reason": "Donor-authored terminal-effects toy outside the Frost set",
+      "sizeKib": 2344
+    },
+    {
+      "name": "yay-debug",
+      "source": "arch",
+      "category": "DROP",
+      "default": "optional",
+      "reason": "Debug-symbols package, not part of a normal install"
+    },
+    {
+      "name": "acpid",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "ACPI event daemon for lid, power button and dock events",
+      "hardware": [
+        "acpi"
+      ]
+    },
+    {
+      "name": "apple-bcm-firmware",
+      "source": "aur",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Broadcom Wi-Fi and Bluetooth firmware for T2 Macs",
+      "hardware": [
+        "mac-t2"
+      ],
+      "pkgbase": "apple-bcm-firmware",
+      "recipeUrl": "https://aur.archlinux.org/apple-bcm-firmware.git"
+    },
+    {
+      "name": "apple-t2-audio-config",
+      "source": "aur",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Audio routing config for T2 Mac speakers",
+      "hardware": [
+        "mac-t2"
+      ],
+      "pkgbase": "apple-t2-audio-config",
+      "recipeUrl": "https://aur.archlinux.org/apple-t2-audio-config.git"
+    },
+    {
+      "name": "asdcontrol",
+      "source": "aur",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Brightness control for Apple displays",
+      "hardware": [
+        "apple-display"
+      ],
+      "sizeKib": 30,
+      "pkgbase": "asdcontrol",
+      "recipeUrl": "https://aur.archlinux.org/asdcontrol.git"
+    },
+    {
+      "name": "asusctl",
+      "source": "aur",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "ASUS laptop hardware control",
+      "hardware": [
+        "asus"
+      ],
+      "pkgbase": "asusctl",
+      "recipeUrl": "https://aur.archlinux.org/asusctl.git"
+    },
+    {
+      "name": "bolt",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "recommended",
+      "reason": "Thunderbolt device authorization",
+      "hardware": [
+        "thunderbolt"
+      ],
+      "sizeKib": 438
+    },
+    {
+      "name": "broadcom-wl",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Broadcom proprietary Wi-Fi driver",
+      "hardware": [
+        "broadcom-wifi"
+      ]
+    },
+    {
+      "name": "ddcutil",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "DDC/CI brightness control for external monitors",
+      "hardware": [
+        "external-display"
+      ],
+      "sizeKib": 2560
+    },
+    {
+      "name": "dell-xps-touchpad-haptics",
+      "source": "aur",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Haptic touchpad support for Dell XPS",
+      "hardware": [
+        "dell-xps"
+      ],
+      "pkgbase": "dell-xps-touchpad-haptics",
+      "recipeUrl": "https://aur.archlinux.org/dell-xps-touchpad-haptics.git"
+    },
+    {
+      "name": "dell-xps13-sidecar-amps",
+      "source": "aur",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Speaker amp init for Dell XPS 13",
+      "hardware": [
+        "dell-xps"
+      ],
+      "pkgbase": "dell-xps13-sidecar-amps",
+      "recipeUrl": "https://aur.archlinux.org/dell-xps13-sidecar-amps.git"
+    },
+    {
+      "name": "dkms",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "recommended",
+      "reason": "Rebuilds out-of-tree kernel modules on kernel updates",
+      "hardware": [
+        "dkms"
+      ]
+    },
+    {
+      "name": "fprintd",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Fingerprint enrolment and authentication service",
+      "hardware": [
+        "fingerprint"
+      ]
+    },
+    {
+      "name": "iio-sensor-proxy",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Accelerometer, ambient light and auto-rotation",
+      "hardware": [
+        "sensors"
+      ]
+    },
+    {
+      "name": "intel-ipu7-camera",
+      "source": "aur",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Driver stack for Intel IPU7 MIPI webcams",
+      "hardware": [
+        "intel-ipu-camera"
+      ],
+      "pkgbase": "intel-ipu7-camera",
+      "recipeUrl": "https://aur.archlinux.org/intel-ipu7-camera.git"
+    },
+    {
+      "name": "intel-lpmd",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Intel low power mode daemon",
+      "hardware": [
+        "cpu-intel"
+      ]
+    },
+    {
+      "name": "intel-media-driver",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Intel VA-API video acceleration",
+      "hardware": [
+        "gpu-intel"
+      ]
+    },
+    {
+      "name": "kernel-modules-hook",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Keeps modules for the running kernel across updates",
+      "hardware": [
+        "dkms"
+      ],
+      "sizeKib": 2
+    },
+    {
+      "name": "lib32-mesa",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "32-bit OpenGL for Steam, Wine and Proton",
+      "hardware": [
+        "gpu",
+        "gaming"
+      ]
+    },
+    {
+      "name": "lib32-nvidia-580xx-utils",
+      "source": "aur",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "32-bit NVIDIA 580 legacy driver",
+      "hardware": [
+        "gpu-nvidia-legacy",
+        "gaming"
+      ],
+      "pkgbase": "lib32-nvidia-580xx-utils",
+      "recipeUrl": "https://aur.archlinux.org/lib32-nvidia-580xx-utils.git"
+    },
+    {
+      "name": "lib32-nvidia-utils",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "32-bit NVIDIA driver for Steam and Wine",
+      "hardware": [
+        "gpu-nvidia",
+        "gaming"
+      ],
+      "sizeKib": 559175
+    },
+    {
+      "name": "lib32-vulkan-intel",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "32-bit Intel Vulkan driver for Steam and Wine",
+      "hardware": [
+        "gpu-intel",
+        "gaming"
+      ]
+    },
+    {
+      "name": "lib32-vulkan-radeon",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "32-bit AMD Vulkan driver for Steam and Wine",
+      "hardware": [
+        "gpu-amd",
+        "gaming"
+      ]
+    },
+    {
+      "name": "libfprint",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Driver library for fingerprint readers",
+      "hardware": [
+        "fingerprint"
+      ]
+    },
+    {
+      "name": "libva-intel-driver",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Legacy Intel VA-API driver",
+      "hardware": [
+        "gpu-intel-legacy"
+      ]
+    },
+    {
+      "name": "libva-nvidia-driver",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "VA-API to NVDEC bridge for video decode",
+      "hardware": [
+        "gpu-nvidia"
+      ]
+    },
+    {
+      "name": "libvpl",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Intel oneVPL runtime loader",
+      "hardware": [
+        "gpu-intel"
+      ],
+      "sizeKib": 1013
+    },
+    {
+      "name": "linux-firmware-marvell",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Marvell Wi-Fi firmware for Surface devices",
+      "hardware": [
+        "surface"
+      ]
+    },
+    {
+      "name": "linux-ptl",
+      "source": "aur",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Panther Lake preview kernel",
+      "hardware": [
+        "ptl-kernel"
+      ],
+      "pkgbase": "linux-ptl",
+      "recipeUrl": "https://aur.archlinux.org/linux-ptl.git"
+    },
+    {
+      "name": "linux-ptl-headers",
+      "source": "aur",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Headers for the Panther Lake preview kernel",
+      "hardware": [
+        "ptl-kernel"
+      ],
+      "pkgbase": "linux-ptl-headers",
+      "recipeUrl": "https://aur.archlinux.org/linux-ptl-headers.git"
+    },
+    {
+      "name": "linux-t2",
+      "source": "aur",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Kernel with T2 Mac patches",
+      "hardware": [
+        "mac-t2"
+      ],
+      "pkgbase": "linux-t2",
+      "recipeUrl": "https://aur.archlinux.org/linux-t2.git"
+    },
+    {
+      "name": "linux-t2-headers",
+      "source": "aur",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Headers for the T2 patched kernel",
+      "hardware": [
+        "mac-t2"
+      ],
+      "pkgbase": "linux-t2-headers",
+      "recipeUrl": "https://aur.archlinux.org/linux-t2-headers.git"
+    },
+    {
+      "name": "lsp-plugins-lv2",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "LV2 limiter plugins used by per-laptop speaker tunings",
+      "hardware": [
+        "speaker-tuning"
+      ]
+    },
+    {
+      "name": "macbook12-spi-driver-dkms",
+      "source": "aur",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "SPI keyboard and trackpad driver for 2015-2017 MacBooks",
+      "hardware": [
+        "macbook"
+      ],
+      "pkgbase": "macbook12-spi-driver-dkms",
+      "recipeUrl": "https://aur.archlinux.org/macbook12-spi-driver-dkms.git"
+    },
+    {
+      "name": "modemmanager",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Cellular and LTE modem support for NetworkManager",
+      "hardware": [
+        "wwan"
+      ]
+    },
+    {
+      "name": "nvidia-580xx-dkms",
+      "source": "aur",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "NVIDIA 580 legacy kernel modules",
+      "hardware": [
+        "gpu-nvidia-legacy"
+      ],
+      "pkgbase": "nvidia-580xx-dkms",
+      "recipeUrl": "https://aur.archlinux.org/nvidia-580xx-dkms.git"
+    },
+    {
+      "name": "nvidia-580xx-utils",
+      "source": "aur",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "NVIDIA 580 legacy userspace driver",
+      "hardware": [
+        "gpu-nvidia-legacy"
+      ],
+      "pkgbase": "nvidia-580xx-utils",
+      "recipeUrl": "https://aur.archlinux.org/nvidia-580xx-utils.git"
+    },
+    {
+      "name": "nvidia-dkms",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "NVIDIA kernel modules for current GPUs",
+      "hardware": [
+        "gpu-nvidia"
+      ]
+    },
+    {
+      "name": "nvidia-open-dkms",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Open NVIDIA kernel modules for Turing and newer",
+      "hardware": [
+        "gpu-nvidia"
+      ]
+    },
+    {
+      "name": "nvidia-utils",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "NVIDIA userspace driver",
+      "hardware": [
+        "gpu-nvidia"
+      ],
+      "sizeKib": 906915
+    },
+    {
+      "name": "qmk-hid",
+      "source": "aur",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "QMK HID tools for Framework input modules",
+      "hardware": [
+        "framework"
+      ],
+      "pkgbase": "qmk-hid",
+      "recipeUrl": "https://aur.archlinux.org/qmk-hid.git"
+    },
+    {
+      "name": "sbctl",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Secure Boot key management for machines that enforce it",
+      "hardware": [
+        "secureboot"
+      ]
+    },
+    {
+      "name": "t2fanrd",
+      "source": "aur",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Fan control daemon for T2 Macs",
+      "hardware": [
+        "mac-t2"
+      ],
+      "pkgbase": "t2fanrd",
+      "recipeUrl": "https://aur.archlinux.org/t2fanrd.git"
+    },
+    {
+      "name": "thermald",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "recommended",
+      "reason": "Intel thermal management daemon",
+      "hardware": [
+        "cpu-intel"
+      ]
+    },
+    {
+      "name": "tlp",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Alternative laptop power management; use instead of power-profiles-daemon, not alongside",
+      "hardware": [
+        "laptop-tlp"
+      ]
+    },
+    {
+      "name": "tuxedo-drivers-nocompatcheck-dkms",
+      "source": "aur",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "TUXEDO laptop drivers",
+      "hardware": [
+        "tuxedo"
+      ],
+      "pkgbase": "tuxedo-drivers-nocompatcheck-dkms",
+      "recipeUrl": "https://aur.archlinux.org/tuxedo-drivers-nocompatcheck-dkms.git"
+    },
+    {
+      "name": "vpl-gpu-rt",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Intel oneVPL GPU runtime for encode and decode",
+      "hardware": [
+        "gpu-intel"
+      ]
+    },
+    {
+      "name": "vulkan-asahi",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Apple Silicon Vulkan driver",
+      "hardware": [
+        "gpu-asahi"
+      ]
+    },
+    {
+      "name": "vulkan-intel",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Intel Vulkan driver",
+      "hardware": [
+        "gpu-intel"
+      ]
+    },
+    {
+      "name": "vulkan-nouveau",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Open-source NVIDIA Vulkan driver for the nouveau stack",
+      "hardware": [
+        "gpu-nvidia-nouveau"
+      ]
+    },
+    {
+      "name": "vulkan-radeon",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "AMD Vulkan driver",
+      "hardware": [
+        "gpu-amd"
+      ],
+      "sizeKib": 17981
+    },
+    {
+      "name": "vulkan-swrast",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Software Vulkan (lavapipe) for VMs, headless use and as a fallback",
+      "hardware": [
+        "gpu-virtual"
+      ]
+    },
+    {
+      "name": "vulkan-virtio",
+      "source": "arch",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Vulkan passthrough (Venus) for virtual machines",
+      "hardware": [
+        "gpu-virtual"
+      ]
+    },
+    {
+      "name": "yt6801-dkms",
+      "source": "aur",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "Motorcomm YT6801 2.5G Ethernet driver",
+      "hardware": [
+        "yt6801-nic"
+      ],
+      "pkgbase": "yt6801-dkms",
+      "recipeUrl": "https://aur.archlinux.org/yt6801-dkms.git"
+    },
+    {
+      "name": "anydesk-bin",
+      "source": "aur",
+      "category": "OPTIONAL",
+      "default": "optional",
+      "reason": "AnyDesk remote desktop client",
+      "feature": "aur",
+      "pkgbase": "anydesk-bin",
+      "recipeUrl": "https://aur.archlinux.org/anydesk-bin.git"
+    },
+    {
+      "name": "beekeeper-studio-bin",
+      "source": "aur",
+      "category": "OPTIONAL",
+      "default": "optional",
+      "reason": "Beekeeper Studio SQL database GUI",
+      "feature": "aur",
+      "pkgbase": "beekeeper-studio-bin",
+      "recipeUrl": "https://aur.archlinux.org/beekeeper-studio-bin.git"
+    },
+    {
+      "name": "brave-bin",
+      "source": "aur",
+      "category": "OPTIONAL",
+      "default": "optional",
+      "reason": "Brave web browser (binary build)",
+      "feature": "aur",
+      "pkgbase": "brave-bin",
+      "recipeUrl": "https://aur.archlinux.org/brave-bin.git"
+    },
+    {
+      "name": "hyprmon-bin",
+      "source": "aur",
+      "category": "OPTIONAL",
+      "default": "optional",
+      "reason": "Hyprland monitor layout and hotplug tool",
+      "feature": "aur",
+      "pkgbase": "hyprmon-bin",
+      "recipeUrl": "https://aur.archlinux.org/hyprmon-bin.git"
+    },
+    {
+      "name": "jetbrains-toolbox",
+      "source": "aur",
+      "category": "OPTIONAL",
+      "default": "optional",
+      "reason": "Installer and updater for JetBrains IDEs",
+      "feature": "aur",
+      "pkgbase": "jetbrains-toolbox",
+      "recipeUrl": "https://aur.archlinux.org/jetbrains-toolbox.git"
+    },
+    {
+      "name": "open-vm-tools",
+      "source": "arch",
+      "category": "OPTIONAL",
+      "default": "optional",
+      "reason": "Guest integration inside VMware",
+      "feature": "virtualisation-guest"
+    },
+    {
+      "name": "pacsea-bin",
+      "source": "aur",
+      "category": "OPTIONAL",
+      "default": "recommended",
+      "reason": "Rust TUI to browse and install Arch and AUR packages",
+      "feature": "aur",
+      "pkgbase": "pacsea-bin",
+      "recipeUrl": "https://aur.archlinux.org/pacsea-bin.git"
+    },
+    {
+      "name": "parsec-bin",
+      "source": "aur",
+      "category": "OPTIONAL",
+      "default": "optional",
+      "reason": "Parsec low-latency remote desktop and game streaming",
+      "feature": "aur",
+      "pkgbase": "parsec-bin",
+      "recipeUrl": "https://aur.archlinux.org/parsec-bin.git"
+    },
+    {
+      "name": "paru",
+      "source": "aur",
+      "category": "OPTIONAL",
+      "default": "recommended",
+      "reason": "AUR helper; backend for the terminal package browsers",
+      "feature": "aur",
+      "pkgbase": "paru",
+      "recipeUrl": "https://aur.archlinux.org/paru.git"
+    },
+    {
+      "name": "parui",
+      "source": "aur",
+      "category": "OPTIONAL",
+      "default": "optional",
+      "reason": "Minimal Rust TUI frontend for paru or yay",
+      "feature": "aur",
+      "pkgbase": "parui",
+      "recipeUrl": "https://aur.archlinux.org/parui.git"
+    },
+    {
+      "name": "qemu-guest-agent",
+      "source": "arch",
+      "category": "OPTIONAL",
+      "default": "optional",
+      "reason": "Host integration when Frost runs inside QEMU or KVM",
+      "feature": "virtualisation-guest"
+    },
+    {
+      "name": "spice-vdagent",
+      "source": "arch",
+      "category": "OPTIONAL",
+      "default": "optional",
+      "reason": "Clipboard and display resize inside SPICE virtual machines",
+      "feature": "virtualisation-guest"
+    },
+    {
+      "name": "tailscale",
+      "source": "arch",
+      "category": "OPTIONAL",
+      "default": "optional",
+      "reason": "Mesh VPN, surfaced by the shell only when the feature is on",
+      "feature": "tailscale",
+      "sizeKib": 52101
+    },
+    {
+      "name": "ufw-docker",
+      "source": "aur",
+      "category": "OPTIONAL",
+      "default": "optional",
+      "reason": "Firewall rule helper for Docker published ports",
+      "feature": "development",
+      "sizeKib": 65,
+      "pkgbase": "ufw-docker",
+      "recipeUrl": "https://aur.archlinux.org/ufw-docker.git"
+    },
+    {
+      "name": "vesktop-bin",
+      "source": "aur",
+      "category": "OPTIONAL",
+      "default": "optional",
+      "reason": "Discord client with Vencord and Wayland screenshare",
+      "feature": "aur",
+      "pkgbase": "vesktop-bin",
+      "recipeUrl": "https://aur.archlinux.org/vesktop-bin.git"
+    },
+    {
+      "name": "virtualbox-guest-utils",
+      "source": "arch",
+      "category": "OPTIONAL",
+      "default": "optional",
+      "reason": "Guest integration inside VirtualBox",
+      "feature": "virtualisation-guest"
+    },
+    {
+      "name": "yay",
+      "source": "aur",
+      "category": "OPTIONAL",
+      "default": "recommended",
+      "reason": "AUR helper and pacman wrapper for terminal package work",
+      "feature": "aur",
+      "sizeKib": 11612,
+      "pkgbase": "yay",
+      "recipeUrl": "https://aur.archlinux.org/yay.git"
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+#!/bin/bash
+# The package selector must work from a file:// URL with no network and no
+# telemetry. This enforces that contract against the source without a browser.
+
+set -euo pipefail
+
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+dir="$root/tools/package-selector"
+
+fail() { printf 'selector: %s\n' "$1" >&2; exit 1; }
+
+for f in index.html style.css app.js build-standalone build-inventory README.md \
+         schema/inventory.schema.json schema/frost-packages.schema.json; do
+  [[ -f $dir/$f ]] || fail "missing $f"
+done
+
+jq -e . "$dir/schema/inventory.schema.json" >/dev/null || fail 'inventory.schema.json invalid'
+jq -e . "$dir/schema/frost-packages.schema.json" >/dev/null || fail 'frost-packages.schema.json invalid'
+
+# No remote resources.
+if rg -n -i '(https?:)?//[a-z0-9.-]+\.(com|net|org|io|dev)/' "$dir/index.html" "$dir/style.css" "$dir/app.js"; then
+  fail 'a remote URL appears in the selector source'
+fi
+if rg -n '<(link|script)[^>]*\bsrc="https?:' "$dir/index.html"; then
+  fail 'the selector loads a remote script or stylesheet'
+fi
+if rg -n '@import|url\(\s*https?:' "$dir/style.css"; then
+  fail 'the stylesheet pulls a remote asset'
+fi
+
+# No network or telemetry from the script. fetch() is allowed only for the
+# local inventory.json.
+if rg -n '\b(XMLHttpRequest|navigator\.sendBeacon|WebSocket|EventSource|import\()' "$dir/app.js"; then
+  fail 'app.js uses a network primitive'
+fi
+bad_fetch=$(rg -n "fetch\(" "$dir/app.js" | rg -v "fetch\('\./inventory\.json'\)" || true)
+[[ -z $bad_fetch ]] || { printf '%s\n' "$bad_fetch" >&2; fail 'app.js fetches something other than ./inventory.json'; }
+if rg -n '\beval\(|new Function\(' "$dir/app.js"; then
+  fail 'app.js uses eval'
+fi
+
+# The standalone build stays self-contained.
+tmp=$(mktemp -d /tmp/frost-selector.XXXXXX)
+trap 'rm -rf -- "$tmp"' EXIT
+"$dir/build-standalone" "$tmp/out.html" >/dev/null
+grep -q 'FROST_INVENTORY' "$tmp/out.html" || fail 'standalone build did not inline the inventory'
+if rg -n '<(link|script)[^>]*\bsrc=' "$tmp/out.html"; then
+  fail 'standalone build still references an external file'
+fi
+# Deterministic: same input, same bytes.
+"$dir/build-standalone" "$tmp/out2.html" >/dev/null
+cmp -s "$tmp/out.html" "$tmp/out2.html" || fail 'standalone build is not deterministic'
+
+printf 'selector: ok\n'

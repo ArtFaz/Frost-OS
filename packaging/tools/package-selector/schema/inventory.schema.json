@@ -1,0 +1,128 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://frost.local/schema/inventory.schema.json",
+  "title": "Frost package inventory",
+  "description": "Audited data source for the offline package selector. It records decisions, never runs anything.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["inventoryVersion", "categories", "features", "profiles", "packages"],
+  "properties": {
+    "inventoryVersion": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}\\.[0-9]+$",
+      "description": "Date-stamped version, e.g. 2026-08-29.1. Bumped whenever the package set or a classification changes."
+    },
+    "generatedFrom": {
+      "type": "array",
+      "description": "Evidence trail: the sources reconciled into this inventory. Reference only, never a build input.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "role"],
+        "properties": {
+          "source": { "type": "string" },
+          "commit": { "type": "string" },
+          "role": { "type": "string" }
+        }
+      }
+    },
+    "defaultProfile": {
+      "type": "string",
+      "description": "Profile key the selector activates on load. Must be a key in .profiles."
+    },
+    "categories": {
+      "type": "array",
+      "items": { "enum": ["BOOTSTRAP", "CORE", "DESKTOP", "HARDWARE", "OPTIONAL", "DEVELOPMENT", "DROP"] },
+      "uniqueItems": true,
+      "minItems": 7,
+      "maxItems": 7
+    },
+    "features": {
+      "type": "object",
+      "description": "Optional capabilities the user can toggle. Each names the packages it pulls in.",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["label", "description", "default", "packages"],
+        "properties": {
+          "label": { "type": "string", "minLength": 1 },
+          "description": { "type": "string", "minLength": 1 },
+          "default": { "type": "boolean" },
+          "packages": { "type": "array", "items": { "$ref": "#/definitions/pkgname" }, "uniqueItems": true },
+          "hardware": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+        }
+      }
+    },
+    "profiles": {
+      "type": "object",
+      "description": "Meaningful presets. A profile is a starting selection, not a lock.",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["label", "description", "includeCategories"],
+        "properties": {
+          "label": { "type": "string", "minLength": 1 },
+          "description": { "type": "string", "minLength": 1 },
+          "includeCategories": {
+            "type": "array",
+            "items": { "enum": ["BOOTSTRAP", "CORE", "DESKTOP", "HARDWARE", "OPTIONAL", "DEVELOPMENT"] },
+            "uniqueItems": true
+          },
+          "includePackages": { "type": "array", "items": { "$ref": "#/definitions/pkgname" }, "uniqueItems": true },
+          "excludePackages": { "type": "array", "items": { "$ref": "#/definitions/pkgname" }, "uniqueItems": true },
+          "features": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+        }
+      }
+    },
+    "packages": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/item" }
+    }
+  },
+  "definitions": {
+    "pkgname": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9@._+-]*$",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "source", "category", "default", "reason"],
+      "properties": {
+        "name": { "$ref": "#/definitions/pkgname" },
+        "source": { "enum": ["arch", "frost", "aur"] },
+        "category": { "enum": ["BOOTSTRAP", "CORE", "DESKTOP", "HARDWARE", "OPTIONAL", "DEVELOPMENT", "DROP"] },
+        "default": { "enum": ["required", "recommended", "optional"] },
+        "reason": { "type": "string", "minLength": 3 },
+        "description": { "type": "string" },
+        "requiredBy": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "dependsOn": { "type": "array", "items": { "$ref": "#/definitions/pkgname" }, "uniqueItems": true },
+        "conflictsWith": { "type": "array", "items": { "$ref": "#/definitions/pkgname" }, "uniqueItems": true },
+        "hardware": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "tags": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "feature": { "type": "string" },
+        "variantOf": { "type": "string" },
+        "pkgbase": { "type": "string", "pattern": "^[a-z0-9][a-z0-9@._+-]*$" },
+        "recipeUrl": { "type": "string", "pattern": "^https://aur\\.archlinux\\.org/[a-zA-Z0-9@._+-]+\\.git$" },
+        "sizeKib": { "type": "integer", "minimum": 0 },
+        "notes": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "source": { "const": "aur" } } },
+          "then": {
+            "required": ["pkgbase", "recipeUrl"],
+            "properties": { "category": { "enum": ["DESKTOP", "HARDWARE", "OPTIONAL", "DEVELOPMENT", "DROP"] } }
+          }
+        },
+        {
+          "if": { "properties": { "category": { "enum": ["BOOTSTRAP", "CORE"] } } },
+          "then": { "properties": { "source": { "enum": ["arch", "frost"] } } }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,118 @@
+#!/bin/bash
+
+set -euo pipefail
+
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+source_repo=${FROST_SOURCE:-$root/../frost}
+destination=$root/repo/x86_64
+key=
+
+usage() {
+  printf '%s\n' 'usage: build-local-repo --key FINGERPRINT [--source PATH] [--destination PATH]' >&2
+  exit 2
+}
+
+while (($# > 0)); do
+  case $1 in
+    --key)
+      (($# >= 2)) || usage
+      key=$2
+      shift 2
+      ;;
+    --source)
+      (($# >= 2)) || usage
+      source_repo=$2
+      shift 2
+      ;;
+    --destination)
+      (($# >= 2)) || usage
+      destination=$2
+      shift 2
+      ;;
+    *) usage ;;
+  esac
+done
+
+if [[ -z $key ]]; then
+  usage
+fi
+if ! gpg --list-secret-keys "$key" >/dev/null 2>&1; then
+  printf 'Secret signing key is unavailable: %s\n' "$key" >&2
+  exit 1
+fi
+for file in frost.gpg frost-trusted frost-revoked; do
+  if [[ ! -f $root/pkgbuilds/frost-keyring/$file ]]; then
+    printf 'Public keyring material is missing: pkgbuilds/frost-keyring/%s\n' "$file" >&2
+    exit 1
+  fi
+done
+
+"$root/tools/validate-package-config"
+mkdir -p "$destination"
+
+# Everything is built into a fresh staging directory so the database is rebuilt
+# from exactly this run's packages. $destination keeps every past build as an
+# archive, but only the current versions go into frost.db.
+staging=$(mktemp -d /tmp/frost-repo-staging.XXXXXX)
+case $staging in /tmp/frost-repo-staging.*) ;; *) exit 1 ;; esac
+trap 'rm -rf -- "$staging"' EXIT
+
+FROST_SOURCE="$source_repo" PKGDEST="$staging" "$root/tools/build-frost-package" >/dev/null
+for extra_pkg in frost-wallpapers frost-settings; do
+  if [[ -f $root/pkgbuilds/$extra_pkg/PKGBUILD ]]; then
+    FROST_SOURCE="$source_repo" PKGDEST="$staging" "$root/tools/build-frost-package" "$extra_pkg" >/dev/null
+  fi
+done
+
+keyring_build=$(mktemp -d /tmp/frost-keyring-package.XXXXXX)
+case $keyring_build in /tmp/frost-keyring-package.*) ;; *) exit 1 ;; esac
+trap 'rm -rf -- "$staging" "$keyring_build"' EXIT
+cp -a "$root/pkgbuilds/frost-keyring/." "$keyring_build/"
+cp "$root/LICENSE" "$keyring_build/LICENSE"
+(
+  cd "$keyring_build"
+  PKGDEST="$staging" makepkg --cleanbuild --force --noconfirm --sign --key "$key"
+)
+
+# frost-meta / frost-settings gates are handled by validate-package-config.
+# frost-meta is pure metadata, so --nodeps: its depends() name packages this
+# repo does not carry.
+if [[ -f $root/pkgbuilds/frost-meta/PKGBUILD ]]; then
+  meta_build=$(mktemp -d /tmp/frost-meta-package.XXXXXX)
+  case $meta_build in /tmp/frost-meta-package.*) ;; *) exit 1 ;; esac
+  trap 'rm -rf -- "$staging" "$keyring_build" "$meta_build"' EXIT
+  cp -a "$root/pkgbuilds/frost-meta/." "$meta_build/"
+  (
+    cd "$meta_build"
+    PKGDEST="$staging" makepkg --cleanbuild --force --noconfirm --nodeps --sign --key "$key"
+  )
+fi
+
+for package in "$staging"/*.pkg.tar.*; do
+  [[ $package == *.sig ]] && continue
+  [[ -f $package.sig ]] || gpg --batch --yes --local-user "$key" --detach-sign "$package"
+done
+
+mapfile -t staged < <(find "$staging" -maxdepth 1 -type f -name '*.pkg.tar.*' ! -name '*.sig' -print | sort)
+if ((${#staged[@]} == 0)); then
+  printf '%s\n' 'No packages were built.' >&2
+  exit 1
+fi
+
+cp -f "$staging"/*.pkg.tar.* "$destination/"
+packages=()
+for package in "${staged[@]}"; do
+  packages+=( "$destination/$(basename -- "$package")" )
+done
+
+# Rebuild the database from this run's packages only.
+rm -f "$destination"/frost.db* "$destination"/frost.files*
+repo-add --verify --sign --key "$key" "$destination/frost.db.tar.gz" "${packages[@]}"
+
+for package in "${packages[@]}"; do
+  gpg --verify "$package.sig" "$package" >/dev/null
+done
+gpg --verify "$destination/frost.db.tar.gz.sig" "$destination/frost.db.tar.gz" >/dev/null
+
+printf 'Signed Frost repository: file://%s\n' "$(realpath "$destination")"
+

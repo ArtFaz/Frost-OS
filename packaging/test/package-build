@@ -1,0 +1,138 @@
+#!/bin/bash
+
+set -euo pipefail
+
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+output=$(mktemp -d /tmp/frost-package-test.XXXXXX)
+case $output in
+  /tmp/frost-package-test.*) ;;
+  *) exit 1 ;;
+esac
+trap 'rm -rf -- "$output"' EXIT
+
+FROST_SOURCE="$root/../frost" PKGDEST="$output" "$root/tools/build-frost-package" >/dev/null
+package=$(find "$output" -maxdepth 1 -type f -name 'frost-[0-9]*.pkg.tar.*' ! -name '*.sig' -print -quit)
+if [[ -z $package ]]; then
+  printf '%s\n' 'package build produced no package' >&2
+  exit 1
+fi
+
+mapfile -t paths < <(bsdtar -tf "$package")
+for expected in \
+  usr/bin/frost \
+  usr/lib/frost/frost-hyprland \
+  usr/lib/frost/frost-osd \
+  usr/lib/frost/frost-terminal \
+  usr/lib/frost/frost-capture \
+  usr/lib/systemd/user/frost-session.target \
+  usr/lib/systemd/user/frost-shell.service \
+  usr/lib/systemd/user/frost-stay-awake.service \
+  usr/lib/systemd/user/frost-nightlight.service \
+  usr/lib/systemd/user/frost-theme.service \
+  usr/lib/systemd/user/frost-notifications.service \
+  usr/lib/systemd/user/frost-polkit.service \
+  usr/lib/systemd/user/frost-idle.service \
+  usr/lib/systemd/user/frost-lock.service \
+  usr/share/wayland-sessions/frost.desktop \
+  usr/share/frost/default/hypr/hyprland.lua \
+  usr/share/frost/default/hypr/hypridle.conf \
+  usr/share/frost/default/hypr/hyprlock.conf \
+  usr/share/frost/default/mako/config \
+  usr/share/frost/default/ghostty/config \
+  usr/share/frost/default/bash/bashrc \
+  usr/share/frost/config/data/emojis.json \
+  usr/share/frost/config/shell.json \
+  usr/share/frost/config/schema/shell.schema.json \
+  usr/share/frost/shell/shell.qml \
+  usr/share/frost/shell/Core/qmldir \
+  usr/share/frost/shell/Core/Config.qml \
+  usr/share/frost/shell/Core/Motion.qml \
+  usr/share/frost/shell/Core/ShellBackend.qml \
+  usr/share/frost/shell/Core/Style.qml \
+  usr/share/frost/shell/Core/Surfaces.qml \
+  usr/share/frost/shell/Core/Theme.qml \
+  usr/share/frost/shell/Island/DynamicGlacier.qml \
+  usr/share/frost/shell/Island/IslandSurface.qml \
+  usr/share/frost/shell/Island/IslandContent.qml \
+  usr/share/frost/shell/Island/WorkspaceRail.qml \
+  usr/share/frost/shell/Island/TrayRail.qml \
+  usr/share/frost/shell/Island/TrayMenu.qml \
+  usr/share/frost/shell/Island/AudioIndicator.qml \
+  usr/share/frost/shell/Island/AudioPanel.qml \
+  usr/share/frost/shell/Island/BatteryPanel.qml \
+  usr/share/frost/shell/Island/BluetoothPanel.qml \
+  usr/share/frost/shell/Island/NotificationsPanel.qml \
+  usr/share/frost/shell/Island/PeekStatusRow.qml \
+  usr/share/frost/shell/Island/PanelSwitch.qml \
+  usr/share/frost/shell/Island/PanelHeader.qml \
+  usr/share/frost/shell/Island/MIcon.qml \
+  usr/share/frost/shell/Island/FrostGlassSurface.qml \
+  usr/share/frost/shell/Surfaces/SurfaceHost.qml \
+  usr/share/frost/shell/Surfaces/LauncherSurface.qml \
+  usr/share/frost/shell/Surfaces/ClipboardSurface.qml \
+  usr/share/frost/shell/Surfaces/EmojiSurface.qml \
+  usr/share/frost/shell/Surfaces/ImagePickerSurface.qml \
+  usr/share/frost/shell/Surfaces/BackgroundSurface.qml \
+  usr/share/frost/shell/Surfaces/EventOsd.qml \
+  usr/share/frost/shell/Surfaces/ConfirmCard.qml \
+  usr/share/frost/shell/Surfaces/SurfaceSearchField.qml \
+  usr/share/doc/frost/phase4-surface-inventory.md \
+  usr/share/doc/frost/phase4-parity-contract.md \
+  usr/share/doc/frost/provenance/data.json \
+  usr/share/doc/frost/provenance/ports.json \
+  usr/share/frost/themes/frost/theme.toml \
+  usr/share/frost/themes/frost-light/theme.toml \
+  usr/share/frost/themes/gruvbox/theme.toml; do
+  if ! printf '%s\n' "${paths[@]}" | grep -qx "$expected"; then
+    printf 'package is missing %s\n' "$expected" >&2
+    exit 1
+  fi
+done
+
+package_info=$(bsdtar -xOf "$package" .PKGINFO)
+for dependency in \
+  bash \
+  bluez \
+  brightnessctl \
+  cliphist \
+  curl \
+  ghostty \
+  grim \
+  hypridle \
+  hyprland \
+  hyprlock \
+  hyprpicker \
+  hyprpolkitagent \
+  hyprsunset \
+  jq \
+  libnotify \
+  slurp \
+  mako \
+  networkmanager \
+  noto-fonts-emoji \
+  power-profiles-daemon \
+  quickshell \
+  systemd \
+  ttf-jetbrains-mono \
+  ttf-nerd-fonts-symbols-mono \
+  uwsm \
+  upower \
+  wireplumber \
+  wl-clipboard; do
+  if ! grep -Eq "^depend = ${dependency}([<=>].*)?$" <<<"$package_info"; then
+    printf 'package is missing fixed session dependency %s\n' "$dependency" >&2
+    exit 1
+  fi
+done
+
+if printf '%s\n' "${paths[@]}" | grep -Eq '^usr/lib/systemd/user/(default|graphical-session)\.target\.wants/'; then
+  printf '%s\n' 'package globally enables a Frost user unit' >&2
+  exit 1
+fi
+
+if printf '%s\n' "${paths[@]}" | grep -Eiq '(omarchy|omacom)'; then
+  printf '%s\n' 'package contains a donor path' >&2
+  exit 1
+fi
+
+printf '%s\n' 'package build: ok'

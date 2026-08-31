@@ -1,0 +1,59 @@
+pkgname=frost-settings
+pkgver=0.2.0
+pkgrel=6
+pkgdesc='Frost privileged and global system configuration'
+arch=('any')
+url='https://github.com/ArtFaz/Frost-OS'
+license=('MIT')
+depends=(
+  'bash'
+  'btrfs-progs'
+  'coreutils'
+  'pam'
+  'sddm'
+  'snapper'
+  'systemd'
+  'ttf-jetbrains-mono'
+  'ttf-nerd-fonts-symbols-mono'
+  'ufw'
+  'util-linux'
+  'zram-generator'
+)
+options=('!debug' '!strip')
+backup=(
+  'etc/sudoers.d/frost'
+  'etc/sddm.conf.d/10-frost.conf'
+  'etc/sysctl.d/99-frost.conf'
+  'etc/systemd/zram-generator.conf'
+)
+install=frost-settings.install
+# build-frost-package archives the frost repo as frost-${pkgver}.
+source=("frost-${pkgver}.tar.gz")
+sha256sums=('SKIP')
+
+package() {
+  cd "$srcdir/frost-${pkgver}"
+
+  # SDDM greeter theme (new paths, no file conflict).
+  install -d "$pkgdir/usr/share/sddm/themes/frost"
+  install -m644 default/sddm/frost/metadata.desktop "$pkgdir/usr/share/sddm/themes/frost/metadata.desktop"
+  install -m644 default/sddm/frost/theme.conf "$pkgdir/usr/share/sddm/themes/frost/theme.conf"
+  install -m644 default/sddm/frost/Main.qml "$pkgdir/usr/share/sddm/themes/frost/Main.qml"
+
+  # /etc drop-ins Frost owns. sddm.conf, /etc/conf.d/snapper and
+  # /etc/pam.d/hyprlock belong to their own packages and are reconciled by
+  # frost-firstboot instead.
+  install -Dm644 default/etc/sddm.conf.d/10-frost.conf "$pkgdir/etc/sddm.conf.d/10-frost.conf"
+  install -Dm644 default/etc/sysctl.d/99-frost.conf "$pkgdir/etc/sysctl.d/99-frost.conf"
+  install -Dm644 default/etc/systemd/zram-generator.conf "$pkgdir/etc/systemd/zram-generator.conf"
+  install -d -m0750 "$pkgdir/etc/sudoers.d"
+  install -Dm440 default/sudoers/frost "$pkgdir/etc/sudoers.d/frost"
+
+  # First-boot reconciliation: the script, its data, and its unit.
+  install -Dm755 bin/frost-firstboot "$pkgdir/usr/lib/frost/frost-firstboot"
+  install -Dm644 default/pam/hyprlock "$pkgdir/usr/share/frost/default/pam/hyprlock"
+  install -Dm644 default/systemd/system/frost-firstboot.service \
+    "$pkgdir/usr/lib/systemd/system/frost-firstboot.service"
+
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/frost-settings/LICENSE"
+}

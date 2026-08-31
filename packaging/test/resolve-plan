@@ -1,0 +1,107 @@
+#!/bin/bash
+# Resolve the Frost package set against the real CachyOS repositories, in a
+# throwaway pacman root, and check which providers the resolution picks.
+#
+# This is the regression guard for the class of failure that blocked the first
+# install: a virtual dependency (`jack`, `vulkan-driver`, `ttf-font`, `tessdata`,
+# `netcat`) has several providers, and left alone pacman takes the first one —
+# jack2 over pipewire-jack, which is an unresolvable conflict. bootstrap-cachyos
+# settles each of them by installing FROST_PROVIDERS first; this proves it.
+#
+# It needs the network, so it is opt-in:
+#
+#   FROST_RESOLVE_PLAN=1 test/resolve-plan
+#
+# The synced databases are cached for a day, so repeated runs are cheap.
+
+set -euo pipefail
+export LC_ALL=C
+
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+script=$root/install/bootstrap-cachyos
+frost_repo=$root/repo/x86_64
+cache=${XDG_CACHE_HOME:-$HOME/.cache}/frost/resolve-plan
+cache_max_age_hours=24
+
+fail() { printf 'resolve plan: %s\n' "$1" >&2; exit 1; }
+
+if [[ ${FROST_RESOLVE_PLAN:-} != 1 && ${1:-} != --online ]]; then
+  printf 'resolve plan: skipped (set FROST_RESOLVE_PLAN=1 to resolve against the live repositories)\n'
+  exit 0
+fi
+
+[[ -f $script ]] || fail 'install/bootstrap-cachyos is missing'
+[[ -f $frost_repo/frost.db ]] || fail "no local Frost repository at $frost_repo — run tools/build-local-repo first"
+command -v curl >/dev/null || fail 'curl is required'
+
+# The repositories a CachyOS install actually has, in its own order, plus the
+# Frost repository the bundle adds last.
+readonly REPOS=(
+  'cachyos-v3|https://mirror.cachyos.org/repo/x86_64_v3/cachyos-v3'
+  'cachyos-core-v3|https://mirror.cachyos.org/repo/x86_64_v3/cachyos-core-v3'
+  'cachyos-extra-v3|https://mirror.cachyos.org/repo/x86_64_v3/cachyos-extra-v3'
+  'cachyos|https://mirror.cachyos.org/repo/x86_64/cachyos'
+  'core|https://geo.mirror.pkgbuild.com/core/os/x86_64'
+  'extra|https://geo.mirror.pkgbuild.com/extra/os/x86_64'
+  'multilib|https://geo.mirror.pkgbuild.com/multilib/os/x86_64'
+)
+
+# The single source of truth for both lists is the script under test.
+array_of() { sed -n "/^readonly $1=(/,/^)/p" "$script" | sed '1d;$d;s/#.*//'; }
+mapfile -t providers < <(array_of FROST_PROVIDERS | tr ' ' '\n' | grep -v '^$')
+((${#providers[@]})) || fail 'could not read FROST_PROVIDERS from the script'
+mapfile -t packages < <(sed -n 's/^readonly PACKAGES=(\(.*\))$/\1/p' "$script" | tr ' ' '\n' | grep -v '^$')
+((${#packages[@]})) || fail 'could not read PACKAGES from the script'
+
+mkdir -p "$cache"
+for entry in "${REPOS[@]}"; do
+  name=${entry%%|*} url=${entry#*|}
+  db=$cache/$name.db
+  if [[ -z $(find "$db" -mmin "-$((cache_max_age_hours * 60))" 2>/dev/null) ]]; then
+    printf 'resolve plan: syncing %s\n' "$name"
+    curl -sf --max-time 120 -o "$db.part" "$url/$name.db" || fail "could not fetch the $name database"
+    mv -- "$db.part" "$db"
+  fi
+done
+
+work=$(mktemp -d)
+trap 'rm -rf -- "$work"' EXIT
+mkdir -p "$work/root" "$work/db/sync" "$work/db/local"
+for entry in "${REPOS[@]}"; do
+  name=${entry%%|*}
+  cp "$cache/$name.db" "$work/db/sync/$name.db"
+done
+cp "$frost_repo/frost.db" "$work/db/sync/frost.db"
+
+{
+  printf '[options]\nArchitecture = x86_64 x86_64_v3\nSigLevel = Never\n'
+  for entry in "${REPOS[@]}"; do
+    printf '\n[%s]\nServer = %s\n' "${entry%%|*}" "${entry#*|}"
+  done
+  printf '\n[frost]\nServer = file://%s\n' "$frost_repo"
+} > "$work/pacman.conf"
+
+# An empty root, so the plan is the whole closure: exactly the resolution the
+# bootstrap performs, with nothing pre-satisfied to hide a bad provider choice.
+if ! plan=$(pacman -Sp --print-format '%n' --noconfirm \
+  --config "$work/pacman.conf" --root "$work/root" --dbpath "$work/db" \
+  base-devel git "${providers[@]}" "${packages[@]}" 2>"$work/err"); then
+  printf 'resolve plan: pacman could not resolve the set\n' >&2
+  sed 's/^/  /' "$work/err" >&2
+  exit 1
+fi
+
+count=$(grep -c . <<<"$plan")
+((count > 100)) || fail "the resolved plan is implausibly small ($count packages)"
+
+for wanted in pipewire-jack wireplumber mesa vulkan-radeon ttf-dejavu tesseract-data-eng openbsd-netcat; do
+  grep -qx "$wanted" <<<"$plan" || fail "the resolved plan is missing $wanted"
+done
+
+# A kernel is not checked: the simulated root is empty, so the plan legitimately
+# pulls one in for VIRTUALBOX-GUEST-MODULES. On a real CachyOS base
+# linux-cachyos already provides it.
+rejected=$(grep -xE 'jack2|pulseaudio|pipewire-media-session|nvidia(-[0-9a-z]+)?-utils' <<<"$plan" || true)
+[[ -z $rejected ]] || fail "the resolved plan picks providers Frost rejects: $(tr '\n' ' ' <<<"$rejected")"
+
+printf 'resolve plan: ok (%s packages, providers as pinned)\n' "$count"

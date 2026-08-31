@@ -1,0 +1,134 @@
+pkgname=frost
+pkgver=0.2.0
+pkgrel=38
+pkgdesc='Independent Frost desktop runtime and diagnostics CLI'
+arch=('x86_64')
+url='https://github.com/ArtFaz/Frost-OS'
+license=('MIT')
+depends=(
+  'bash'
+  'bluez'
+  'brightnessctl'
+  'cliphist'
+  'coreutils'
+  'curl'
+  'dconf'
+  'gawk'
+  'ghostty'
+  'glib2'
+  'glibc'
+  'grim'
+  'hypridle'
+  'hyprland'
+  'hyprlock'
+  'hyprpicker'
+  'hyprpolkitagent'
+  'hyprsunset'
+  'jq'
+  'libnotify'
+  'mako'
+  'networkmanager'
+  'noto-fonts-emoji'
+  'power-profiles-daemon'
+  'qt6-5compat'
+  'qt6-declarative'
+  'quickshell'
+  'slurp'
+  'systemd'
+  'ttf-jetbrains-mono'
+  'ttf-nerd-fonts-symbols-mono'
+  'util-linux'
+  'uwsm'
+  'upower'
+  'wireplumber'
+  'wl-clipboard'
+)
+makedepends=('cargo')
+checkdepends=('desktop-file-utils')
+options=('!debug')
+source=("${pkgname}-${pkgver}.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+  cd "$srcdir/${pkgname}-${pkgver}"
+  CARGO_TARGET_DIR="$srcdir/target" cargo build \
+    --locked \
+    --offline \
+    --release \
+    --manifest-path cli/Cargo.toml
+}
+
+check() {
+  cd "$srcdir/${pkgname}-${pkgver}"
+  CARGO_TARGET_DIR="$srcdir/target" ./test/all
+}
+
+package() {
+  cd "$srcdir/${pkgname}-${pkgver}"
+
+  install -Dm755 "$srcdir/target/release/frost" "$pkgdir/usr/bin/frost"
+  install -Dm755 bin/frost-hyprland "$pkgdir/usr/lib/frost/frost-hyprland"
+  install -Dm755 bin/frost-osd "$pkgdir/usr/lib/frost/frost-osd"
+  install -Dm755 bin/frost-terminal "$pkgdir/usr/lib/frost/frost-terminal"
+  install -Dm755 bin/frost-capture "$pkgdir/usr/lib/frost/frost-capture"
+  install -Dm755 tools/frost-report "$pkgdir/usr/lib/frost/frost-report"
+
+  install -Dm644 config/shell.json "$pkgdir/usr/share/frost/config/shell.json"
+  install -Dm644 config/schema/shell.schema.json \
+    "$pkgdir/usr/share/frost/config/schema/shell.schema.json"
+  install -d "$pkgdir/usr/share/frost/config/data"
+  cp -r config/data/. "$pkgdir/usr/share/frost/config/data/"
+  find "$pkgdir/usr/share/frost/config/data" -type f -exec chmod 0644 {} +
+  install -d "$pkgdir/usr/share/frost/themes"
+  cp -r themes/. "$pkgdir/usr/share/frost/themes/"
+  find "$pkgdir/usr/share/frost/themes" -type d -exec chmod 0755 {} +
+  find "$pkgdir/usr/share/frost/themes" -type f -exec chmod 0644 {} +
+
+  install -d "$pkgdir/usr/share/frost/templates"
+  install -m644 default/templates/*.tpl "$pkgdir/usr/share/frost/templates/"
+
+  install -d "$pkgdir/usr/share/frost/shell"
+  cp -r shell/. "$pkgdir/usr/share/frost/shell/"
+  find "$pkgdir/usr/share/frost/shell" -type d -exec chmod 0755 {} +
+  find "$pkgdir/usr/share/frost/shell" -type f -exec chmod 0644 {} +
+
+  install -Dm644 default/hypr/hyprland.lua \
+    "$pkgdir/usr/share/frost/default/hypr/hyprland.lua"
+  install -Dm644 default/hypr/hypridle.conf \
+    "$pkgdir/usr/share/frost/default/hypr/hypridle.conf"
+  install -Dm644 default/hypr/hyprlock.conf \
+    "$pkgdir/usr/share/frost/default/hypr/hyprlock.conf"
+  install -Dm644 default/mako/config \
+    "$pkgdir/usr/share/frost/default/mako/config"
+  install -Dm644 default/ghostty/config \
+    "$pkgdir/usr/share/frost/default/ghostty/config"
+  install -Dm644 default/bash/bashrc \
+    "$pkgdir/usr/share/frost/default/bash/bashrc"
+  install -Dm644 default/starship.toml \
+    "$pkgdir/usr/share/frost/default/starship.toml"
+
+  for unit in default/systemd/user/*; do
+    install -Dm644 "$unit" "$pkgdir/usr/lib/systemd/user/${unit##*/}"
+  done
+  install -Dm644 default/wayland-sessions/frost.desktop \
+    "$pkgdir/usr/share/wayland-sessions/frost.desktop"
+
+  install -d -m0755 "$pkgdir/etc/frost"
+  install -Dm644 docs/architecture.md \
+    "$pkgdir/usr/share/doc/frost/architecture.md"
+  install -Dm644 docs/phase4-surface-inventory.md \
+    "$pkgdir/usr/share/doc/frost/phase4-surface-inventory.md"
+  install -Dm644 docs/phase4-parity-contract.md \
+    "$pkgdir/usr/share/doc/frost/phase4-parity-contract.md"
+  install -Dm644 docs/preview-session.md \
+    "$pkgdir/usr/share/doc/frost/preview-session.md"
+  install -Dm644 docs/security-boundaries.md \
+    "$pkgdir/usr/share/doc/frost/security-boundaries.md"
+  install -Dm644 docs/provenance/ports.json \
+    "$pkgdir/usr/share/doc/frost/provenance/ports.json"
+  install -Dm644 docs/provenance/data.json \
+    "$pkgdir/usr/share/doc/frost/provenance/data.json"
+  install -Dm644 THIRD_PARTY.md \
+    "$pkgdir/usr/share/doc/frost/THIRD_PARTY.md"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/frost/LICENSE"
+}

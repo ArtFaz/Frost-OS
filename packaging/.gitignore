@@ -1,0 +1,9 @@
+/repo/
+/build/
+/keys/private/
+*.pkg.tar.*
+*.sig
+
+/tools/package-selector/package-selector.html
+/frost-install-bundle.tar.zst
+/frost-install-bundle/
