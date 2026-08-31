@@ -6,7 +6,7 @@
 set -euo pipefail
 
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
-frost=$root/../frost
+frost=$root/..
 pkgbuild=$root/pkgbuilds/frost-settings/PKGBUILD
 
 fail() { printf 'settings contract: %s\n' "$1" >&2; exit 1; }

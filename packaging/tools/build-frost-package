@@ -3,7 +3,7 @@
 set -euo pipefail
 
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
-source_repo=${FROST_SOURCE:-$root/../frost}
+source_repo=${FROST_SOURCE:-$root/..}
 destination=${PKGDEST:-$root/repo/unsigned}
 package=${1:-frost}
 
@@ -19,7 +19,7 @@ if [[ ! -d $source_repo/.git ]]; then
   printf 'Frost source is not an independent Git repository: %s\n' "$source_repo" >&2
   exit 2
 fi
-if [[ -n $(git -C "$source_repo" status --porcelain --untracked-files=no) ]]; then
+if [[ -n $(git -C "$source_repo" status --porcelain --untracked-files=no -- . ':(exclude)packaging') ]]; then
   printf 'Frost source has uncommitted tracked changes; commit before packaging.\n' >&2
   exit 1
 fi

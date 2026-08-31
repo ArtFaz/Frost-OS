@@ -32,7 +32,7 @@ done
 
 cp "$root/pkgbuilds/frost-keyring/frost.gpg" "$b/frost.gpg"
 install -m755 "$root/install/bootstrap-cachyos" "$b/bootstrap-cachyos"
-for extra in "$root/../frost/frost-packages.json" "$root/../frost/aur.lock.json"; do
+for extra in "$root/..-packages.json" "$root/../aur.lock.json"; do
   [[ -f $extra ]] && cp "$extra" "$b/"
 done
 cat > "$b/README" <<'EOF'

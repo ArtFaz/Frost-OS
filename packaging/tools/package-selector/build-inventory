@@ -14,7 +14,7 @@
 set -euo pipefail
 
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
-donor_root="$root/../Definitive Frost-OS"
+donor_root="$root/../../Definitive Frost-OS"
 
 while (($#)); do
   case $1 in

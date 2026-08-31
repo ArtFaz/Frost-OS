@@ -15,3 +15,10 @@ root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 "$root/test/packages-contract"
 cargo fmt --manifest-path "$root/cli/Cargo.toml" -- --check
 cargo test --manifest-path "$root/cli/Cargo.toml"
+
+# The packaging half: PKGBUILDs, the installer and the local repository. It is
+# conditional because the frost package runs this same script inside its source
+# tarball, where .gitattributes has deliberately left packaging/ out.
+if [[ -x $root/packaging/test/all ]]; then
+  "$root/packaging/test/all"
+fi

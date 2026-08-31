@@ -47,7 +47,7 @@ for required in frost frost-settings; do
 done
 
 # The generator is deterministic: re-running it must not change the file.
-if command -v frost >/dev/null 2>&1 && [[ -f $root/../frost/frost-packages.json ]]; then
+if command -v frost >/dev/null 2>&1 && [[ -f $root/../frost-packages.json ]]; then
   tmp=$(mktemp)
   trap 'rm -f -- "$tmp"' EXIT
   cp "$pkgbuild" "$tmp"

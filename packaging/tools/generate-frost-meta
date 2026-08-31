@@ -8,7 +8,7 @@
 set -euo pipefail
 
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
-manifest=$root/../frost/frost-packages.json
+manifest=$root/..-packages.json
 inventory=$root/tools/package-selector/inventory.json
 frost_bin=${FROST_BIN:-}
 
@@ -25,8 +25,8 @@ done
 if [[ -z $frost_bin ]]; then
   for candidate in \
     "$(command -v frost || true)" \
-    "$root/../frost/cli/target/release/frost" \
-    "$root/../frost/cli/target/debug/frost"; do
+    "$root/../cli/target/release/frost" \
+    "$root/../cli/target/debug/frost"; do
     [[ -n $candidate && -x $candidate ]] && { frost_bin=$candidate; break; }
   done
 fi

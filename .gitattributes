@@ -1,0 +1,4 @@
+# The frost package is built from `git archive HEAD`. Packaging is how the
+# package is made, not part of what it installs, so it stays out of the
+# source tarball.
+packaging/ export-ignore

@@ -63,7 +63,7 @@ fi
 # runtime and the user gets an empty session, which is how qt6-5compat was found
 # on the first clean CachyOS install. The map is reviewed, and an unknown
 # namespace fails so that a new import forces a dependency decision.
-frost_source=${FROST_SOURCE:-$root/../frost}
+frost_source=${FROST_SOURCE:-$root/..}
 if [[ -d $frost_source/shell ]]; then
   declare -A qml_namespace_package=(
     [qs]=''

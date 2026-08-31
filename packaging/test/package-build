@@ -10,7 +10,7 @@ case $output in
 esac
 trap 'rm -rf -- "$output"' EXIT
 
-FROST_SOURCE="$root/../frost" PKGDEST="$output" "$root/tools/build-frost-package" >/dev/null
+FROST_SOURCE="$root/.." PKGDEST="$output" "$root/tools/build-frost-package" >/dev/null
 package=$(find "$output" -maxdepth 1 -type f -name 'frost-[0-9]*.pkg.tar.*' ! -name '*.sig' -print -quit)
 if [[ -z $package ]]; then
   printf '%s\n' 'package build produced no package' >&2

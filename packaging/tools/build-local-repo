@@ -3,7 +3,7 @@
 set -euo pipefail
 
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
-source_repo=${FROST_SOURCE:-$root/../frost}
+source_repo=${FROST_SOURCE:-$root/..}
 destination=$root/repo/x86_64
 key=
 
