@@ -8,25 +8,31 @@ Current status: private implementation. Gate 6 is closed — `install.sh` turns 
 
 ## Install
 
-On a fresh CachyOS Minimal, with a Btrfs root and `[multilib]` enabled:
+On a fresh CachyOS Minimal, with a Btrfs root and `[multilib]` enabled.
+
+**While this repository is private** — which it is, until the provenance gate
+below closes — clone it with credentials and run the installer from the clone:
 
 ```
-curl -fsSL https://raw.githubusercontent.com/ArtFaz/Frost-OS/main/install.sh | bash
-```
-
-Or read it first, which is the same thing with one more step:
-
-```
+sudo pacman -S --needed git github-cli
+gh auth login
 git clone https://github.com/ArtFaz/Frost-OS.git frost
 ./frost/install.sh --dry-run   # prints every step without running any of them
 ./frost/install.sh
 ```
 
-It installs `base-devel git rust`, builds the Frost packages on the machine, and
-hands off to `packaging/install/bootstrap-cachyos`. Nothing is downloaded but the
-repository itself: the Frost CLI has no crate dependencies, so it compiles
-anywhere `rust` is installed, and the packages are never signed because they are
-built and consumed on the same machine — see `docs/security-boundaries.md`.
+Once the repository is public, the same thing becomes one command:
+
+```
+curl -fsSL https://raw.githubusercontent.com/ArtFaz/Frost-OS/main/install.sh | bash
+```
+
+Either way it installs `base-devel git rust`, builds the Frost packages on the
+machine, and hands off to `packaging/install/bootstrap-cachyos`. Nothing is
+downloaded but the repository itself: the Frost CLI has no crate dependencies, so
+it compiles anywhere `rust` is installed, and the packages are never signed
+because they are built and consumed on the same machine — see
+`docs/security-boundaries.md`.
 
 The clone it leaves behind is the source tree. Build new packages from it with
 `packaging/tools/build-local-repo`, and re-run `install.sh` to update: it pulls,

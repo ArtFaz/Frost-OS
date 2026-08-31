@@ -1,11 +1,15 @@
 #!/bin/bash
-# Install Frost on a fresh CachyOS Minimal, in one command:
+# Install Frost on a fresh CachyOS Minimal.
+#
+# While the repository is private, clone it with credentials and run this from
+# the clone — raw.githubusercontent.com serves nothing without a token:
+#
+#   gh auth login
+#   git clone https://github.com/ArtFaz/Frost-OS.git frost && ./frost/install.sh
+#
+# Once it is public, the same thing is one command:
 #
 #   curl -fsSL https://raw.githubusercontent.com/ArtFaz/Frost-OS/main/install.sh | bash
-#
-# or, to read everything before it runs:
-#
-#   git clone https://github.com/ArtFaz/Frost-OS.git frost && ./frost/install.sh
 #
 # It clones the repository, builds the Frost packages on this machine and hands
 # off to packaging/install/bootstrap-cachyos, which does the actual install. The
