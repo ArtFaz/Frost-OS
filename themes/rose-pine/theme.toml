@@ -1,7 +1,6 @@
 schemaVersion = 1
 name = "Rose Pine"
 mode = "light"
-icon = "Yaru-prussiangreen"
 
 [colors]
 background = "#faf4ed"

@@ -1,7 +1,6 @@
 schemaVersion = 1
 name = "Everforest"
 mode = "dark"
-icon = "Yaru-sage"
 
 [colors]
 background = "#2d353b"

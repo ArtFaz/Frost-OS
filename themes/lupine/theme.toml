@@ -1,7 +1,6 @@
 schemaVersion = 1
 name = "Lupine"
 mode = "light"
-icon = "Yaru-blue"
 
 [colors]
 background = "#fafafa"

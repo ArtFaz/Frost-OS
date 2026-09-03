@@ -1,7 +1,6 @@
 schemaVersion = 1
 name = "Matte Black"
 mode = "dark"
-icon = "Yaru"
 
 [colors]
 background = "#121212"

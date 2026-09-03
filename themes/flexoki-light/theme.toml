@@ -1,7 +1,6 @@
 schemaVersion = 1
 name = "Flexoki Light"
 mode = "light"
-icon = "Yaru-blue"
 
 [colors]
 background = "#fffcf0"

@@ -64,9 +64,7 @@ The VM install of `bootstrap-cachyos` failed: `frost-meta` hard-depended on
 packages that exist only in the Omarchy repo or the AUR, so a clean CachyOS
 could not resolve them. Every `arch`-sourced package was checked against the
 real Arch repos. `nvim`→`neovim`, `mise-bin`→`mise`, `yaru-icon-theme`→
-`papirus-icon-theme` (reverted 2026-09-03 — `yaru-icon-theme` is in Arch
-`extra`, and Frost now sets a per-theme Yaru accent variant),
-`tobi-try`→`try`; `cliamp`, `tensaku`, `ttf-ia-writer`,
+`papirus-icon-theme`, `tobi-try`→`try`; `cliamp`, `tensaku`, `ttf-ia-writer`,
 `tzupdate`, `ufw-docker`, `yay`, `xdg-terminal-exec`, `limine-snapper-sync` and
 the legacy-hardware drivers moved to `source: aur`; `hyprland-preview-share-picker`
 and `ttf-jetbrains-mono-nerd-basic` (Omarchy-custom, no clean equivalent) moved
@@ -160,10 +158,8 @@ Only after that may `frost-meta` be generated or changed (Phase 6).
 - **SHA-256:** `db0a42b206f0080ba27d087283a94076513d5a6b7c2db09888ecff2653d652db`
   (superseded `2026-08-29.5` / `e7b2e221…` after a repo-source audit reclassified
   packages that exist only in the Omarchy repo or the AUR — `nvim`→`neovim`,
-  `mise-bin`→`mise`, `tobi-try`→`try`,
-  `xdg-terminal-exec`/`limine-snapper-sync`/`yay`/`cliamp`/… moved to `aur`.
-  The `yaru-icon-theme`→`papirus-icon-theme` remap from that pass was reverted
-  on 2026-09-03.)
+  `mise-bin`→`mise`, `yaru-icon-theme`→`papirus-icon-theme`, `tobi-try`→`try`,
+  `xdg-terminal-exec`/`limine-snapper-sync`/`yay`/`cliamp`/… moved to `aur`.)
 - **Lockfile:** `aur.lock.json` — 8 AUR selections, each pinned to a `git ls-remote`
   commit on 2026-08-30.
 - **Resolution:** 197 packages, no risks, no auto-added dependencies, no

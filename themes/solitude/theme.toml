@@ -1,7 +1,6 @@
 schemaVersion = 1
 name = "Solitude"
 mode = "dark"
-icon = "Yaru-dark"
 
 [colors]
 background = "#101315"

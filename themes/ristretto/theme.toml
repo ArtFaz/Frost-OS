@@ -1,7 +1,6 @@
 schemaVersion = 1
 name = "Ristretto"
 mode = "dark"
-icon = "Yaru-red"
 
 [colors]
 background = "#2c2525"

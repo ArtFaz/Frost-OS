@@ -1,7 +1,6 @@
 schemaVersion = 1
 name = "Tokyo Night"
 mode = "dark"
-icon = "Yaru-blue"
 
 [colors]
 background = "#1a1b26"

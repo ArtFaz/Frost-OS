@@ -1,9 +1,9 @@
 {
-  "inventoryVersion": "2026-09-03.1",
+  "inventoryVersion": "2026-09-03.2",
   "generatedFrom": [
     {
       "source": "clean CachyOS/Arch repo audit",
-      "role": "2026-08-30.1: packages that exist only in the Omarchy repo or the AUR were reclassified arch->aur; nvim->neovim, mise-bin->mise, tobi-try->try; two Omarchy-custom packages with no clean equivalent moved to DROP. 2026-09-03: yaru-icon-theme kept (it is in Arch extra); the earlier papirus-icon-theme remap was reverted."
+      "role": "2026-08-30.1: packages that exist only in the Omarchy repo or the AUR were reclassified arch->aur; nvim->neovim, mise-bin->mise, yaru-icon-theme->papirus-icon-theme (yaru-icon-theme is AUR-only), tobi-try->try; two Omarchy-custom packages with no clean equivalent moved to DROP."
     },
     {
       "source": "arch extra/multilib",
@@ -1725,12 +1725,12 @@
       "sizeKib": 8273
     },
     {
-      "name": "yaru-icon-theme",
+      "name": "papirus-icon-theme",
       "source": "arch",
       "category": "DESKTOP",
       "default": "recommended",
-      "reason": "Icon theme; per-theme Yaru accent variant set via GSettings on theme sync",
-      "sizeKib": 22000
+      "reason": "Icon theme",
+      "sizeKib": 64931
     },
     {
       "name": "yt-dlp",

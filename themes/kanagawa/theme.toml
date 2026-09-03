@@ -1,7 +1,6 @@
 schemaVersion = 1
 name = "Kanagawa"
 mode = "dark"
-icon = "Yaru-wartybrown"
 
 [colors]
 background = "#1f1f28"
