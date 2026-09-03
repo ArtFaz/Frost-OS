@@ -104,8 +104,10 @@ package() {
     "$pkgdir/usr/share/frost/default/ghostty/config"
   install -Dm644 default/bash/bashrc \
     "$pkgdir/usr/share/frost/default/bash/bashrc"
-  install -Dm644 default/starship.toml \
-    "$pkgdir/usr/share/frost/default/starship.toml"
+  install -Dm644 default/bash/inputrc \
+    "$pkgdir/usr/share/frost/default/bash/inputrc"
+  install -Dm644 default/nautilus/frost-open-in-ghostty.py \
+    "$pkgdir/usr/share/nautilus-python/extensions/frost-open-in-ghostty.py"
 
   for unit in default/systemd/user/*; do
     install -Dm644 "$unit" "$pkgdir/usr/lib/systemd/user/${unit##*/}"

@@ -51,6 +51,9 @@ const PALETTE_KEYS: [&str; 19] = [
 pub(crate) struct Theme {
     pub name: String,
     pub mode: String,
+    /// Optional GTK icon-theme name (a Yaru variant). Applied via GSettings on
+    /// theme sync; never written into the runtime palette the shell reads.
+    pub icon: Option<String>,
     pub colors: BTreeMap<String, String>,
 }
 
@@ -194,11 +197,12 @@ pub(crate) fn parse_theme(raw: &str) -> Result<Theme, CliError> {
         target.insert(key.to_owned(), value.trim().to_owned());
     }
 
-    let expected_root = BTreeSet::from(["schemaVersion", "name", "mode"]);
+    let required_root = BTreeSet::from(["schemaVersion", "name", "mode"]);
+    let allowed_root = BTreeSet::from(["schemaVersion", "name", "mode", "icon"]);
     let actual_root = root.keys().map(String::as_str).collect::<BTreeSet<_>>();
-    if actual_root != expected_root {
+    if !required_root.is_subset(&actual_root) || !actual_root.is_subset(&allowed_root) {
         return Err(CliError::Usage(
-            "theme root must contain exactly schemaVersion, name and mode".to_owned(),
+            "theme root must contain schemaVersion, name and mode, and optionally icon".to_owned(),
         ));
     }
     if root.get("schemaVersion").map(String::as_str) != Some("1") {
@@ -210,6 +214,20 @@ pub(crate) fn parse_theme(raw: &str) -> Result<Theme, CliError> {
     let mode = unquote(root.get("mode").expect("checked key"))
         .filter(|value| value == "dark" || value == "light")
         .ok_or_else(|| CliError::Usage("theme mode must be dark or light".to_owned()))?;
+    let icon = match root.get("icon") {
+        Some(raw) => Some(
+            unquote(raw)
+                .filter(|value| {
+                    !value.is_empty()
+                        && value.len() <= 64
+                        && value
+                            .bytes()
+                            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
+                })
+                .ok_or_else(|| CliError::Usage("invalid theme icon name".to_owned()))?,
+        ),
+        None => None,
+    };
 
     let actual_colors = colors.keys().map(String::as_str).collect::<BTreeSet<_>>();
     let required_colors = COLOR_KEYS.into_iter().collect::<BTreeSet<_>>();
@@ -255,6 +273,7 @@ pub(crate) fn parse_theme(raw: &str) -> Result<Theme, CliError> {
     Ok(Theme {
         name,
         mode,
+        icon,
         colors: normalized,
     })
 }
@@ -528,6 +547,8 @@ fn ensure_background_state() -> Result<(), CliError> {
 /// one in the set — take their light/dark preference from the XDG appearance
 /// portal, which serves this GSettings key, and GTK3 reads gtk-theme through
 /// the same portal. Without this a dark session opens a white file manager.
+/// The icon theme is a Yaru variant the palette declares (falling back to the
+/// neutral `Yaru`), so the file manager and tray follow the active theme.
 /// Best effort on purpose: a session without a settings backend must still get
 /// its theme materialised.
 fn apply_gtk_color_scheme(theme: &Theme) {
@@ -536,7 +557,12 @@ fn apply_gtk_color_scheme(theme: &Theme) {
     } else {
         ("prefer-dark", "Adwaita-dark")
     };
-    for (key, value) in [("color-scheme", scheme), ("gtk-theme", gtk_theme)] {
+    let icon_theme = theme.icon.as_deref().unwrap_or("Yaru");
+    for (key, value) in [
+        ("color-scheme", scheme),
+        ("gtk-theme", gtk_theme),
+        ("icon-theme", icon_theme),
+    ] {
         let _ = Command::new("/usr/bin/gsettings")
             .args(["set", "org.gnome.desktop.interface", key, value])
             .status();
@@ -719,7 +745,22 @@ warning = "#d8a657"
         let theme = parse_theme(VALID).unwrap();
         assert_eq!(theme.name, "Test");
         assert_eq!(theme.mode, "dark");
+        assert_eq!(theme.icon, None);
         assert_eq!(theme.colors["accent"], "#7daea3");
+    }
+
+    #[test]
+    fn parses_optional_icon_theme() {
+        let with_icon = VALID.replace("mode = \"dark\"", "mode = \"dark\"\nicon = \"Yaru-blue\"");
+        assert_eq!(
+            parse_theme(&with_icon).unwrap().icon.as_deref(),
+            Some("Yaru-blue")
+        );
+        let bad_icon = VALID.replace(
+            "mode = \"dark\"",
+            "mode = \"dark\"\nicon = \"Yaru blue; rm\"",
+        );
+        assert!(parse_theme(&bad_icon).is_err());
     }
 
     #[test]

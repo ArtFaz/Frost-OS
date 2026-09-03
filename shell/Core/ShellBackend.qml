@@ -54,7 +54,7 @@ QtObject {
     }
 
     function action(name, argument) {
-        const noArgument = ["brightness-down", "brightness-up", "lock", "logout", "notification-clear", "poweroff", "reboot", "stay-awake-toggle", "suspend"];
+        const noArgument = ["brightness-down", "brightness-up", "close-all-windows", "lock", "logout", "nightlight-toggle", "notification-clear", "poweroff", "reboot", "stay-awake-toggle", "suspend"];
         const numericArgument = ["brightness-set", "clipboard-copy", "notification-dismiss", "notification-invoke"];
         const pathArgument = ["image-copy", "wallpaper-set"];
         const tokenArgument = ["theme-set"];
@@ -67,6 +67,8 @@ QtObject {
             argumentsList = [String(argument)];
         else if (["wifi-radio", "notification-dnd"].indexOf(name) >= 0 && ["on", "off"].indexOf(String(argument || "")) >= 0)
             argumentsList = [String(argument)];
+        else if (name === "notification-dnd" && String(argument || "") === "toggle")
+            argumentsList = ["toggle"];
         else if (name === "bluetooth-radio" && ["on", "off"].indexOf(String(argument || "")) >= 0)
             argumentsList = [String(argument)];
         else if (["wifi-disconnect", "wifi-forget"].indexOf(name) >= 0 && /^[^\u0000-\u001f\u007f]{1,32}$/.test(String(argument || "")))

@@ -1,6 +1,7 @@
 schemaVersion = 1
 name = "Osaka Jade"
 mode = "dark"
+icon = "Yaru-prussiangreen"
 
 [colors]
 background = "#111c18"

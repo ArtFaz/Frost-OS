@@ -1,6 +1,7 @@
 schemaVersion = 1
 name = "Hackerman"
 mode = "dark"
+icon = "Yaru-sage"
 
 [colors]
 background = "#0b0c16"

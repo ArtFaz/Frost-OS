@@ -1,3 +1,4 @@
 **/target/
 /dist/
 *.pkg.tar.*
+__pycache__/

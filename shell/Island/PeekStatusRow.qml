@@ -52,7 +52,7 @@ RowLayout {
             MIcon {
                 name: root.volumeGlyph
                 size: root.compact ? 12 : 13
-                color: root.muted ? Theme.secondaryText : (audioMouse.containsMouse ? Theme.highlight : Theme.foreground)
+                color: root.muted ? Theme.secondaryText : (audioMouse.containsMouse ? Theme.accent : Theme.foreground)
                 anchors.verticalCenter: parent.verticalCenter
             }
 
@@ -140,7 +140,7 @@ RowLayout {
             MIcon {
                 name: root.notificationsDnd ? "notifications_off" : "notifications"
                 size: root.compact ? 12 : 13
-                color: root.notificationsDnd ? Theme.secondaryText : (notificationsMouse.containsMouse ? Theme.highlight : Theme.foreground)
+                color: root.notificationsDnd ? Theme.secondaryText : (notificationsMouse.containsMouse ? Theme.accent : Theme.foreground)
                 anchors.verticalCenter: parent.verticalCenter
             }
 
@@ -204,7 +204,7 @@ RowLayout {
 
             Text {
                 text: root.batteryLevel + "%"
-                color: batteryMouse.containsMouse ? Theme.highlight : Theme.foreground
+                color: batteryMouse.containsMouse ? Theme.accent : Theme.foreground
                 font.family: root.fontFamily
                 font.pixelSize: root.compact ? 10 : 11
                 font.weight: Font.Bold

@@ -37,7 +37,7 @@ Item {
     // fixed rows rather than a launcher.
     readonly property bool searchingRoot: root.route === "root" && root.filterText.trim() !== ""
     readonly property var rows: root.appsRoute ? root.applicationRows()
-                                : root.searchingRoot ? root.menuRows().concat(root.applicationRows())
+                                : root.searchingRoot ? root.menuRows().concat(root.actionRows()).concat(root.applicationRows())
                                                      : root.menuRows()
     readonly property int rowUnit: root.appsRoute || root.searchingRoot ? Style.detailRowHeight : Style.rowHeight
 
@@ -79,13 +79,45 @@ Item {
             const entry = source[i];
             if (!entry || entry.noDisplay)
                 continue;
-            const haystack = (entry.name + " " + entry.genericName + " " + entry.comment).toLowerCase();
+            const keywords = Array.isArray(entry.keywords) ? entry.keywords.join(" ") : "";
+            const haystack = (entry.name + " " + entry.genericName + " " + entry.comment + " " + keywords).toLowerCase();
             if (query === "" || haystack.indexOf(query) >= 0)
                 matched.push({"entry": entry, "label": entry.name, "detail": entry.comment || entry.genericName || "", "kind": "app"});
         }
 
         matched.sort((left, right) => String(left.label).localeCompare(String(right.label)));
         return matched.slice(0, 120);
+    }
+
+    // Every leaf action from every route, flattened, so a search at the root
+    // reaches "desligar", "bloquear", a surface or a theme without first walking
+    // into its submenu. Only surfaced while a query is being typed.
+    function actionRows() {
+        const query = root.filterText.trim().toLowerCase();
+        if (query === "")
+            return [];
+
+        const leaves = root.routeItems("trigger")
+            .concat(root.routeItems("setup"))
+            .concat(root.routeItems("system"))
+            .concat(root.themeRows())
+            .concat(root.toggleItems());
+        const matched = [];
+        for (let i = 0; i < leaves.length; i += 1) {
+            if ((leaves[i].label + " " + leaves[i].detail).toLowerCase().indexOf(query) >= 0)
+                matched.push(leaves[i]);
+        }
+        return matched;
+    }
+
+    // Session and shell toggles that have no submenu of their own. Each maps to a
+    // single validated `frost shell-action` verb.
+    function toggleItems() {
+        return [{"icon": "󰅶", "label": "Manter acordado", "detail": "Inibir suspensão automática", "action": "stay-awake-toggle", "kind": "toggle"},
+                {"icon": "󰛨", "label": "Luz noturna", "detail": "Alternar o filtro de luz azul", "action": "nightlight-toggle", "kind": "toggle"},
+                {"icon": "󰂛", "label": "Não perturbe", "detail": "Alternar o silêncio do Mako", "action": "notification-dnd", "argument": "toggle", "kind": "toggle"},
+                {"icon": "󰎟", "label": "Limpar notificações", "detail": "Dispensar todas as notificações", "action": "notification-clear", "kind": "toggle"},
+                {"icon": "󱂬", "label": "Fechar todas as janelas", "detail": "Encerrar as janelas abertas", "action": "close-all-windows", "kind": "toggle"}];
     }
 
     function routeItems(value) {
@@ -212,6 +244,12 @@ Item {
             Surfaces.close();
             return;
         }
+        if (item.kind === "toggle") {
+            ShellBackend.action(item.action, item.argument);
+            Surfaces.notify(item.icon, item.label, 1600);
+            Surfaces.close();
+            return;
+        }
         if (item.route) {
             root.enterRoute(item.route, 1);
             return;
@@ -310,6 +348,9 @@ Item {
         root.route = "root";
         root.filterText = "";
         root.selectedIndex = 0;
+        // So a root-level search can list themes before the Aparência route is
+        // ever opened.
+        ShellBackend.query("themes");
         keyCatcher.forceActiveFocus();
     }
 

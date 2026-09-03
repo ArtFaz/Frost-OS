@@ -33,6 +33,23 @@ if rg -n 'Theme\.muted' "$root/shell"; then
   fail 'the muted palette role is not readable enough to paint text or marks'
 fi
 
+# Colour lives only in Theme.qml. Every component takes its colour from a Theme
+# role or the "transparent" sentinel — never a literal hex, a computed colour,
+# or a named CSS colour that would ignore the active theme.
+if rg -n --glob '*.qml' --glob '*.js' --glob '!**/Core/Theme.qml' \
+  -e '#[0-9A-Fa-f]{3,8}"' \
+  -e 'Qt\.(rgba|hsla|hsva|lighter|darker|tint)\s*\(' \
+  -e 'color:\s*"(white|black|red|green|blue|yellow|orange|purple|gray|grey|cyan|magenta|pink|brown)"' \
+  "$root/shell"; then
+  fail 'a shell component defines a colour outside the Theme palette'
+fi
+
+# Interaction chrome (hover, press) uses the neutral accent role. `highlight` is
+# a warm attention colour in most themes, so it is reserved for content marks.
+if rg -n 'Theme\.highlight' "$root/shell/Island/PeekStatusRow.qml" "$root/shell/Island/IslandContent.qml"; then
+  fail 'interaction chrome must use Theme.accent, not the warm highlight role'
+fi
+
 rg -Fq 'readonly property real glassAmount: 1' "$glass" ||
   fail 'Frost glass is not the single permanent material'
 rg -Fq 'fallbackColor: Theme.barBackground' "$surface" ||

@@ -1,6 +1,7 @@
 schemaVersion = 1
 name = "Lumon"
 mode = "dark"
+icon = "Yaru-blue"
 
 [colors]
 background = "#16242d"

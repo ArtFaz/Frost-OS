@@ -6,16 +6,19 @@ pragma Singleton
 QtObject {
     id: root
 
-    property string name: "Gruvbox"
+    // Neutral greyscale placeholders only. The real palette arrives from the
+    // runtime file (or the on-disk fallback) the instant the shell starts, so
+    // no theme's identity is spelled out in the component code.
+    property string name: "Neutral"
     property string mode: "dark"
-    property color background: "#282828"
-    property color foreground: "#d4be98"
-    property color mutedBase: "#928374"
-    property color accent: "#7daea3"
-    property color urgent: "#ea6962"
-    property color highlight: "#d8a657"
-    property color success: "#a9b665"
-    property color warning: "#d8a657"
+    property color background: "#1c1c1c"
+    property color foreground: "#d6d6d6"
+    property color mutedBase: "#8a8a8a"
+    property color accent: "#9e9e9e"
+    property color urgent: "#b4b4b4"
+    property color highlight: "#bcbcbc"
+    property color success: "#a6a6a6"
+    property color warning: "#b0b0b0"
     property bool runtimeLoaded: false
     readonly property string sourceRoot: Quickshell.env("FROST_PREVIEW") === "1" ? Quickshell.env("FROST_SOURCE_ROOT") : ""
 

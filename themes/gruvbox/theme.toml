@@ -1,6 +1,7 @@
 schemaVersion = 1
 name = "Gruvbox"
 mode = "dark"
+icon = "Yaru-sage"
 
 [colors]
 background = "#282828"

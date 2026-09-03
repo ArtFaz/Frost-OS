@@ -70,19 +70,19 @@ hl.config({
             rounding_power = 2.0,
             gradient_rounding = 6,
             gradient_rounding_power = 2.0,
-            -- Colours are overwritten at runtime by the generated
-            -- hyprland-colors.conf; these are the pre-theme fallback.
-            text_color = "rgba(d4be98ff)",
-            text_color_inactive = "rgba(d4be989e)",
+            -- Neutral grey placeholders. The runtime theme foreground overwrites
+            -- all of these below; nothing here carries a theme's identity.
+            text_color = "rgba(d6d6d6ff)",
+            text_color_inactive = "rgba(d6d6d69e)",
             gaps_in = 4,
             gaps_out = 4,
             keep_upper_gap = true,
             blur = true,
             col = {
-                active = "rgba(d4be981f)",
-                inactive = "rgba(d4be980a)",
-                locked_active = "rgba(d4be981f)",
-                locked_inactive = "rgba(d4be980a)",
+                active = "rgba(d6d6d61f)",
+                inactive = "rgba(d6d6d60a)",
+                locked_active = "rgba(d6d6d61f)",
+                locked_inactive = "rgba(d6d6d60a)",
             },
         },
     },

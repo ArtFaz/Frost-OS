@@ -1,6 +1,7 @@
 schemaVersion = 1
 name = "Last Horizon"
 mode = "dark"
+icon = "Yaru-wartybrown"
 
 [colors]
 background = "#0c0b0c"

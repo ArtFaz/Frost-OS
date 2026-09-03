@@ -22,7 +22,8 @@ required_files=(
   default/mako/config
   default/ghostty/config
   default/bash/bashrc
-  default/starship.toml
+  default/bash/inputrc
+  default/nautilus/frost-open-in-ghostty.py
   tools/frost-report
   default/systemd/user/frost-session.target
   default/systemd/user/frost-theme.service
@@ -132,8 +133,35 @@ if rg -n -i '^(on-notify|on-button|on-touch)=' "$root/default/mako/config"; then
   fail 'Mako config may not execute notification hooks'
 fi
 
+bashrc=$root/default/bash/bashrc
+inputrc=$root/default/bash/inputrc
+if rg -n 'STARSHIP_CONFIG' "$bashrc"; then
+  fail 'bashrc pins a Frost starship config; the default preset is used instead'
+fi
+rg -q '^\s*eval "\$\(starship init bash\)"$' "$bashrc" || fail 'bashrc does not initialise starship'
+rg -q '^\s*bind -f /usr/share/frost/default/bash/inputrc$' "$bashrc" ||
+  fail 'bashrc does not load the package-owned inputrc'
+for binding in 'history-search-backward' 'history-search-forward' 'menu-complete' 'completion-ignore-case on'; do
+  rg -qF "$binding" "$inputrc" || fail "inputrc is missing the expected readline setting: $binding"
+done
+# Every non-blank, non-comment line must be a readline `set` or a key binding —
+# no shell, no command substitution, no `bind -x`.
+if rg -vn '^\s*($|#|set [a-z-]+ .+$|(TAB|"[^"]+"):\s*[a-z-]+$)' "$inputrc"; then
+  fail 'inputrc contains a line that is not a plain readline set/binding'
+fi
+
 bash -n "$root/bin/frost-hyprland" "$root/bin/frost-osd" "$root/bin/frost-terminal" "$root/bin/frost-capture" "$root/default/bash/bashrc"
 desktop-file-validate "$root/default/wayland-sessions/frost.desktop"
+
+nautilus_ext=$root/default/nautilus/frost-open-in-ghostty.py
+if rg -n '(subprocess\.(call|run|Popen)\([^)]*shell\s*=\s*True|os\.system|bash\s+-c|sh\s+-c)' "$nautilus_ext"; then
+  fail 'Nautilus extension may not run an interpreted shell'
+fi
+rg -q '"--working-directory=" \+ path' "$nautilus_ext" ||
+  fail 'Nautilus extension does not pass the folder as a fixed working-directory argument'
+if command -v python3 >/dev/null; then
+  python3 -m py_compile "$nautilus_ext" || fail 'Nautilus extension does not compile'
+fi
 
 if command -v Hyprland >/dev/null; then
   Hyprland --verify-config --config "$hyprland_config" >/dev/null

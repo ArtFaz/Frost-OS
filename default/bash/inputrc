@@ -1,0 +1,40 @@
+# Package-owned Frost readline defaults. Loaded per interactive shell by
+# default/bash/bashrc with `bind -f`; it is never installed as /etc/inputrc and
+# never overrides a user's own ~/.inputrc. Provenance is recorded in
+# THIRD_PARTY.md.
+
+set meta-flag on
+set input-meta on
+set output-meta on
+set convert-meta off
+
+# Completion is case-insensitive and lists every candidate on the first Tab.
+set completion-ignore-case on
+set completion-prefix-display-length 2
+set show-all-if-ambiguous on
+set show-all-if-unmodified on
+set page-completions off
+set completion-query-items 200
+
+# Up / Down search history for what has already been typed on the line.
+"\e[A": history-search-backward
+"\e[B": history-search-forward
+"\e[C": forward-char
+"\e[D": backward-char
+
+# Tab cycles through the candidates; Shift+Tab cycles back. The common prefix is
+# inserted before the cycling starts.
+TAB: menu-complete
+"\e[Z": menu-complete-backward
+set menu-complete-display-prefix on
+set skip-completed-text on
+
+# A trailing slash the moment a symlink-to-directory is completed.
+set mark-symlinked-directories on
+
+# Hidden files only when the pattern itself begins with a dot.
+set match-hidden-files off
+
+# `ls -F`-style type markers and colour in the completion list.
+set visible-stats on
+set colored-stats on

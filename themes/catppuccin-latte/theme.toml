@@ -1,6 +1,7 @@
 schemaVersion = 1
 name = "Catppuccin Latte"
 mode = "light"
+icon = "Yaru-blue"
 
 [colors]
 background = "#eff1f5"

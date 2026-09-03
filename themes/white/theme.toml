@@ -1,6 +1,7 @@
 schemaVersion = 1
 name = "White"
 mode = "light"
+icon = "Yaru"
 
 [colors]
 background = "#ffffff"

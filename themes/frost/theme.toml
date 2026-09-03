@@ -1,6 +1,7 @@
 schemaVersion = 1
 name = "Frost Dark"
 mode = "dark"
+icon = "Yaru-blue"
 
 [colors]
 background = "#0f1724"

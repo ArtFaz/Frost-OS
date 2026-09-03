@@ -627,7 +627,7 @@ Item {
                             MIcon {
                                 name: "chevron_left"
                                 size: 13
-                                color: mediaFaceMouse.containsMouse ? Theme.highlight : Theme.secondaryText
+                                color: mediaFaceMouse.containsMouse ? Theme.accent : Theme.secondaryText
                                 anchors.verticalCenter: parent.verticalCenter
                             }
 

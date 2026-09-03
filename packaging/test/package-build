@@ -40,6 +40,8 @@ for expected in \
   usr/share/frost/default/mako/config \
   usr/share/frost/default/ghostty/config \
   usr/share/frost/default/bash/bashrc \
+  usr/share/frost/default/bash/inputrc \
+  usr/share/nautilus-python/extensions/frost-open-in-ghostty.py \
   usr/share/frost/config/data/emojis.json \
   usr/share/frost/config/shell.json \
   usr/share/frost/config/schema/shell.schema.json \

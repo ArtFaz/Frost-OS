@@ -23,7 +23,8 @@ done
 # Both sides must carry the action: the QML allowlist and the Rust validator.
 # Matching either file was enough before, which let one side drift silently.
 for action in wifi-connect wifi-disconnect wifi-forget wifi-radio bluetooth-radio \
-  power-profile battery-threshold notification-dnd notification-dismiss stay-awake-toggle; do
+  power-profile battery-threshold notification-dnd notification-dismiss stay-awake-toggle \
+  nightlight-toggle close-all-windows notification-clear; do
   rg -Fq "\"$action\"" "$shell/Core/ShellBackend.qml" || fail "typed island action missing from the QML allowlist: $action"
   rg -Fq "\"$action\"" "$root/cli/src/main.rs" || fail "typed island action missing from the Rust validator: $action"
 done
