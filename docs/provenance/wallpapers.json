@@ -83,16 +83,6 @@
       "redistribution": "blocked"
     },
     {
-      "destination": "backgrounds/flexoki-light/2-omarchy.webp",
-      "originRepository": "Definitive Frost-OS/omarchy",
-      "originCommit": "0ae1694830b6bd9511042fe1b89a0062d8c083cb",
-      "originPath": "themes/flexoki-light/backgrounds/2-omarchy.webp",
-      "sha256": "a3a3d457c6547bb8a94dd7da06b14deab572bdf78ae597bb6eb8a6a81b04f0bb",
-      "transformation": "verbatim",
-      "license": "unresolved",
-      "redistribution": "blocked"
-    },
-    {
       "destination": "backgrounds/gruvbox/1-the-backwater.jpg",
       "originRepository": "Definitive Frost-OS/omarchy",
       "originCommit": "0ae1694830b6bd9511042fe1b89a0062d8c083cb",
@@ -213,26 +203,6 @@
       "redistribution": "blocked"
     },
     {
-      "destination": "backgrounds/lumon/01-united-in-severance.webp",
-      "originRepository": "Definitive Frost-OS/omarchy",
-      "originCommit": "0ae1694830b6bd9511042fe1b89a0062d8c083cb",
-      "originPath": "themes/lumon/backgrounds/01-united-in-severance.webp",
-      "sha256": "cdfb3d4cb22077ed5f2a73ac8822b6c4e3614a210c5947194c046078ab5073a5",
-      "transformation": "verbatim",
-      "license": "unresolved",
-      "redistribution": "blocked"
-    },
-    {
-      "destination": "backgrounds/lumon/02-opinions-equally.webp",
-      "originRepository": "Definitive Frost-OS/omarchy",
-      "originCommit": "0ae1694830b6bd9511042fe1b89a0062d8c083cb",
-      "originPath": "themes/lumon/backgrounds/02-opinions-equally.webp",
-      "sha256": "ecf20fa95f659643fb37e05910b92e82195aa673f3c58a2a51e20ce1127dc7c5",
-      "transformation": "verbatim",
-      "license": "unresolved",
-      "redistribution": "blocked"
-    },
-    {
       "destination": "backgrounds/lupine/01-cherry-blossom-bokeh.webp",
       "originRepository": "Definitive Frost-OS/omarchy",
       "originCommit": "0ae1694830b6bd9511042fe1b89a0062d8c083cb",
@@ -278,16 +248,6 @@
       "originCommit": "0ae1694830b6bd9511042fe1b89a0062d8c083cb",
       "originPath": "themes/lupine/backgrounds/05-abstract-wave.webp",
       "sha256": "f7ed1e829d3a53a9451c91b7f59cde257bffe6901c8810f352dd944e2f65d67f",
-      "transformation": "verbatim",
-      "license": "unresolved",
-      "redistribution": "blocked"
-    },
-    {
-      "destination": "backgrounds/lupine/06-omarchy.webp",
-      "originRepository": "Definitive Frost-OS/omarchy",
-      "originCommit": "0ae1694830b6bd9511042fe1b89a0062d8c083cb",
-      "originPath": "themes/lupine/backgrounds/06-omarchy.webp",
-      "sha256": "069bca2eb0e28b6c6edbc54940e7a63f647a203d95243b26bdd3f3721e32b21a",
       "transformation": "verbatim",
       "license": "unresolved",
       "redistribution": "blocked"
@@ -543,16 +503,6 @@
       "redistribution": "blocked"
     },
     {
-      "destination": "backgrounds/rose-pine/3-omarchy-plants.webp",
-      "originRepository": "Definitive Frost-OS/omarchy",
-      "originCommit": "0ae1694830b6bd9511042fe1b89a0062d8c083cb",
-      "originPath": "themes/rose-pine/backgrounds/3-omarchy-plants.webp",
-      "sha256": "1cf5444e546016a26c8d0335fe0743a21f0499820f41444a8d95e2fe4c65dca1",
-      "transformation": "verbatim",
-      "license": "unresolved",
-      "redistribution": "blocked"
-    },
-    {
       "destination": "backgrounds/solitude/1-on-pole.webp",
       "originRepository": "Definitive Frost-OS/omarchy",
       "originCommit": "0ae1694830b6bd9511042fe1b89a0062d8c083cb",
@@ -613,16 +563,6 @@
       "redistribution": "blocked"
     },
     {
-      "destination": "backgrounds/tokyo-night/1-quattro.webp",
-      "originRepository": "Definitive Frost-OS/omarchy",
-      "originCommit": "0ae1694830b6bd9511042fe1b89a0062d8c083cb",
-      "originPath": "themes/tokyo-night/backgrounds/1-quattro.webp",
-      "sha256": "c9b96c106d2758113986a8ddb621f3867edf65e09a89dad51abb9fc5f3447146",
-      "transformation": "verbatim",
-      "license": "unresolved",
-      "redistribution": "blocked"
-    },
-    {
       "destination": "backgrounds/tokyo-night/2-swirl-buck.webp",
       "originRepository": "Definitive Frost-OS/omarchy",
       "originCommit": "0ae1694830b6bd9511042fe1b89a0062d8c083cb",
@@ -638,36 +578,6 @@
       "originCommit": "0ae1694830b6bd9511042fe1b89a0062d8c083cb",
       "originPath": "themes/tokyo-night/backgrounds/3-sunset-lake.webp",
       "sha256": "eabc95e4d5e2396b967970458f51a1a2ead80d5cad88a4d303af58989f5f8c49",
-      "transformation": "verbatim",
-      "license": "unresolved",
-      "redistribution": "blocked"
-    },
-    {
-      "destination": "backgrounds/tokyo-night/4-omakub.webp",
-      "originRepository": "Definitive Frost-OS/omarchy",
-      "originCommit": "0ae1694830b6bd9511042fe1b89a0062d8c083cb",
-      "originPath": "themes/tokyo-night/backgrounds/4-omakub.webp",
-      "sha256": "1de02e50e19b1884c9195f1553cbb686ae0642963789b34d0a9f4f0478f80aa7",
-      "transformation": "verbatim",
-      "license": "unresolved",
-      "redistribution": "blocked"
-    },
-    {
-      "destination": "backgrounds/tokyo-night/5-oma-cityscape.jpg",
-      "originRepository": "Definitive Frost-OS/omarchy",
-      "originCommit": "0ae1694830b6bd9511042fe1b89a0062d8c083cb",
-      "originPath": "themes/tokyo-night/backgrounds/5-oma-cityscape.jpg",
-      "sha256": "22e1d639722b33fa6f0d3ac2733450b4bae961b481f5665cb16397bc5f714e5c",
-      "transformation": "verbatim",
-      "license": "unresolved",
-      "redistribution": "blocked"
-    },
-    {
-      "destination": "backgrounds/tokyo-night/6-oma.webp",
-      "originRepository": "Definitive Frost-OS/omarchy",
-      "originCommit": "0ae1694830b6bd9511042fe1b89a0062d8c083cb",
-      "originPath": "themes/tokyo-night/backgrounds/6-oma.webp",
-      "sha256": "1dae1555422c3713381f09dd20b8ed91eaaf42cf73e73bfe255dfefe89b1d004",
       "transformation": "verbatim",
       "license": "unresolved",
       "redistribution": "blocked"

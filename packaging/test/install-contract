@@ -125,6 +125,17 @@ grep -qE 'grep -qxF "\$line" "\$rc"' "$script" \
   || fail 'the bashrc seed is not guarded by the line it adds'
 grep -qE '>> "\$rc"' "$script" || fail 'the bashrc seed replaces the file instead of appending'
 
+# The CachyOS launcher-app hide list is a fixed array, written only as a
+# per-user NoDisplay override, and only when the base entry actually exists.
+grep -qE '^readonly FROST_HIDE_DESKTOP=\(' "$script" \
+  || fail 'the launcher hide list is not a fixed constant array'
+grep -qF 'printf "[Desktop Entry]\nType=Application\nNoDisplay=true\n" > "$dest/$id"' "$script" \
+  || fail 'the launcher hide step does not write a NoDisplay override'
+grep -qF 'dest="$HOME/.local/share/applications"' "$script" \
+  || fail 'the launcher hide step writes outside the user application directory'
+grep -qF '[ -n "$found" ] || { missing="$missing $id"; continue; }' "$script" \
+  || fail 'the launcher hide step writes an override for an id that does not resolve'
+
 # The login shell change is bounded: the invoking user, and only to bash.
 if grep -q 'chsh' <<<"$rules"; then
   grep -qE 'chsh -s /bin/bash "\$invoker"' "$script" \
@@ -132,8 +143,10 @@ if grep -q 'chsh' <<<"$rules"; then
 fi
 
 # The initramfs, the boot splash and the bootloader belong to CachyOS. Frost
-# ships no Plymouth theme, so touching them was risk without a return.
-if grep -n -E '(mkinitcpio|dracut|booster|limine|grub|/boot/)' <<<"$rules"; then
+# ships no Plymouth theme, so touching them was risk without a return. A
+# `.desktop` id that merely contains one of these words (e.g. a launcher entry
+# for limine-snapper-restore being hidden) is not the bootloader being touched.
+if grep -n -E '(mkinitcpio|dracut|booster|limine|grub|/boot/)' <<<"$rules" | grep -vE '\.desktop\b'; then
   fail 'bootstrap touches the initramfs or the bootloader'
 fi
 

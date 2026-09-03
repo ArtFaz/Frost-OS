@@ -1,6 +1,6 @@
 pkgname=frost-wallpapers
 pkgver=0.2.0
-pkgrel=1
+pkgrel=2
 pkgdesc='Theme wallpapers for the Frost desktop'
 arch=('any')
 url='https://github.com/ArtFaz/Frost-OS'

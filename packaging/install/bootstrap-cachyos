@@ -69,6 +69,30 @@ readonly FROST_REPLACES=(
 # resolution costs a message instead of a half-installed system.
 readonly FROST_UNWANTED='^(jack2|pulseaudio|pipewire-media-session|nvidia(-[0-9a-z]+)?-utils|linux(-lts|-zen|-hardened)?)$'
 
+# CachyOS Minimal ships utility apps that clutter the Frost launcher. Their
+# launcher entries are hidden per user with a NoDisplay override written into
+# ~/.local/share/applications, which shadows /usr/share/applications. Only an id
+# that resolves to an installed entry is written, so a wrong or absent name is a
+# no-op; the user deletes the override file to bring an app back.
+readonly FROST_HIDE_DESKTOP=(
+  Alacritty.desktop
+  avahi-discover.desktop bssh.desktop bvnc.desktop
+  btop.desktop
+  btrfs-assistant.desktop
+  cachyos-hello.desktop
+  cachyos-kernel-manager.desktop
+  cachyos-packageinstaller.desktop
+  lstopo.desktop
+  limine-snapper-restore.desktop
+  org.gnome.Meld.desktop
+  micro.desktop
+  qv4l2.desktop qvidcap.desktop
+  scx-manager.desktop
+  shelly.desktop
+  uuctl.desktop
+  pavucontrol.desktop pavucontrol-qt.desktop
+)
+
 here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 invoker=${SUDO_USER:-}
 aur_failed=()
@@ -284,6 +308,39 @@ else
     'disabled the CachyOS Hello autostart' \
     'CachyOS Hello autostart absent or already disabled' \
     'could not disable the CachyOS Hello autostart'
+
+  # Hide the CachyOS utility apps from the launcher with per-user NoDisplay
+  # overrides. Idempotent; only ids that resolve to an installed entry are
+  # written, and every id considered is named in the log.
+  hidden_desktop_ids=$(printf '%s\n' "${FROST_HIDE_DESKTOP[@]}")
+  status=0
+  try_run su - "$invoker" -s /bin/bash -c '
+    set -eu
+    ids="'"$hidden_desktop_ids"'"
+    dest="$HOME/.local/share/applications"
+    mkdir -p "$dest"
+    hidden="" missing=""
+    for id in $ids; do
+      found=""
+      for dir in /usr/share/applications /usr/local/share/applications "$dest"; do
+        [ -f "$dir/$id" ] && { found=1; break; }
+      done
+      [ -n "$found" ] || { missing="$missing $id"; continue; }
+      if [ -f "$dest/$id" ] && grep -q "^NoDisplay=true$" "$dest/$id"; then
+        continue
+      fi
+      printf "[Desktop Entry]\nType=Application\nNoDisplay=true\n" > "$dest/$id"
+      hidden="$hidden $id"
+    done
+    [ -z "$hidden" ] || printf "hidden:%s\n" "$hidden"
+    [ -z "$missing" ] || printf "not present on this image:%s\n" "$missing"
+    command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$dest" >/dev/null 2>&1 || true
+    [ -n "$hidden" ] || exit 10
+  ' || status=$?
+  report "$status" \
+    'hid the marked CachyOS apps from the launcher' \
+    'no CachyOS launcher entries needed hiding' \
+    'could not write the launcher overrides'
 fi
 
 step 'building the AUR apps'
