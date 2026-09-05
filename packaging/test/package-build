@@ -86,7 +86,6 @@ for expected in \
   usr/share/doc/frost/provenance/data.json \
   usr/share/doc/frost/provenance/ports.json \
   usr/share/frost/themes/frost/theme.toml \
-  usr/share/frost/themes/frost-light/theme.toml \
   usr/share/frost/themes/gruvbox/theme.toml; do
   if ! printf '%s\n' "${paths[@]}" | grep -qx "$expected"; then
     printf 'package is missing %s\n' "$expected" >&2

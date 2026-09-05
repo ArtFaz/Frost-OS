@@ -16,7 +16,7 @@ with `9F8D63165ACC27A4FDCCED02FD40A38811EDD104`.
 | One shell process, one IPC target, one process owner | `source-contract` and `shell-contract`: exactly two `Process` objects, both in `qs.Core.ShellBackend`, both entering only `frost shell-data` or `frost shell-action`; the surfaces coordinate through the `qs.Core.Surfaces` singleton rather than a second IPC handler |
 | Every runtime dependency is inventoried | `frost doctor` checks each fixed executable by name; the mapping to owning packages is in `docs/phase4-surface-inventory.md`, and every one of them is a declared dependency of the `frost` package |
 | Optional surfaces fail closed | Each row of `docs/phase4-surface-inventory.md` states the behaviour when its source is unavailable; none falls back to a shell string, a second authority or a donor path |
-| Themes are data | 24 palettes validate, contrast gates included; a theme cannot carry geometry, opacity, motion, commands, symlinks or executable content |
+| Themes are data | 12 palettes validate, contrast gates included; a theme cannot carry geometry, opacity, motion, commands, symlinks or executable content |
 | Material and motion are frozen | `material-contract` pins the alpha ladder, the single glass implementation and the bounded motion durations; the island paints at the reference bar's transmittance in every state |
 
 `./test/all` passes: six contracts and 16 Rust tests.

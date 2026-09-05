@@ -735,7 +735,7 @@ warning = "#d8a657"
 
     #[test]
     fn validates_theme_names() {
-        assert!(valid_name("tokyo-night"));
+        assert!(valid_name("matte-black"));
         assert!(!valid_name("../escape"));
         assert!(!valid_name("bad/name"));
     }
