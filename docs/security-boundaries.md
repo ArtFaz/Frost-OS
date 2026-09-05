@@ -61,7 +61,7 @@ then it does not.
 - Notifications: Mako only. Frost's viewer is a makoctl client behind the typed CLI boundary; it never registers `org.freedesktop.Notifications` and never acts on a notification hint, only on an id the user selected.
 - Lock and PAM: Hyprlock only.
 - Polkit: hyprpolkitagent only.
-- Bluetooth pairing: no agent is registered today. `Quickshell.Bluetooth` exposes `pair()`, `cancelPair()` and `forget()` but no way to answer a BlueZ passkey, PIN or authorization request, so only Just Works devices complete pairing. A pairing agent is a separate authority in the same sense hyprpolkitagent is for Polkit; it must not be implemented inside the shell process.
+- Bluetooth pairing: `frost-bluetooth-agent.service` runs `bt-agent -c DisplayYesNo` as the session's BlueZ agent. `Quickshell.Bluetooth` exposes `pair()`, `cancelPair()` and `forget()` but no way to answer a BlueZ passkey, PIN or authorization request; the agent answers them out of process, auto-confirming numeric comparison and authorization so passkey and Just Works devices both complete pairing. Legacy PIN-input devices are still unsupported (a `-p` pin file is a later option). The agent is a separate authority in the same sense hyprpolkitagent is for Polkit; it is not implemented inside the shell process, and BlueZ's stock `org.bluez.conf` lets the user process register it with no sudoers grant.
 - Session lifecycle: UWSM plus `frost-session.target`.
 - Package ownership: pacman with Arch and Frost keys.
 - Machine rollback: Btrfs, Snapper and Limine.

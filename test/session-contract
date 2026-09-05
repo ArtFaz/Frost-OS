@@ -57,7 +57,8 @@ for wanted in \
   frost-polkit.service \
   frost-idle.service \
   frost-clipboard-text.service \
-  frost-clipboard-image.service; do
+  frost-clipboard-image.service \
+  frost-bluetooth-agent.service; do
   rg -q "^Wants=.*\\b${wanted//./\\.}\\b" "$target" || fail "target does not want $wanted"
 done
 rg -q '^BindsTo=graphical-session\.target$' "$target" || fail 'target is not bound to graphical-session.target'

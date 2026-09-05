@@ -338,6 +338,8 @@ fn collect_checks(strict: bool) -> Vec<Check> {
         "nmcli",
         "powerprofilesctl",
         "rfkill",
+        // The Bluetooth pairing agent frost-bluetooth-agent.service runs.
+        "bt-agent",
         "upower",
         "busctl",
         "wl-copy",

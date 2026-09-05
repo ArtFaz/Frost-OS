@@ -11,7 +11,7 @@ This inventory describes the single active shell composition after the DynamicGl
 | brightness | sysfs poll on the device path resolved once through frost shell-data | machines without a backlight leave the path empty, which disables the poll |
 | background applications | Quickshell SystemTray, rendered as a bare icon rail outside the glass | absent or passive items remain hidden; the rail collapses to nothing |
 | workspaces | Quickshell Hyprland, rendered as a bare dot rail outside the glass | falls back to the baseline set when no monitor can be resolved |
-| Bluetooth | Quickshell Bluetooth/BlueZ, pairing and forgetting as distinct operations | reports unavailable or rfkill-blocked state; a device needing a passkey cannot complete pairing because no BlueZ agent is registered — see docs/security-boundaries.md |
+| Bluetooth | Quickshell Bluetooth/BlueZ, pairing and forgetting as distinct operations; `frost-bluetooth-agent.service` (`bt-agent -c DisplayYesNo`) answers passkey/authorization requests out of process | reports unavailable or rfkill-blocked state; passkey and Just Works devices pair, legacy PIN-input devices do not — see docs/security-boundaries.md |
 | battery | Quickshell UPower plus typed threshold/profile queries | metrics and controls disable independently when unsupported |
 | Wi-Fi | frost shell-data/action using fixed NetworkManager clients, including which SSIDs already hold a saved profile | unavailable state; a secured network without a profile asks for its password before attempting; enterprise authentication and hidden SSIDs are not guessed |
 | privacy | Quickshell PipeWire for microphone use plus a typed bounded camera projection | indicators remain absent when state cannot be established |
