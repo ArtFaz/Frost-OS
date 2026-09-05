@@ -1,0 +1,24 @@
+#!/bin/bash
+# Frost snapshot helper. Takes one described Snapper snapshot of / and prints its
+# number to stdout. Root, sudoers-gated (see default/sudoers/frost). One machine
+# action, no wildcards, no generic execution.
+
+set -euo pipefail
+export LC_ALL=C
+
+[[ $EUID -eq 0 ]] || { printf 'frost-snapshot: must run as root\n' >&2; exit 1; }
+
+# The description is caller-supplied; reduce it to a bounded, inert string.
+desc=$(printf '%s' "${1:-frost}" | tr -cd 'A-Za-z0-9 ._-')
+desc=${desc:0:64}
+[[ -n $desc ]] || desc=frost
+
+[[ $(findmnt -n -o FSTYPE / 2>/dev/null || true) == btrfs ]] \
+  || { printf 'frost-snapshot: root is not Btrfs\n' >&2; exit 1; }
+command -v snapper >/dev/null \
+  || { printf 'frost-snapshot: snapper is not installed\n' >&2; exit 1; }
+[[ -f /etc/snapper/configs/root ]] \
+  || { printf 'frost-snapshot: no snapper config for root\n' >&2; exit 1; }
+
+exec snapper -c root create --type single --cleanup-algorithm number \
+  --print-number --description "$desc"

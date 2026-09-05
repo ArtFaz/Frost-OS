@@ -1,0 +1,56 @@
+#!/bin/bash
+# Frost update. Root, sudoers-gated (see default/sudoers/frost). Takes a verified
+# pre-update snapshot, then runs one pacman transaction. No arguments, no
+# migrations (Phase 7). `frost update` (the CLI verb, run as your user) is the
+# front end; it also refreshes AUR and runs `frost verify` afterwards.
+#
+# Follows docs/security-boundaries.md "Update and rollback invariants": lock,
+# validate, mandatory verified snapshot, one transaction, rollback path. A failed
+# snapshot aborts before pacman.
+
+set -euo pipefail
+export LC_ALL=C
+
+readonly LOG=/var/log/frost-update.log
+readonly LOCK=/run/frost/update.lock
+readonly SNAP_REF=/var/lib/frost/last-update-snapshot
+readonly MIN_FREE_KIB=$((5 * 1024 * 1024))
+
+log() { printf 'frost-update: %s\n' "$1" | tee -a "$LOG" >&2; }
+die() { log "$1"; exit 1; }
+
+[[ $EUID -eq 0 ]] || { printf 'frost-update: must run as root (via sudo)\n' >&2; exit 1; }
+
+install -d -m0755 /run/frost
+exec 9>"$LOCK"
+flock -n 9 || die 'another frost update is already running'
+
+printf '\n=== frost-update %s\n' "$(date -Is)" >>"$LOG"
+
+# Validate before touching anything.
+[[ $(findmnt -n -o FSTYPE / 2>/dev/null || true) == btrfs ]] || die 'root is not Btrfs'
+command -v snapper >/dev/null || die 'snapper is not installed'
+[[ -f /etc/snapper/configs/root ]] || die 'no snapper config for root'
+free_kib=$(df -kP / | awk 'NR == 2 { print $4 }')
+((free_kib >= MIN_FREE_KIB)) \
+  || die "not enough free space on / ($((free_kib / 1024 / 1024)) GiB, need $((MIN_FREE_KIB / 1024 / 1024)) GiB)"
+
+# Mandatory verified pre-update snapshot. A failure here aborts before pacman.
+num=$(/usr/lib/frost/frost-snapshot 'pre-frost-update') \
+  || die 'could not take the pre-update snapshot; aborting before pacman'
+install -d -m0755 "$(dirname -- "$SNAP_REF")"
+printf '%s\n' "$num" > "$SNAP_REF"
+log "pre-update snapshot #$num"
+
+# One pacman transaction, interactive, suspend inhibited.
+log 'running pacman -Syu'
+if ! systemd-inhibit --what=sleep:shutdown --why='Frost update' --mode=block \
+     pacman -Syu 2>&1 | tee -a "$LOG"; then
+  die "pacman -Syu failed — nothing else runs. Roll back with: snapper -c root undochange ${num}..0"
+fi
+
+# Report restart state: pacman removes the modules directory of a replaced kernel.
+[[ -d /usr/lib/modules/$(uname -r) ]] \
+  || log 'reboot recommended (the running kernel was replaced by this update)'
+
+log "update ok (pre-update snapshot #$num)"

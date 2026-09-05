@@ -1,6 +1,6 @@
 pkgname=frost-settings
 pkgver=0.2.0
-pkgrel=6
+pkgrel=7
 pkgdesc='Frost privileged and global system configuration'
 arch=('any')
 url='https://github.com/ArtFaz/Frost-OS'
@@ -54,6 +54,10 @@ package() {
   install -Dm644 default/pam/hyprlock "$pkgdir/usr/share/frost/default/pam/hyprlock"
   install -Dm644 default/systemd/system/frost-firstboot.service \
     "$pkgdir/usr/lib/systemd/system/frost-firstboot.service"
+
+  # The sudoers-gated update helpers.
+  install -Dm755 bin/frost-update   "$pkgdir/usr/lib/frost/frost-update"
+  install -Dm755 bin/frost-snapshot "$pkgdir/usr/lib/frost/frost-snapshot"
 
   install -Dm644 LICENSE "$pkgdir/usr/share/licenses/frost-settings/LICENSE"
 }

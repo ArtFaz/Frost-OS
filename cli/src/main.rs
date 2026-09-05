@@ -9,6 +9,7 @@ use std::time::{Duration, SystemTime};
 
 mod packages;
 mod theme;
+mod update;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const SHARE_DIR: &str = "/usr/share/frost";
@@ -109,6 +110,7 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
         "verify" => doctor_command(rest, true)?,
         "theme" => theme::theme_command(rest)?,
         "packages" => packages::packages_command(rest)?,
+        "update" => update::update_command(rest)?,
         "weather" => weather_command(rest)?,
         "session-lock" => session_program(rest, "hyprlock")?,
         "session-notifications" => session_program(rest, "mako")?,
@@ -153,6 +155,7 @@ Usage:\n  frost status [--json]\n  frost doctor [--json]\n  \
 frost verify [--json]\n  frost theme <list|current|validate|set|sync>\n  frost weather <current|set CITY|clear>\n  \
 frost packages validate --inventory PATH MANIFEST [--json]\n  \
 frost packages plan --inventory PATH MANIFEST [--json] [--lockfile PATH] [--donor-base PATH]\n  \
+frost update\n  \
 frost version\n\nInternal typed shell interface:\n  \
 frost shell-data <brightness|clipboard|images|indicators|notifications|themes|wallpapers|weather>\n  \
 frost shell-action ACTION [VALUE]"
@@ -395,6 +398,37 @@ fn collect_checks(strict: bool) -> Vec<Check> {
                 detail: defaults.display().to_string(),
             });
         }
+
+        // Portal backends. Absent, screen share and the GTK file chooser fail
+        // silently — quickshell does not, so plain `frost doctor` skips these.
+        for (name, path) in [
+            (
+                "file:portal-hyprland",
+                "/usr/share/xdg-desktop-portal/portals/hyprland.portal",
+            ),
+            (
+                "file:portal-gtk",
+                "/usr/share/xdg-desktop-portal/portals/gtk.portal",
+            ),
+        ] {
+            checks.push(Check {
+                name: name.to_owned(),
+                ok: regular_non_executable_file(Path::new(path)),
+                detail: path.to_owned(),
+            });
+        }
+
+        // frost-settings' privileged update helpers.
+        for path in [
+            "/usr/lib/frost/frost-update",
+            "/usr/lib/frost/frost-snapshot",
+        ] {
+            checks.push(Check {
+                name: format!("file:{}", path.rsplit('/').next().unwrap_or(path)),
+                ok: executable_regular_file(Path::new(path)),
+                detail: path.to_owned(),
+            });
+        }
     }
     checks
 }
@@ -461,7 +495,7 @@ fn executable_regular_file(path: &Path) -> bool {
         .is_ok_and(|metadata| metadata.file_type().is_file() && metadata.mode() & 0o111 != 0)
 }
 
-fn command_exists(program: &str) -> bool {
+pub(crate) fn command_exists(program: &str) -> bool {
     let Some(path) = env::var_os("PATH") else {
         return false;
     };
@@ -1512,7 +1546,7 @@ fn valid_numeric(value: &str, maximum: u32) -> bool {
         && value.parse::<u32>().is_ok_and(|number| number <= maximum)
 }
 
-fn run_fixed(program: &str, args: &[&str]) -> Result<(), CliError> {
+pub(crate) fn run_fixed(program: &str, args: &[&str]) -> Result<(), CliError> {
     let status = Command::new(program)
         .args(args)
         .status()

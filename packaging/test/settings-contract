@@ -24,7 +24,9 @@ for rel in \
   default/etc/systemd/zram-generator.conf \
   default/sudoers/frost \
   default/systemd/system/frost-firstboot.service \
-  bin/frost-firstboot; do
+  bin/frost-firstboot \
+  bin/frost-update \
+  bin/frost-snapshot; do
   [[ -f $frost/$rel ]] || fail "missing source file: $rel"
 done
 
@@ -73,6 +75,20 @@ if rg -n 'curl|wget|pacman -R|pacman -S|rm -rf /|chmod 777|eval |>\s*/dev/sd' "$
   fail 'frost-firstboot does something it must not'
 fi
 rg -q '^\s*if \[\[ -f \$marker \]\]; then' "$frost/bin/frost-firstboot" || fail 'frost-firstboot is not guarded by its marker'
+
+# --- update helpers: bounded (they legitimately run pacman -Syu, unlike above) ---
+for helper in bin/frost-update bin/frost-snapshot; do
+  bash -n "$frost/$helper"
+  if rg -n 'curl|wget|rm -rf /|chmod 777|eval |>\s*/dev/sd' "$frost/$helper"; then
+    fail "$helper does something it must not"
+  fi
+  rg -q '^\[\[ \$EUID -eq 0 \]\]' "$frost/$helper" || fail "$helper does not require root"
+done
+# frost-update: the mandatory snapshot must happen before the pacman transaction.
+snap_line=$(rg -n --no-filename 'frost-snapshot' "$frost/bin/frost-update" | head -1 | cut -d: -f1)
+pac_line=$(rg -n --no-filename '^\s*if ! systemd-inhibit.*pacman -Syu|pacman -Syu' "$frost/bin/frost-update" | head -1 | cut -d: -f1)
+[[ -n $snap_line && -n $pac_line && $snap_line -lt $pac_line ]] \
+  || fail 'frost-update runs pacman before taking the pre-update snapshot'
 
 # --- unit: oneshot, self-disabling ---
 unit=$frost/default/systemd/system/frost-firstboot.service
