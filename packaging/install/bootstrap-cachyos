@@ -98,6 +98,8 @@ here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 invoker=${SUDO_USER:-}
 aur_failed=()
 aur_installed=0
+pre_snapshot=''
+verify_failed=0
 
 [[ $EUID -eq 0 ]] || { printf 'bootstrap-cachyos: run as root (sudo ./bootstrap-cachyos)\n' >&2; exit 1; }
 
@@ -162,10 +164,29 @@ else
   note 'no unprivileged invoking user (use sudo, not a root shell)'
 fi
 
-if [[ $(findmnt -n -o FSTYPE / 2>/dev/null || true) != btrfs ]]; then
-  note 'root is not Btrfs; snapshots and rollback will be unavailable'
+root_fstype=$(findmnt -n -o FSTYPE / 2>/dev/null || true)
+if [[ $root_fstype != btrfs ]]; then
+  if [[ ${FROST_ALLOW_NONBTRFS:-} == 1 ]]; then
+    note 'root is not Btrfs; snapshots and rollback are unavailable (FROST_ALLOW_NONBTRFS=1)'
+  else
+    die 'root is not Btrfs — Frost expects a CachyOS Minimal Btrfs install so a failed run can be rolled back. Set FROST_ALLOW_NONBTRFS=1 to install without a rollback point.'
+  fi
+elif ! command -v snapper >/dev/null || [[ ! -f /etc/snapper/configs/root ]]; then
+  note 'Snapper is not configured on this base — no pre-install snapshot or rollback. Reinstall CachyOS Minimal with the Btrfs + Snapper + Limine option for boot-menu rollback.'
 fi
 note "$(df -h / | awk 'NR == 2 { print $4 }') free on /, logging to $LOG_FILE"
+
+step 'taking a pre-bootstrap snapshot'
+# The last no-op point: the next step writes the [frost] repo. With Snapper on a
+# Btrfs root a failed or unbootable run has exactly one clean rollback target.
+if command -v snapper >/dev/null && [[ -f /etc/snapper/configs/root ]]; then
+  pre_snapshot=$(snapper -c root create --type single --cleanup-algorithm number \
+    --print-number --description 'pre-frost-bootstrap' 2>&3) \
+    || die "could not take the pre-bootstrap snapshot — resolve the Snapper error above (is the .snapshots subvolume mounted?), then re-run"
+  note "snapshot #$pre_snapshot — 'snapper -c root undochange ${pre_snapshot}..0' or booting the snapshot from Limine reverts this run"
+else
+  note 'skipped: no Snapper root config (this run has no rollback point)'
+fi
 
 step "installing the Frost repository under $REPO_DEST"
 install -d -m0755 "$REPO_DEST"
@@ -448,10 +469,12 @@ if command -v frost >/dev/null; then
   if run frost verify; then
     note 'frost verify: every check ok'
   else
-    note 'frost verify reported failures; run it inside the session for detail'
+    verify_failed=1
+    say 'frost verify reported failures — the install is not clean'
   fi
 else
-  note 'the frost command is not on PATH — the install did not complete'
+  verify_failed=1
+  say 'the frost command is not on PATH — the install did not complete'
 fi
 
 step 'done'
@@ -461,4 +484,12 @@ if ((${#aur_failed[@]})); then
 fi
 say "Log:   $LOG_FILE"
 say 'Check: frost-report (after logging into the Frost session)'
+if [[ -n $pre_snapshot ]]; then
+  say "Rollback: snapper -c root undochange ${pre_snapshot}..0  (or boot snapshot #$pre_snapshot from Limine)"
+fi
+if ((verify_failed)); then
+  say ''
+  say 'Do NOT reboot yet — frost verify failed. Investigate with: frost verify'
+  exit 1
+fi
 say 'Reboot into Frost.'
