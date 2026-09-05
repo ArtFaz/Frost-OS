@@ -10,6 +10,19 @@ HISTSIZE=10000
 HISTFILESIZE=20000
 shopt -s histappend checkwinsize
 
+# ~/.local/bin holds user-installed executables and the mise shims; put it on
+# PATH ahead of anything that looks for them.
+case ":$PATH:" in
+    *":$HOME/.local/bin:"*) ;;
+    *) export PATH="$HOME/.local/bin${PATH:+:$PATH}" ;;
+esac
+
+# mise manages language runtimes and tools; activate it so its shims and
+# per-directory environment load for each shell.
+if command -v mise >/dev/null 2>&1; then
+    eval "$(mise activate bash)"
+fi
+
 # Readline behaviour: history search on the arrow keys, cycling Tab completion,
 # case-insensitive matching. Package-owned; a user's own ~/.inputrc still wins.
 if [ -r /usr/share/frost/default/bash/inputrc ]; then
@@ -49,8 +62,15 @@ if command -v zoxide >/dev/null 2>&1; then
     alias cd='zd'
 fi
 
-# fzf key bindings (Ctrl-R history, Ctrl-T files) and completion.
+# fzf key bindings (Ctrl-R history, Ctrl-T files) and completion. When fd is
+# present it becomes the file source, so hidden files are searched and .git is
+# skipped.
 if command -v fzf >/dev/null 2>&1; then
+    if command -v fd >/dev/null 2>&1; then
+        export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
+        export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+    fi
+    export FZF_DEFAULT_OPTS='--layout=reverse --border --height=40%'
     [ -r /usr/share/fzf/completion.bash ] && . /usr/share/fzf/completion.bash
     [ -r /usr/share/fzf/key-bindings.bash ] && . /usr/share/fzf/key-bindings.bash
 fi
@@ -60,6 +80,10 @@ if command -v bat >/dev/null 2>&1; then
     export MANROFFOPT='-c'
     export MANPAGER="sh -c 'col -bx | bat -l man -p'"
 fi
+
+# less: keep ANSI colour from paged output, and don't leave a ~/.lesshst behind.
+export LESS='-R'
+export LESSHISTFILE=-
 
 # Starship draws the prompt with its own default preset (Nerd Font glyphs, no
 # Frost config file). The plain PS1 below is only what is left if it is missing.
