@@ -32,4 +32,4 @@ Mako remains the sole notification server; the island reads and acts on notifica
 
 QML never constructs or invokes a shell. Core/ShellBackend.qml owns exactly two serialized Process objects and dispatches only allowlisted frost shell-data and frost shell-action calls. The Rust CLI validates every action again and calls fixed absolute clients. Wi-Fi passwords are bounded printable data sent over stdin, never process arguments.
 
-tools/preview-shell runs the Frost worktree directly with isolated XDG state and preview-only source/CLI overrides. It temporarily hides the Omarchy bar and installs a namespace-scoped blur rule; cleanup restores the bar and releases the rule handle. Upstream comparison mode copies an explicitly supplied DynamicGlacier checkout and never runs its installer.
+tools/preview-shell runs the Frost worktree directly with isolated XDG state and preview-only source/CLI overrides. It temporarily stops the running frost-shell.service and installs a namespace-scoped blur rule; cleanup restarts the service and releases the rule handle. Upstream comparison mode copies an explicitly supplied DynamicGlacier checkout and never runs its installer.

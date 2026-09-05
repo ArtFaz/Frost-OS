@@ -54,7 +54,7 @@ if rg -n 'toggle (apps|settings)|mode === "(apps|settings)"|mode = "(apps|settin
 fi
 rg -Fq 'target: "frost"' "$shell/Island/DynamicGlacier.qml" || fail 'Frost IPC target is missing'
 rg -Fq 'function showOsd(payload: string)' "$shell/Island/DynamicGlacier.qml" || fail 'hardware OSD bridge is missing'
-rg -Fq 'omarchy toggle bar off' "$root/tools/preview-shell" || fail 'preview does not hide the existing bar'
+rg -Fq 'systemctl --user stop frost-shell.service' "$root/tools/preview-shell" || fail 'preview does not stop the running shell'
 rg -Fq 'rule:destroy()' "$root/tools/preview-shell" || fail 'preview does not remove its Hyprland rule'
 rg -Fq '_G.frost_island_preview_rule = nil' "$root/tools/preview-shell" || fail 'preview does not release its Hyprland rule handle'
 

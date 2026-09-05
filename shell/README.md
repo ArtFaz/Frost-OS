@@ -10,4 +10,4 @@ The island carries no configuration UI and no application launcher. Geometry and
 
 Theme.qml, Style.qml and Motion.qml retain Frost's semantic palette, Nerd Font glyphs and bounded motion. FrostGlassSurface.qml is the only island material; there is no Liquid Glass option or runtime material switch. Mako, Hyprlock and hyprpolkitagent remain the sole notification, authentication and Polkit authorities.
 
-For a reversible live worktree preview, run tools/preview-shell. It uses isolated config/state/cache, temporarily hides the pre-existing session bar, applies a scoped blur rule and restores the prior session state on exit.
+For a reversible live worktree preview, run tools/preview-shell. It uses isolated config/state/cache, temporarily stops the running frost-shell.service, applies a scoped blur rule and restores the prior session state on exit.
