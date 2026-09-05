@@ -29,11 +29,13 @@ readonly SRC=${FROST_SRC:-$HOME/frost}
 readonly BUILD_DEPS=(base-devel git rust)
 
 dry_run=0
+check_only=0
 case ${1:-} in
   --dry-run) dry_run=1 ;;
+  --check) check_only=1 ;;
   -h | --help) sed -n '2,18p' "${BASH_SOURCE[0]}"; exit 0 ;;
   '') ;;
-  *) printf 'usage: install.sh [--dry-run]\n' >&2; exit 2 ;;
+  *) printf 'usage: install.sh [--dry-run|--check]\n' >&2; exit 2 ;;
 esac
 
 step() { printf '\n== %s\n' "$1"; }
@@ -59,6 +61,24 @@ command -v pacman-conf >/dev/null || die 'pacman-conf not found'
 pacman-conf --repo-list | grep -qx multilib \
   || die 'the [multilib] repository is disabled — enable it in /etc/pacman.conf, then run this again'
 note "$(. /etc/os-release 2>/dev/null && printf '%s' "${PRETTY_NAME:-unknown}"), $(uname -m), multilib on"
+
+# --check resolves the Frost package set against the live CachyOS/Arch
+# repositories and stops. It touches nothing on this system — no sudo, no
+# pacman.conf edit — so a renamed or dropped dependency is caught before a real
+# install commits.
+if ((check_only)); then
+  here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" 2>/dev/null && pwd || printf '')
+  [[ -n $here && -f $here/packaging/install/bootstrap-cachyos ]] \
+    || die 'run --check from inside a Frost checkout'
+  step 'resolving the package set against the live repositories'
+  if [[ ! -f $here/packaging/repo/x86_64/frost.db ]]; then
+    note 'building the local repository first (the resolver needs it)'
+    run "$here/packaging/tools/build-local-repo"
+  fi
+  FROST_RESOLVE_PLAN=1 run "$here/packaging/test/resolve-plan"
+  step 'check complete — nothing on this system was changed'
+  exit 0
+fi
 
 step 'installing what the build needs'
 run sudo pacman -S --needed --noconfirm "${BUILD_DEPS[@]}"
