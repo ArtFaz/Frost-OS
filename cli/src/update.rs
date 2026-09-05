@@ -1,7 +1,7 @@
 use std::fs;
 use std::os::unix::fs::MetadataExt;
 
-use crate::{command_exists, run_fixed, CliError};
+use crate::{CliError, command_exists, run_fixed};
 
 const SNAPSHOT_REF: &str = "/var/lib/frost/last-update-snapshot";
 const LOG: &str = "/var/log/frost-update.log";
