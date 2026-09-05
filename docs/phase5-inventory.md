@@ -70,7 +70,9 @@ the legacy-hardware drivers moved to `source: aur`; `hyprland-preview-share-pick
 and `ttf-jetbrains-mono-nerd-basic` (Omarchy-custom, no clean equivalent) moved
 to `DROP`. `limine-snapper-sync` (was `CORE`) is now `OPTIONAL` `aur` and sits in
 the `this-machine` profile so `paru` installs it. `frost-meta` dropped from 177
-to 166 dependencies.
+to 166 dependencies. _(Superseded 2026-09-05: `limine-snapper-sync` and `limine`
+were removed from the inventory entirely — the base owns the bootloader. See the
+Record below.)_
 
 ### Editors, Spotify and the microcode fix (`2026-08-29.4`)
 
@@ -154,16 +156,24 @@ Only after that may `frost-meta` be generated or changed (Phase 6).
 
 ### Record
 
-- **Manifest:** `frost-packages.json` at the repo root, `inventoryVersion 2026-08-30.1`.
-- **SHA-256:** `db0a42b206f0080ba27d087283a94076513d5a6b7c2db09888ecff2653d652db`
-  (superseded `2026-08-29.5` / `e7b2e221…` after a repo-source audit reclassified
-  packages that exist only in the Omarchy repo or the AUR — `nvim`→`neovim`,
-  `mise-bin`→`mise`, `yaru-icon-theme`→`papirus-icon-theme`, `tobi-try`→`try`,
-  `xdg-terminal-exec`/`limine-snapper-sync`/`yay`/`cliamp`/… moved to `aur`.)
-- **Lockfile:** `aur.lock.json` — 8 AUR selections, each pinned to a `git ls-remote`
-  commit on 2026-08-30.
-- **Resolution:** 197 packages, no risks, no auto-added dependencies, no
-  excluded-but-required packages. Against the donor base list: +83 / −31.
+- **Manifest:** `frost-packages.json` at the repo root, `inventoryVersion 2026-09-05.1`.
+- **SHA-256:** `ad9d6485db5551938fd842e12b2f7ff08e95d105b2e8ef77399ec4ac39ac8d4f`
+  (supersedes `2026-08-30.1` / `db0a42b2…`, itself superseding `2026-08-29.5` /
+  `e7b2e221…` after a repo-source audit reclassified Omarchy-repo/AUR-only
+  packages — `nvim`→`neovim`, `mise-bin`→`mise`,
+  `yaru-icon-theme`→`papirus-icon-theme`, `tobi-try`→`try`,
+  `xdg-terminal-exec`/`yay`/`cliamp`/… moved to `aur`.)
+- **2026-09-05 pre-install trim:** `limine` and `limine-snapper-sync` removed
+  from the inventory — the CachyOS base owns the bootloader, and Frost is only
+  installed onto a base that already carries them (`limine-mkinitcpio-hook`
+  stays). `chromium`, `foot`, `tmux`, `evince` moved to `DROP` (they were
+  already in the manifest `exclude`). `frost-meta` `depends()` is unchanged
+  (still 166); only its header (`inventoryVersion`, `manifest sha256`, `pkgver`)
+  moved.
+- **Lockfile:** `aur.lock.json` — 15 AUR selections, each pinned to a
+  `git ls-remote` commit (`limine-snapper-sync` dropped).
+- **Resolution:** 194 packages (arch 176 · frost 3 · aur 15), no risks, no
+  auto-added dependencies, no excluded-but-required packages.
 - **Profile:** `this-machine` (Vaio FE16, Ryzen 5 5825U, all-AMD).
 - **Features on:** `aur`, `bluetooth`, `development`, `gaming`, `media-production`,
   `tailscale`, `virtualisation-guest`. Off: `printing`, `scanning`.
@@ -175,11 +185,14 @@ Only after that may `frost-meta` be generated or changed (Phase 6).
   `kdenlive`, `localsend`, `moonlight-qt`, `pacsea-bin`, `parsec-bin`, `ruby`,
   `tmux`, `xournalpp`, `yt-dlp`, `zbar`. PDFs are read in Brave; a video editor,
   a second terminal, a second browser, a second AUR TUI and the streaming clients
-  are not wanted.
-- **AUR (8):** `anydesk-bin`, `beekeeper-studio-bin`, `brave-bin`, `hyprmon-bin`,
-  `paru`, `parui`, `vesktop-bin`, `visual-studio-code-bin`.
+  are not wanted. `chromium`/`evince`/`foot`/`tmux` are also `DROP` in the
+  inventory as of 2026-09-05.
+- **AUR (15):** `anydesk-bin`, `beekeeper-studio-bin`, `brave-bin`, `cliamp`,
+  `hyprmon-bin`, `paru`, `parui`, `tensaku`, `try`, `ttf-ia-writer`, `tzupdate`,
+  `ufw-docker`, `vesktop-bin`, `visual-studio-code-bin`, `yay`.
 - **Approval:** the user approved the manifest on 2026-08-30 after `dkms` was
   dropped from the include list and the three flagged items (VM guest agents,
-  `dkms`, no PDF viewer) were each decided.
+  `dkms`, no PDF viewer) were each decided; the 2026-09-05 trim above was
+  approved as part of the pre-install review.
 
 `frost-meta` may now be generated from this manifest in Phase 6.

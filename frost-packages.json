@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "inventoryVersion": "2026-09-03.2",
+  "inventoryVersion": "2026-09-05.1",
   "profiles": [
     "this-machine"
   ],
@@ -41,7 +41,6 @@
       "brave-bin",
       "cliamp",
       "hyprmon-bin",
-      "limine-snapper-sync",
       "paru",
       "parui",
       "tensaku",

@@ -1,5 +1,5 @@
 {
-  "inventoryVersion": "2026-09-03.2",
+  "inventoryVersion": "2026-09-05.1",
   "generatedFrom": [
     {
       "source": "clean CachyOS/Arch repo audit",
@@ -214,13 +214,11 @@
         "beekeeper-studio-bin",
         "bolt",
         "brave-bin",
-        "chromium",
         "cliamp",
         "ddcutil",
         "dua-cli",
         "exfatprogs",
         "expac",
-        "foot",
         "gum",
         "gvfs-mtp",
         "gvfs-nfs",
@@ -234,7 +232,6 @@
         "lib32-vulkan-radeon",
         "libreoffice-fresh",
         "libvips",
-        "limine-snapper-sync",
         "localsend",
         "nautilus-python",
         "obsidian",
@@ -341,14 +338,6 @@
       "hardware": [
         "cpu-intel"
       ]
-    },
-    {
-      "name": "limine",
-      "source": "arch",
-      "category": "BOOTSTRAP",
-      "default": "required",
-      "reason": "The bootloader Frost uses",
-      "sizeKib": 5232
     },
     {
       "name": "limine-mkinitcpio-hook",
@@ -606,16 +595,6 @@
       "default": "required",
       "reason": "Client library apps use to reach the keyring",
       "sizeKib": 1189
-    },
-    {
-      "name": "limine-snapper-sync",
-      "source": "aur",
-      "category": "OPTIONAL",
-      "default": "optional",
-      "reason": "Adds Limine boot entries for Snapper snapshots; installed with paru",
-      "sizeKib": 26736,
-      "pkgbase": "limine-snapper-sync",
-      "recipeUrl": "https://aur.archlinux.org/limine-snapper-sync.git"
     },
     {
       "name": "mako",
@@ -957,9 +936,9 @@
     {
       "name": "chromium",
       "source": "arch",
-      "category": "DESKTOP",
+      "category": "DROP",
       "default": "optional",
-      "reason": "Chromium browser and the runtime for local web apps",
+      "reason": "Second Chromium browser; Brave is the Frost default and covers local web apps",
       "sizeKib": 426199
     },
     {
@@ -1019,9 +998,9 @@
     {
       "name": "evince",
       "source": "arch",
-      "category": "DESKTOP",
-      "default": "recommended",
-      "reason": "PDF and document viewer",
+      "category": "DROP",
+      "default": "optional",
+      "reason": "Separate PDF viewer not wanted; PDFs open in Brave",
       "sizeKib": 12748
     },
     {
@@ -1099,9 +1078,9 @@
     {
       "name": "foot",
       "source": "arch",
-      "category": "DESKTOP",
+      "category": "DROP",
       "default": "optional",
-      "reason": "Lightweight Wayland terminal, kept available though ghostty is the Frost default",
+      "reason": "Second Wayland terminal not wanted; ghostty is the Frost default",
       "sizeKib": 793
     },
     {
@@ -1598,9 +1577,9 @@
     {
       "name": "tmux",
       "source": "arch",
-      "category": "DESKTOP",
-      "default": "recommended",
-      "reason": "Terminal multiplexer",
+      "category": "DROP",
+      "default": "optional",
+      "reason": "Terminal multiplexer not wanted in the base set",
       "sizeKib": 1244
     },
     {
