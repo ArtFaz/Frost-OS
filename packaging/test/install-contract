@@ -126,14 +126,16 @@ grep -qE 'grep -qxF "\$line" "\$rc"' "$script" \
 grep -qE '>> "\$rc"' "$script" || fail 'the bashrc seed replaces the file instead of appending'
 
 # The CachyOS launcher-app hide list is a fixed array, written only as a
-# per-user NoDisplay override, and only when the base entry actually exists.
+# per-user override (a full copy of the base entry with NoDisplay=true, so the
+# nameless stub Quickshell rejects is never produced), and only when the base
+# entry actually exists.
 grep -qE '^readonly FROST_HIDE_DESKTOP=\(' "$script" \
   || fail 'the launcher hide list is not a fixed constant array'
-grep -qF 'printf "[Desktop Entry]\nType=Application\nNoDisplay=true\n" > "$dest/$id"' "$script" \
-  || fail 'the launcher hide step does not write a NoDisplay override'
+grep -qF '{ grep -v "^NoDisplay=" "$src" || true; printf "NoDisplay=true\n"; } > "$dest/$id"' "$script" \
+  || fail 'the launcher hide step does not write a NoDisplay shadow of the base entry'
 grep -qF 'dest="$HOME/.local/share/applications"' "$script" \
   || fail 'the launcher hide step writes outside the user application directory'
-grep -qF '[ -n "$found" ] || { missing="$missing $id"; continue; }' "$script" \
+grep -qF '[ -n "$src" ] || { missing="$missing $id"; continue; }' "$script" \
   || fail 'the launcher hide step writes an override for an id that does not resolve'
 
 # The login shell change is bounded: the invoking user, and only to bash.
