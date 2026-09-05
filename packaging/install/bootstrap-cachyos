@@ -86,6 +86,7 @@ readonly FROST_HIDE_DESKTOP=(
   limine-snapper-restore.desktop
   org.gnome.Meld.desktop
   micro.desktop
+  vim.desktop gvim.desktop
   qv4l2.desktop qvidcap.desktop
   scx-manager.desktop
   shelly.desktop
