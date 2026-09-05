@@ -136,10 +136,17 @@ fi
 
 bashrc=$root/default/bash/bashrc
 inputrc=$root/default/bash/inputrc
-if rg -n 'STARSHIP_CONFIG' "$bashrc"; then
-  fail 'bashrc pins a Frost starship config; the default preset is used instead'
-fi
+starship_toml=$root/default/starship/starship.toml
+# bashrc points STARSHIP_CONFIG at the package-owned config, but only when the
+# user has none of their own — their ~/.config/starship.toml still wins.
+rg -q '^\s*export STARSHIP_CONFIG=/usr/share/frost/default/starship/starship\.toml$' "$bashrc" \
+  || fail 'bashrc does not point STARSHIP_CONFIG at the Frost config'
+rg -qF '${XDG_CONFIG_HOME:-$HOME/.config}/starship.toml' "$bashrc" \
+  || fail 'the Frost starship config is not guarded by the user override check'
 rg -q '^\s*eval "\$\(starship init bash\)"$' "$bashrc" || fail 'bashrc does not initialise starship'
+[[ -f $starship_toml && ! -L $starship_toml ]] || fail 'default/starship/starship.toml is missing or a symlink'
+python3 -c "import tomllib,sys; tomllib.load(open(sys.argv[1],'rb'))" "$starship_toml" \
+  || fail 'default/starship/starship.toml is not valid TOML'
 rg -q '^\s*bind -f /usr/share/frost/default/bash/inputrc$' "$bashrc" ||
   fail 'bashrc does not load the package-owned inputrc'
 for binding in 'history-search-backward' 'history-search-forward' 'menu-complete' 'completion-ignore-case on'; do

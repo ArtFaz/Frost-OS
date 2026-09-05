@@ -42,6 +42,7 @@ for expected in \
   usr/share/frost/default/ghostty/config \
   usr/share/frost/default/bash/bashrc \
   usr/share/frost/default/bash/inputrc \
+  usr/share/frost/default/starship/starship.toml \
   usr/share/nautilus-python/extensions/frost-open-in-ghostty.py \
   usr/share/frost/config/data/emojis.json \
   usr/share/frost/config/data/keybinds.json \

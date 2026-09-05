@@ -85,10 +85,15 @@ fi
 export LESS='-R'
 export LESSHISTFILE=-
 
-# Starship draws the prompt with its own default preset (Nerd Font glyphs, no
-# Frost config file). The plain PS1 below is only what is left if it is missing.
+# Starship draws the prompt. It uses the package-owned Frost config unless the
+# user has their own ~/.config/starship.toml, which still wins. The plain PS1
+# below is only what is left if starship is missing.
 PS1='\[\e[38;5;110m\]\w\[\e[0m\] \$ '
 
 if [ "${TERM:-}" != "dumb" ] && command -v starship >/dev/null 2>&1; then
+    if [ ! -e "${XDG_CONFIG_HOME:-$HOME/.config}/starship.toml" ] \
+       && [ -r /usr/share/frost/default/starship/starship.toml ]; then
+        export STARSHIP_CONFIG=/usr/share/frost/default/starship/starship.toml
+    fi
     eval "$(starship init bash)"
 fi

@@ -1,6 +1,6 @@
 pkgname=frost
 pkgver=0.2.0
-pkgrel=41
+pkgrel=42
 pkgdesc='Independent Frost desktop runtime and diagnostics CLI'
 arch=('x86_64')
 url='https://github.com/ArtFaz/Frost-OS'
@@ -107,6 +107,8 @@ package() {
     "$pkgdir/usr/share/frost/default/bash/bashrc"
   install -Dm644 default/bash/inputrc \
     "$pkgdir/usr/share/frost/default/bash/inputrc"
+  install -Dm644 default/starship/starship.toml \
+    "$pkgdir/usr/share/frost/default/starship/starship.toml"
   install -Dm644 default/nautilus/frost-open-in-ghostty.py \
     "$pkgdir/usr/share/nautilus-python/extensions/frost-open-in-ghostty.py"
 
