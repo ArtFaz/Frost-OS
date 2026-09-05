@@ -52,9 +52,18 @@ else
 fi
 
 # 3. Firewall: default-deny inbound, enable at boot. Skipped if ufw is absent.
+#    If sshd is enabled on this base, punch a hole for it first so enabling the
+#    firewall never drops a remote session.
 if command -v ufw >/dev/null; then
   ufw --force default deny incoming >/dev/null
   ufw --force default allow outgoing >/dev/null
+  if systemctl is-enabled sshd.service >/dev/null 2>&1 \
+     || systemctl is-active sshd.service >/dev/null 2>&1; then
+    ufw allow OpenSSH >/dev/null 2>&1 \
+      || ufw allow ssh >/dev/null 2>&1 \
+      || ufw allow 22/tcp >/dev/null 2>&1 || true
+    log 'allowed SSH (sshd is enabled)'
+  fi
   ufw --force enable >/dev/null
   systemctl enable ufw >/dev/null 2>&1 || true
   log 'ufw enabled, default deny incoming'
