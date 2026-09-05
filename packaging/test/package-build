@@ -33,6 +33,7 @@ for expected in \
   usr/lib/systemd/user/frost-polkit.service \
   usr/lib/systemd/user/frost-idle.service \
   usr/lib/systemd/user/frost-lock.service \
+  usr/lib/systemd/user/frost-bluetooth-agent.service \
   usr/share/wayland-sessions/frost.desktop \
   usr/share/frost/default/hypr/hyprland.lua \
   usr/share/frost/default/hypr/hypridle.conf \
@@ -43,6 +44,7 @@ for expected in \
   usr/share/frost/default/bash/inputrc \
   usr/share/nautilus-python/extensions/frost-open-in-ghostty.py \
   usr/share/frost/config/data/emojis.json \
+  usr/share/frost/config/data/keybinds.json \
   usr/share/frost/config/shell.json \
   usr/share/frost/config/schema/shell.schema.json \
   usr/share/frost/shell/shell.qml \
@@ -73,6 +75,7 @@ for expected in \
   usr/share/frost/shell/Surfaces/LauncherSurface.qml \
   usr/share/frost/shell/Surfaces/ClipboardSurface.qml \
   usr/share/frost/shell/Surfaces/EmojiSurface.qml \
+  usr/share/frost/shell/Surfaces/KeybindsSurface.qml \
   usr/share/frost/shell/Surfaces/ImagePickerSurface.qml \
   usr/share/frost/shell/Surfaces/BackgroundSurface.qml \
   usr/share/frost/shell/Surfaces/EventOsd.qml \
@@ -95,6 +98,7 @@ package_info=$(bsdtar -xOf "$package" .PKGINFO)
 for dependency in \
   bash \
   bluez \
+  bluez-tools \
   brightnessctl \
   cliphist \
   curl \

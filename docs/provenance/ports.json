@@ -281,6 +281,15 @@
       "notice": "docs/provenance.md"
     },
     {
+      "destination": "shell/Surfaces/KeybindsSurface.qml",
+      "originRepository": "Frost",
+      "originCommit": "",
+      "originPath": "",
+      "transformation": "original",
+      "license": "Frost project license",
+      "notice": "docs/provenance.md"
+    },
+    {
       "destination": "shell/shell.qml",
       "originRepository": "Frost-OS",
       "originCommit": "f4a8cc9cd4137469393f815ccef08a849ce9005d",

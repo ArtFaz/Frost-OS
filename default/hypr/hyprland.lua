@@ -466,6 +466,7 @@ hl.bind(main_mod .. " + ALT + SPACE", ipc("toggle launcher"))
 hl.bind(main_mod .. " + CTRL + E", ipc("toggle emoji"))
 hl.bind(main_mod .. " + CTRL + SPACE", ipc("toggle wallpaper"))
 hl.bind(main_mod .. " + SHIFT + SPACE", ipc("toggle island"))
+hl.bind(main_mod .. " + K", ipc("toggle keybinds"))
 
 -- Applications. Targets are fixed binaries; the set matches the package
 -- manifest, and a key whose app is not installed simply does nothing.

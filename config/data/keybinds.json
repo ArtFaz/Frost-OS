@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "groups": [
+    {
+      "title": "Shell",
+      "items": [
+        { "keys": "Super + Space", "action": "Launcher" },
+        { "keys": "Super + K", "action": "This shortcut reference" },
+        { "keys": "Super + Ctrl + E", "action": "Emoji picker" },
+        { "keys": "Super + Ctrl + Space", "action": "Wallpaper picker" },
+        { "keys": "Super + Ctrl + V", "action": "Clipboard history" },
+        { "keys": "Super + Shift + Space", "action": "Show / hide the island" },
+        { "keys": "Super + Ctrl + A", "action": "Audio panel" },
+        { "keys": "Super + Ctrl + W", "action": "Wi-Fi panel" },
+        { "keys": "Super + Ctrl + B", "action": "Bluetooth panel" },
+        { "keys": "Super + Ctrl + P", "action": "Battery panel" }
+      ]
+    },
+    {
+      "title": "Applications",
+      "items": [
+        { "keys": "Super + Return", "action": "Terminal" },
+        { "keys": "Super + Shift + Return", "action": "Browser" },
+        { "keys": "Super + Shift + B", "action": "Browser" },
+        { "keys": "Super + Shift + Alt + B", "action": "Browser (private window)" },
+        { "keys": "Super + Shift + F", "action": "File manager" },
+        { "keys": "Super + Shift + N", "action": "Editor" },
+        { "keys": "Super + Shift + M", "action": "Music" },
+        { "keys": "Super + Shift + Alt + M", "action": "Terminal music player" },
+        { "keys": "Super + Shift + O", "action": "Notes" },
+        { "keys": "Super + Shift + D", "action": "Docker TUI" },
+        { "keys": "Super + Ctrl + T", "action": "System monitor" }
+      ]
+    },
+    {
+      "title": "Clipboard",
+      "items": [
+        { "keys": "Super + C", "action": "Copy (Ctrl+C, or Insert in a terminal)" },
+        { "keys": "Super + V", "action": "Paste (Ctrl+V, or Shift+Insert in a terminal)" },
+        { "keys": "Super + X", "action": "Cut" }
+      ]
+    },
+    {
+      "title": "Windows",
+      "items": [
+        { "keys": "Super + W", "action": "Close window" },
+        { "keys": "Super + Q", "action": "Close window" },
+        { "keys": "Super + F", "action": "Fullscreen" },
+        { "keys": "Super + Alt + F", "action": "Maximize" },
+        { "keys": "Super + T", "action": "Toggle floating" },
+        { "keys": "Super + J", "action": "Toggle split direction" },
+        { "keys": "Super + P", "action": "Pseudo-tile" },
+        { "keys": "Super + -  /  Super + =", "action": "Resize width" },
+        { "keys": "Super + Shift + -  /  =", "action": "Resize height" },
+        { "keys": "Super + Alt + -  /  =", "action": "Resize width, fine" },
+        { "keys": "Super + Ctrl + -  /  =", "action": "Resize width, coarse" },
+        { "keys": "Super + Left drag", "action": "Move window" },
+        { "keys": "Super + Right drag", "action": "Resize window" }
+      ]
+    },
+    {
+      "title": "Focus & move",
+      "items": [
+        { "keys": "Super + ← ↑ → ↓", "action": "Focus window in direction" },
+        { "keys": "Super + Shift + ← ↑ → ↓", "action": "Swap window in direction" },
+        { "keys": "Alt + Tab", "action": "Cycle windows / bring to front" },
+        { "keys": "Alt + Shift + Tab", "action": "Cycle windows backward" }
+      ]
+    },
+    {
+      "title": "Workspaces",
+      "items": [
+        { "keys": "Super + 1 … 0", "action": "Go to workspace" },
+        { "keys": "Super + Shift + 1 … 0", "action": "Move window to workspace" },
+        { "keys": "Super + Shift + Alt + 1 … 0", "action": "Send window to workspace, stay" },
+        { "keys": "Super + Tab", "action": "Next workspace" },
+        { "keys": "Super + Shift + Tab", "action": "Previous workspace" },
+        { "keys": "Super + Ctrl + Tab", "action": "Last workspace" },
+        { "keys": "Super + Scroll", "action": "Next / previous workspace" },
+        { "keys": "Super + S", "action": "Scratchpad" },
+        { "keys": "Super + `", "action": "Scratchpad" },
+        { "keys": "Super + Alt + S", "action": "Move window to scratchpad" }
+      ]
+    },
+    {
+      "title": "Groups",
+      "items": [
+        { "keys": "Super + G", "action": "Toggle group" },
+        { "keys": "Super + Alt + G", "action": "Move window out of group" },
+        { "keys": "Super + Alt + ← →", "action": "Move window into the group beside it" },
+        { "keys": "Super + Ctrl + ← →", "action": "Previous / next window in group" },
+        { "keys": "Super + Alt + Tab", "action": "Next group" },
+        { "keys": "Super + Alt + Shift + Tab", "action": "Previous group" },
+        { "keys": "Super + Alt + 1 … 5", "action": "Focus group member" }
+      ]
+    },
+    {
+      "title": "Monitors",
+      "items": [
+        { "keys": "Super + Shift + Alt + ← ↑ → ↓", "action": "Move workspace to monitor" },
+        { "keys": "Ctrl + Alt + Tab", "action": "Focus next monitor" },
+        { "keys": "Ctrl + Alt + Shift + Tab", "action": "Focus previous monitor" }
+      ]
+    },
+    {
+      "title": "Session",
+      "items": [
+        { "keys": "Super + Ctrl + L", "action": "Lock screen" },
+        { "keys": "Super + Shift + E", "action": "Log out" },
+        { "keys": "Ctrl + Alt + Delete", "action": "Close all windows" },
+        { "keys": "Super + Ctrl + I", "action": "Toggle stay-awake" },
+        { "keys": "Super + Ctrl + N", "action": "Toggle night light" },
+        { "keys": "Super + Ctrl + Z", "action": "Cursor zoom in" },
+        { "keys": "Super + Ctrl + Alt + Z", "action": "Reset cursor zoom" }
+      ]
+    },
+    {
+      "title": "Notifications",
+      "items": [
+        { "keys": "Super + ,", "action": "Dismiss latest" },
+        { "keys": "Super + Alt + ,", "action": "Activate latest" },
+        { "keys": "Super + Shift + ,", "action": "Clear all" },
+        { "keys": "Super + Ctrl + ,", "action": "Toggle do-not-disturb" },
+        { "keys": "Super + Shift + Alt + ,", "action": "Notifications panel" }
+      ]
+    },
+    {
+      "title": "Capture",
+      "items": [
+        { "keys": "Print", "action": "Screenshot the screen" },
+        { "keys": "Super + Ctrl + C", "action": "Screenshot a region" },
+        { "keys": "Super + Ctrl + Print", "action": "Grab text from a region (OCR)" },
+        { "keys": "Alt + Print", "action": "Record the screen" },
+        { "keys": "Super + Print", "action": "Pick a colour" }
+      ]
+    },
+    {
+      "title": "Hardware keys",
+      "items": [
+        { "keys": "Volume ↑ / ↓ / Mute", "action": "Adjust output volume" },
+        { "keys": "Alt + Volume ↑ / ↓", "action": "Adjust volume, fine steps" },
+        { "keys": "Mic Mute", "action": "Toggle microphone" },
+        { "keys": "Brightness ↑ / ↓", "action": "Adjust screen brightness" },
+        { "keys": "Alt + Brightness ↑ / ↓", "action": "Adjust brightness, fine steps" },
+        { "keys": "Shift + Brightness ↑ / ↓", "action": "Brightness to max / min" },
+        { "keys": "Keyboard Brightness ↑ / ↓ / Toggle", "action": "Keyboard backlight" },
+        { "keys": "Media Next / Prev / Play", "action": "Control the active player" }
+      ]
+    }
+  ]
+}

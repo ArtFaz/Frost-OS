@@ -81,6 +81,13 @@ Scope {
                 hostHeight: panel.height
                 active: Surfaces.active === "emoji"
             }
+
+            KeybindsSurface {
+                anchors.centerIn: parent
+                hostWidth: panel.width
+                hostHeight: panel.height
+                active: Surfaces.active === "keybinds"
+            }
         }
     }
 }

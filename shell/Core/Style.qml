@@ -36,6 +36,8 @@ QtObject {
     readonly property int imageHeight: 450
     readonly property int installerWidth: 720
     readonly property int installerHeight: 600
+    readonly property int keybindsWidth: 640
+    readonly property int keybindsHeight: 560
 
     readonly property int caption: 10
     readonly property int bodySmall: 11

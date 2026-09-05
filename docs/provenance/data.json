@@ -7,6 +7,13 @@
       "derivation": "Hand-curated Unicode characters with original generic search keywords; no donor dataset copied",
       "license": "Frost project license",
       "executable": false
+    },
+    {
+      "destination": "config/data/keybinds.json",
+      "authority": "Frost-authored",
+      "derivation": "Hand-authored shortcut reference describing the binds in default/hypr/hyprland.lua; original grouping and wording, no donor cheatsheet copied",
+      "license": "Frost project license",
+      "executable": false
     }
   ]
 }
