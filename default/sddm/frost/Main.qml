@@ -295,30 +295,17 @@ Rectangle {
         }
     }
 
-    // ---- wordmark, host and power -------------------------------------
+    // ---- mark and power ---------------------------------------------
 
-    Row {
+    Text {
         anchors.left: parent.left
         anchors.bottom: parent.bottom
         anchors.margins: 24
-        spacing: 8
+        text: ""
+        color: root.mutedColor
+        font.family: root.glyphFont
+        font.pixelSize: 13
         opacity: 0.5
-
-        Text {
-            anchors.verticalCenter: parent.verticalCenter
-            text: ""
-            color: root.mutedColor
-            font.family: root.glyphFont
-            font.pixelSize: 12
-        }
-        Text {
-            anchors.verticalCenter: parent.verticalCenter
-            text: "Frost"
-            color: root.mutedColor
-            font.family: root.uiFont
-            font.pixelSize: 11
-            font.letterSpacing: 2
-        }
     }
 
     Row {
