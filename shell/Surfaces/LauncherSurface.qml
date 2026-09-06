@@ -31,6 +31,18 @@ Item {
     readonly property int rowSpacing: 3
     readonly property int footerHeight: Style.footerHeight
 
+    // CachyOS ships utility launchers Frost hides. Quickshell's DesktopEntries
+    // does not reliably honour a NoDisplay shadow in ~/.local/share/applications,
+    // so the launcher drops them by id here too. Mirrors FROST_HIDE_DESKTOP in
+    // packaging/install/bootstrap-cachyos.
+    readonly property var hiddenAppIds: [
+        "Alacritty", "avahi-discover", "bssh", "bvnc", "btop", "btrfs-assistant",
+        "cachyos-hello", "cachyos-kernel-manager", "cachyos-packageinstaller",
+        "lstopo", "limine-snapper-restore", "org.gnome.Meld", "micro", "vim", "gvim",
+        "qv4l2", "qvidcap", "scx-manager", "shelly", "uuctl",
+        "pavucontrol", "pavucontrol-qt"
+    ]
+
     readonly property bool appsRoute: root.route === "apps"
     // Typing at the root searches applications too. Reaching an application only
     // by entering a submenu first made the field feel like a filter over five
@@ -77,7 +89,7 @@ Item {
 
         for (let i = 0; i < source.length; i += 1) {
             const entry = source[i];
-            if (!entry || entry.noDisplay)
+            if (!entry || entry.noDisplay || root.hiddenAppIds.indexOf(String(entry.id)) >= 0)
                 continue;
             const keywords = Array.isArray(entry.keywords) ? entry.keywords.join(" ") : "";
             const haystack = (entry.name + " " + entry.genericName + " " + entry.comment + " " + keywords).toLowerCase();
@@ -599,7 +611,10 @@ Item {
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
-                                onEntered: root.selectedIndex = rowItem.index
+                                // Only real cursor movement moves the selection.
+                                // onEntered also fires when the keyboard scrolls
+                                // a row under a still mouse, which fought arrows.
+                                onPositionChanged: root.selectedIndex = rowItem.index
                                 onClicked: root.activate(rowItem.modelData)
                             }
                         }
