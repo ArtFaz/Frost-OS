@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "inventoryVersion": "2026-09-05.2",
+  "inventoryVersion": "2026-09-05.3",
   "packages": [
     {"name":"anydesk-bin","pkgbase":"anydesk-bin","recipeUrl":"https://aur.archlinux.org/anydesk-bin.git","commit":"1ab396f348300d9b0559abc962e4f2d67d793c87"},
     {"name":"beekeeper-studio-bin","pkgbase":"beekeeper-studio-bin","recipeUrl":"https://aur.archlinux.org/beekeeper-studio-bin.git","commit":"0b88d8d382e131bef6ecf855a6b55e6a49197c6d"},
     {"name":"brave-bin","pkgbase":"brave-bin","recipeUrl":"https://aur.archlinux.org/brave-bin.git","commit":"7b85edf5694c59dd523fabfdec2cedbd525b5e37"},
     {"name":"cliamp","pkgbase":"cliamp","recipeUrl":"https://aur.archlinux.org/cliamp.git","commit":"76b9ce02837a49de0fa50cfa3da5d1c0c692ece5"},
-    {"name":"hyprmon-bin","pkgbase":"hyprmon-bin","recipeUrl":"https://aur.archlinux.org/hyprmon-bin.git","commit":"612430ba613b89cc6b8fde924311a4593ff6f6ad"},
+    {"name":"hyprmoncfg-bin","pkgbase":"hyprmoncfg-bin","recipeUrl":"https://aur.archlinux.org/hyprmoncfg-bin.git","commit":"519adc1366690e81fb9d955b663ccde7b304de10"},
     {"name":"paru","pkgbase":"paru","recipeUrl":"https://aur.archlinux.org/paru.git","commit":"329be2113c590046cb29858c23d9b96a8d7bd586"},
     {"name":"parui","pkgbase":"parui","recipeUrl":"https://aur.archlinux.org/parui.git","commit":"29a25a8585059e3e88efde2acdd554d274f0dba3"},
     {"name":"tensaku","pkgbase":"tensaku","recipeUrl":"https://aur.archlinux.org/tensaku.git","commit":"c6fe8f2c6dc43a5c2f0c95df5656037b351dacb7"},

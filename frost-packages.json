@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "inventoryVersion": "2026-09-05.2",
+  "inventoryVersion": "2026-09-05.3",
   "profiles": [
     "this-machine"
   ],
@@ -40,7 +40,7 @@
       "beekeeper-studio-bin",
       "brave-bin",
       "cliamp",
-      "hyprmon-bin",
+      "hyprmoncfg-bin",
       "paru",
       "parui",
       "tensaku",

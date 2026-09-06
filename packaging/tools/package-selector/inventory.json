@@ -1,5 +1,5 @@
 {
-  "inventoryVersion": "2026-09-05.2",
+  "inventoryVersion": "2026-09-05.3",
   "generatedFrom": [
     {
       "source": "clean CachyOS/Arch repo audit",
@@ -223,7 +223,7 @@
         "gvfs-mtp",
         "gvfs-nfs",
         "gvfs-smb",
-        "hyprmon-bin",
+        "hyprmoncfg-bin",
         "inetutils",
         "inotify-tools",
         "inxi",
@@ -2600,14 +2600,14 @@
       "recipeUrl": "https://aur.archlinux.org/brave-bin.git"
     },
     {
-      "name": "hyprmon-bin",
+      "name": "hyprmoncfg-bin",
       "source": "aur",
       "category": "OPTIONAL",
       "default": "optional",
-      "reason": "Hyprland monitor layout and hotplug tool",
+      "reason": "Hyprland monitor layout and hotplug configurator",
       "feature": "aur",
-      "pkgbase": "hyprmon-bin",
-      "recipeUrl": "https://aur.archlinux.org/hyprmon-bin.git"
+      "pkgbase": "hyprmoncfg-bin",
+      "recipeUrl": "https://aur.archlinux.org/hyprmoncfg-bin.git"
     },
     {
       "name": "jetbrains-toolbox",

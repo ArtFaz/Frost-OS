@@ -95,7 +95,7 @@ A fourth profile, `this-machine`, seeded from `pacman -Qe` on the Vaio FE16
 (`vulkan-radeon`, `lib32-vulkan-radeon`, `bolt`, `ddcutil`,
 `kernel-modules-hook`), and seven AUR apps carried over from Omarchy
 (`brave-bin`, `vesktop-bin`, `anydesk-bin`, `parsec-bin`,
-`beekeeper-studio-bin`, `jetbrains-toolbox`, `hyprmon-bin`). The inventory's
+`beekeeper-studio-bin`, `jetbrains-toolbox`, `hyprmoncfg-bin`). The inventory's
 new `defaultProfile` field makes the selector open with it already applied, so
 nothing has to be re-picked by hand. It is a starting point; the donor tools
 (`omarchy-nvim`, `omacut`, …) stay `DROP`.
@@ -156,9 +156,10 @@ Only after that may `frost-meta` be generated or changed (Phase 6).
 
 ### Record
 
-- **Manifest:** `frost-packages.json` at the repo root, `inventoryVersion 2026-09-05.2`.
-- **SHA-256:** `311d7d6431406d63263e0934932a65bae7996775e69d1f2f28cefaaa55637df4`
-  (supersedes `2026-09-05.1` / `ad9d6485…`, `2026-08-30.1` / `db0a42b2…`,
+- **Manifest:** `frost-packages.json` at the repo root, `inventoryVersion 2026-09-05.3`.
+- **SHA-256:** `fb2563244fb8f1a9d7babab93cfa69d15a61615ab4990bbd43fb8b4af9dfcaee`
+  (supersedes `2026-09-05.2` / `311d7d64…`, `2026-09-05.1` / `ad9d6485…`,
+  `2026-08-30.1` / `db0a42b2…`,
   `2026-08-29.5` / `e7b2e221…` — the last after a repo-source audit reclassified
   Omarchy-repo/AUR-only packages: `nvim`→`neovim`, `mise-bin`→`mise`,
   `yaru-icon-theme`→`papirus-icon-theme`, `tobi-try`→`try`,
@@ -171,6 +172,8 @@ Only after that may `frost-meta` be generated or changed (Phase 6).
   regenerates the initramfs or touches the kernel cmdline, and ships no theme —
   the package could not work); `egl-wayland` moved to `HARDWARE` gated on
   `gpu-nvidia` (inert on any other GPU). `frost-meta` `depends()` 166 → 164.
+- **2026-09-05 AUR swap (`.3`):** `hyprmon-bin` → `hyprmoncfg-bin` (the monitor
+  configurator the operator actually uses). AUR-only, so `frost-meta` unchanged.
 - **Lockfile:** `aur.lock.json` — 15 AUR selections, each pinned to a
   `git ls-remote` commit (`limine-snapper-sync` dropped).
 - **Resolution:** 192 packages (arch 174 · frost 3 · aur 15), no risks, no
@@ -189,7 +192,7 @@ Only after that may `frost-meta` be generated or changed (Phase 6).
   are not wanted. `chromium`/`evince`/`foot`/`tmux` are also `DROP` in the
   inventory as of 2026-09-05.
 - **AUR (15):** `anydesk-bin`, `beekeeper-studio-bin`, `brave-bin`, `cliamp`,
-  `hyprmon-bin`, `paru`, `parui`, `tensaku`, `try`, `ttf-ia-writer`, `tzupdate`,
+  `hyprmoncfg-bin`, `paru`, `parui`, `tensaku`, `try`, `ttf-ia-writer`, `tzupdate`,
   `ufw-docker`, `vesktop-bin`, `visual-studio-code-bin`, `yay`.
 - **Approval:** the user approved the manifest on 2026-08-30 after `dkms` was
   dropped from the include list and the three flagged items (VM guest agents,
