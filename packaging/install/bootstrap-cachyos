@@ -94,6 +94,27 @@ readonly FROST_HIDE_DESKTOP=(
   pavucontrol.desktop pavucontrol-qt.desktop
 )
 
+# System units Frost turns on so its packages are actually running after the
+# reboot, not just installed. A unit is enabled only when it exists, so a
+# service whose package the chosen profile did not install is a silent skip —
+# one list covers every profile. `--now` is not used: everything comes up
+# cleanly on the reboot into Frost. ufw and the snapper timers are handled by
+# frost-firstboot; sddm and frost-firstboot are enabled explicitly below.
+readonly FROST_SERVICES=(
+  NetworkManager.service           # network — the shell drives nmcli
+  bluetooth.service                # the island Bluetooth panel and pairing agent
+  sshd.service                     # remote access
+  avahi-daemon.service             # mDNS / .local names, printer discovery
+  power-profiles-daemon.service    # the island power-profile control
+  fstrim.timer                     # periodic SSD TRIM
+  paccache.timer                   # prune the pacman cache
+  fwupd-refresh.timer              # LVFS firmware metadata
+  smartd.service                   # disk health, when smartmontools is present
+  cups.socket                      # printing, when the printing feature is on
+  tailscaled.service               # when the tailscale feature is on
+  docker.socket                    # when the development feature is on
+)
+
 here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 invoker=${SUDO_USER:-}
 aur_failed=()
@@ -265,6 +286,21 @@ step 'enabling the display manager and first-boot reconciliation'
 run systemctl enable --force sddm.service || die 'could not enable sddm'
 run systemctl enable frost-firstboot.service || die 'could not enable frost-firstboot'
 note 'sddm and frost-firstboot enabled'
+
+step 'enabling system services'
+services_enabled=()
+services_skipped=()
+for unit in "${FROST_SERVICES[@]}"; do
+  if ! systemctl cat "$unit" >/dev/null 2>&1; then
+    services_skipped+=("$unit")
+  elif run systemctl enable "$unit"; then
+    services_enabled+=("$unit")
+  else
+    note "could not enable $unit"
+  fi
+done
+note "enabled: ${services_enabled[*]:-none}"
+((${#services_skipped[@]} == 0)) || note "not on this profile: ${services_skipped[*]}"
 
 if [[ -x /usr/lib/frost/frost-firstboot ]]; then
   step 'running first-boot reconciliation now'
