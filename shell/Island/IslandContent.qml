@@ -684,7 +684,7 @@ Item {
                 icon: !root.wifiRadioEnabled ? "wifi_off" : (root.wifiConnected ? (root.wifiSignal >= 70 ? "wifi" : root.wifiSignal >= 40 ? "wifi_2_bar" : "wifi_1_bar") : "wifi")
                 iconDimmed: !root.wifiRadioEnabled
                 title: "Wi-Fi"
-                subtitle: !root.wifiRadioEnabled ? "Desligado" : (root.wifiConnected ? root.wifiSsid + "  ·  " + root.wifiSignal + "%" : "Não conectado")
+                subtitle: !root.wifiRadioEnabled ? "Off" : (root.wifiConnected ? root.wifiSsid + "  ·  " + root.wifiSignal + "%" : "Not connected")
                 subtitleHighlighted: root.wifiConnected
                 statusText: root.wifiStatusText
                 fontFamily: root.fontFamily

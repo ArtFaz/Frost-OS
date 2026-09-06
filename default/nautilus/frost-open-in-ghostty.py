@@ -47,8 +47,8 @@ class FrostOpenInGhostty(GObject.GObject, Nautilus.MenuProvider):
     def _menu_item(self, name: str, path: str) -> Nautilus.MenuItem:
         item = Nautilus.MenuItem(
             name=name,
-            label="Abrir no Ghostty",
-            tip="Abrir um terminal Ghostty nesta pasta",
+            label="Open in Ghostty",
+            tip="Open a Ghostty terminal in this folder",
         )
         item.connect("activate", lambda _item: self._open(path))
         return item

@@ -1772,7 +1772,7 @@ Scope {
             }
             if (action === "notification-dismiss" || action === "notification-invoke" || action === "notification-clear") {
                 if (!succeeded)
-                    root.notificationsStatusText = "Mako não respondeu";
+                    root.notificationsStatusText = "Mako did not respond";
                 root.refreshNotifications();
             }
             if (action === "stay-awake-toggle") {

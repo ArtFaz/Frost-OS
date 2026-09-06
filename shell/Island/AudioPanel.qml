@@ -125,7 +125,7 @@ Item {
             Layout.preferredHeight: root.headerHeight
             icon: root.outputMuted ? "volume_off" : (root.outputVolume < 50 ? "volume_down" : "volume_up")
             iconDimmed: root.outputMuted
-            title: "Áudio"
+            title: "Audio"
             fontFamily: root.fontFamily
             onCloseRequested: root.closeRequested()
         }
@@ -208,7 +208,7 @@ Item {
             spacing: root.deviceRowSpacing
 
             Text {
-                text: "Saída"
+                text: "Output"
                 color: Theme.secondaryText
                 font.family: root.fontFamily
                 font.pixelSize: 10
@@ -278,7 +278,7 @@ Item {
             spacing: root.deviceRowSpacing
 
             Text {
-                text: "Por aplicativo"
+                text: "Per application"
                 color: Theme.secondaryText
                 font.family: root.fontFamily
                 font.pixelSize: 10

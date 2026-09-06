@@ -212,8 +212,8 @@ Item {
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: root.filterText !== "" ? "Nada encontrado para “" + root.filterText + "”"
-                          : root.wallpaperMode ? "Nenhum papel de parede instalado"
-                                               : "Nenhuma imagem em ~/Pictures ou ~/Imagens"
+                          : root.wallpaperMode ? "No wallpaper installed"
+                                               : "No image in ~/Pictures or ~/Imagens"
                     color: Theme.foreground
                     opacity: 0.7
                     font.family: Style.fontFamily
@@ -233,7 +233,7 @@ Item {
                 Text {
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
-                    text: root.wallpaperMode ? "Papel de parede" : "Imagens"
+                    text: root.wallpaperMode ? "Wallpaper" : "Images"
                     color: Theme.foreground
                     font.family: Style.fontFamily
                     font.pixelSize: Style.title
@@ -246,7 +246,7 @@ Item {
                     width: Math.min(320, parent.width * 0.45)
                     height: 36
                     text: root.filterText
-                    placeholder: "Buscar imagens…"
+                    placeholder: "Search images…"
                     glyph: "󰍉"
                     textSize: Style.body
                 }

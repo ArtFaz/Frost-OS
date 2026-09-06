@@ -50,7 +50,7 @@ Item {
             Layout.preferredHeight: root.headerHeight
             icon: root.dnd ? "notifications_off" : "notifications"
             iconDimmed: root.dnd
-            title: "Notificações"
+            title: "Notifications"
             statusText: root.statusText
             fontFamily: root.fontFamily
             onCloseRequested: root.closeRequested()
@@ -84,7 +84,7 @@ Item {
                     id: clearLabel
 
                     anchors.centerIn: parent
-                    text: "Limpar"
+                    text: "Clear"
                     color: clearMouse.containsMouse ? Theme.foreground : Theme.secondaryText
                     font.family: root.fontFamily
                     font.pixelSize: 10
@@ -111,7 +111,7 @@ Item {
                 Layout.fillWidth: true
                 Layout.preferredHeight: root.placeholderHeight
                 visible: root.entries.length === 0
-                text: root.dnd ? "Não perturbe está ativo." : "Nada por aqui."
+                text: root.dnd ? "Do not disturb is on." : "Nothing here."
                 color: Theme.secondaryText
                 verticalAlignment: Text.AlignVCenter
                 font.family: root.fontFamily

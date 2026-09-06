@@ -135,7 +135,7 @@ Item {
             Layout.preferredHeight: root.headerHeight
             icon: root.charging ? "battery_charging_full" : (root.level <= 20 ? "battery_alert" : "battery_full")
             iconDimmed: !root.available
-            title: "Bateria"
+            title: "Battery"
             fontFamily: root.fontFamily
             onCloseRequested: root.closeRequested()
         }

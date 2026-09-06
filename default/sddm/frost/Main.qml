@@ -90,7 +90,7 @@ Rectangle {
         function onLoginSucceeded() { root.busy = false; }
         function onLoginFailed() {
             root.busy = false;
-            root.errorText = "Senha incorreta";
+            root.errorText = "Wrong password";
             passwordInput.text = "";
             passwordInput.forceActiveFocus();
         }
@@ -140,7 +140,7 @@ Rectangle {
 
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: Qt.formatDateTime(root.now, "dddd, d 'de' MMMM")
+            text: Qt.formatDateTime(root.now, "dddd, d MMMM")
             color: root.alpha(root.mutedColor, 0.85)
             font.family: root.uiFont
             font.pixelSize: 13
@@ -265,7 +265,7 @@ Rectangle {
                     id: userInput
                     width: parent.width
                     visible: root.needsUserInput
-                    placeholder: "usuário"
+                    placeholder: "username"
                     glyph: "󰀄"
                     onAccepted: passwordInput.forceActiveFocus()
                 }
@@ -273,7 +273,7 @@ Rectangle {
                 InputField {
                     id: passwordInput
                     width: parent.width
-                    placeholder: "senha"
+                    placeholder: "password"
                     glyph: "󰌾"
                     password: true
                     enabled: !root.busy
@@ -316,19 +316,19 @@ Rectangle {
 
         PowerButton {
             glyph: "󰤄"
-            label: "suspender"
+            label: "suspend"
             visible: sddm.canSuspend
             onTriggered: sddm.suspend()
         }
         PowerButton {
             glyph: "󰜉"
-            label: "reiniciar"
+            label: "restart"
             visible: sddm.canReboot
             onTriggered: sddm.reboot()
         }
         PowerButton {
             glyph: "󰐥"
-            label: "desligar"
+            label: "shut down"
             visible: sddm.canPowerOff
             onTriggered: sddm.powerOff()
         }

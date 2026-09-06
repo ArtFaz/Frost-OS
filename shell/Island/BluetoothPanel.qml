@@ -85,7 +85,7 @@ Item {
             icon: root.discovering ? "bluetooth_searching" : (root.radioEnabled ? "bluetooth" : "bluetooth_disabled")
             iconDimmed: !root.radioEnabled
             title: "Bluetooth"
-            subtitle: !root.radioEnabled ? "Desligado" : (root.connectedDeviceName !== "" ? root.connectedDeviceName : (root.discovering ? "Procurando…" : "Nenhum dispositivo"))
+            subtitle: !root.radioEnabled ? "Off" : (root.connectedDeviceName !== "" ? root.connectedDeviceName : (root.discovering ? "Searching…" : "No device"))
             subtitleHighlighted: root.connectedDeviceName !== ""
             statusText: root.statusText
             fontFamily: root.fontFamily

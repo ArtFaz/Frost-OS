@@ -102,7 +102,7 @@ Item {
     }
 
     // Every leaf action from every route, flattened, so a search at the root
-    // reaches "desligar", "bloquear", a surface or a theme without first walking
+    // reaches "shut down", "lock", a surface or a theme without first walking
     // into its submenu. Only surfaced while a query is being typed.
     function actionRows() {
         const query = root.filterText.trim().toLowerCase();
@@ -125,38 +125,38 @@ Item {
     // Session and shell toggles that have no submenu of their own. Each maps to a
     // single validated `frost shell-action` verb.
     function toggleItems() {
-        return [{"icon": "󰅶", "label": "Manter acordado", "detail": "Inibir suspensão automática", "action": "stay-awake-toggle", "kind": "toggle"},
-                {"icon": "󰛨", "label": "Luz noturna", "detail": "Alternar o filtro de luz azul", "action": "nightlight-toggle", "kind": "toggle"},
-                {"icon": "󰂛", "label": "Não perturbe", "detail": "Alternar o silêncio do Mako", "action": "notification-dnd", "argument": "toggle", "kind": "toggle"},
-                {"icon": "󰎟", "label": "Limpar notificações", "detail": "Dispensar todas as notificações", "action": "notification-clear", "kind": "toggle"},
-                {"icon": "󱂬", "label": "Fechar todas as janelas", "detail": "Encerrar as janelas abertas", "action": "close-all-windows", "kind": "toggle"}];
+        return [{"icon": "󰅶", "label": "Stay awake", "detail": "Inhibit automatic suspend", "action": "stay-awake-toggle", "kind": "toggle"},
+                {"icon": "󰛨", "label": "Night light", "detail": "Toggle the blue-light filter", "action": "nightlight-toggle", "kind": "toggle"},
+                {"icon": "󰂛", "label": "Do not disturb", "detail": "Toggle Mako's silence", "action": "notification-dnd", "argument": "toggle", "kind": "toggle"},
+                {"icon": "󰎟", "label": "Clear notifications", "detail": "Dismiss every notification", "action": "notification-clear", "kind": "toggle"},
+                {"icon": "󱂬", "label": "Close all windows", "detail": "Close every open window", "action": "close-all-windows", "kind": "toggle"}];
     }
 
     function routeItems(value) {
         if (value === "trigger")
-            return [{"icon": "󰅌", "label": "Clipboard", "detail": "Histórico de texto", "surface": "clipboard", "kind": "menu"},
-                    {"icon": "󰞅", "label": "Emoji", "detail": "Buscar e copiar", "surface": "emoji", "kind": "menu"},
-                    {"icon": "󰋩", "label": "Imagens", "detail": "Copiar de ~/Pictures", "surface": "images", "kind": "menu"},
-                    {"icon": "󰸉", "label": "Papel de parede", "detail": "Trocar o fundo", "surface": "wallpaper", "kind": "menu"}];
+            return [{"icon": "󰅌", "label": "Clipboard", "detail": "Text history", "surface": "clipboard", "kind": "menu"},
+                    {"icon": "󰞅", "label": "Emoji", "detail": "Search and copy", "surface": "emoji", "kind": "menu"},
+                    {"icon": "󰋩", "label": "Images", "detail": "Copy from ~/Pictures", "surface": "images", "kind": "menu"},
+                    {"icon": "󰸉", "label": "Wallpaper", "detail": "Change the background", "surface": "wallpaper", "kind": "menu"}];
         if (value === "setup")
-            return [{"icon": "󰖩", "label": "Wi-Fi", "detail": "Redes e conexões", "island": "wifi", "kind": "menu"},
-                    {"icon": "󰂯", "label": "Bluetooth", "detail": "Dispositivos", "island": "bluetooth", "kind": "menu"},
-                    {"icon": "󰕾", "label": "Áudio", "detail": "Volume e saída", "island": "audio", "kind": "menu"},
-                    {"icon": "󰂚", "label": "Notificações", "detail": "Histórico do Mako", "island": "notifications", "kind": "menu"},
-                    {"icon": "󰁹", "label": "Bateria", "detail": "Energia e limite de carga", "island": "battery", "kind": "menu"}];
+            return [{"icon": "󰖩", "label": "Wi-Fi", "detail": "Networks and connections", "island": "wifi", "kind": "menu"},
+                    {"icon": "󰂯", "label": "Bluetooth", "detail": "Devices", "island": "bluetooth", "kind": "menu"},
+                    {"icon": "󰕾", "label": "Audio", "detail": "Volume and output", "island": "audio", "kind": "menu"},
+                    {"icon": "󰂚", "label": "Notifications", "detail": "Mako's history", "island": "notifications", "kind": "menu"},
+                    {"icon": "󰁹", "label": "Battery", "detail": "Power and charge limit", "island": "battery", "kind": "menu"}];
         if (value === "system")
-            return [{"icon": "󰌾", "label": "Bloquear", "detail": "Proteger esta sessão", "action": "lock", "kind": "action"},
-                    {"icon": "󰒲", "label": "Suspender", "detail": "Dormir até retomar", "action": "suspend", "kind": "action"},
-                    {"icon": "󰍃", "label": "Encerrar sessão", "detail": "Sair do Frost", "action": "logout", "kind": "action"},
-                    {"icon": "󰜉", "label": "Reiniciar", "detail": "Reiniciar a máquina", "action": "reboot", "kind": "action"},
-                    {"icon": "󰐥", "label": "Desligar", "detail": "Encerrar a máquina", "action": "poweroff", "kind": "action"}];
+            return [{"icon": "󰌾", "label": "Lock", "detail": "Lock this session", "action": "lock", "kind": "action"},
+                    {"icon": "󰒲", "label": "Suspend", "detail": "Sleep until resumed", "action": "suspend", "kind": "action"},
+                    {"icon": "󰍃", "label": "Log out", "detail": "Leave Frost", "action": "logout", "kind": "action"},
+                    {"icon": "󰜉", "label": "Restart", "detail": "Restart the machine", "action": "reboot", "kind": "action"},
+                    {"icon": "󰐥", "label": "Shut down", "detail": "Power the machine off", "action": "poweroff", "kind": "action"}];
         if (value === "style")
             return root.themeRows();
-        return [{"icon": "󰀻", "label": "Aplicativos", "detail": "Buscar e abrir", "route": "apps", "kind": "menu"},
-                {"icon": "󱓥", "label": "Atalhos", "detail": "Área de transferência e emoji", "route": "trigger", "kind": "menu"},
-                {"icon": "󰏘", "label": "Aparência", "detail": "Paleta semântica", "route": "style", "kind": "menu"},
-                {"icon": "󰒓", "label": "Ajustes", "detail": "Rede, áudio e energia", "route": "setup", "kind": "menu"},
-                {"icon": "󰐥", "label": "Sistema", "detail": "Sessão e energia", "route": "system", "kind": "menu"}];
+        return [{"icon": "󰀻", "label": "Applications", "detail": "Search and open", "route": "apps", "kind": "menu"},
+                {"icon": "󱓥", "label": "Shortcuts", "detail": "Clipboard and emoji", "route": "trigger", "kind": "menu"},
+                {"icon": "󰏘", "label": "Appearance", "detail": "Semantic palette", "route": "style", "kind": "menu"},
+                {"icon": "󰒓", "label": "Setup", "detail": "Network, audio and power", "route": "setup", "kind": "menu"},
+                {"icon": "󰐥", "label": "System", "detail": "Session and power", "route": "system", "kind": "menu"}];
     }
 
     // Which palettes exist is a filesystem fact, so the rows come from
@@ -183,11 +183,11 @@ Item {
     }
 
     function routeTitle() {
-        if (root.route === "apps") return "Aplicativos";
-        if (root.route === "trigger") return "Atalhos";
-        if (root.route === "style") return "Aparência";
-        if (root.route === "setup") return "Ajustes";
-        if (root.route === "system") return "Sistema";
+        if (root.route === "apps") return "Applications";
+        if (root.route === "trigger") return "Shortcuts";
+        if (root.route === "style") return "Appearance";
+        if (root.route === "setup") return "Setup";
+        if (root.route === "system") return "System";
         return "";
     }
 
@@ -216,9 +216,9 @@ Item {
     }
 
     readonly property var sessionNotices: ({
-        "poweroff": {"glyph": "󰐥", "message": "Desligando"},
-        "reboot": {"glyph": "󰜉", "message": "Reiniciando"},
-        "logout": {"glyph": "󰍃", "message": "Encerrando sessão"}
+        "poweroff": {"glyph": "󰐥", "message": "Shutting down"},
+        "reboot": {"glyph": "󰜉", "message": "Restarting"},
+        "logout": {"glyph": "󰍃", "message": "Logging out"}
     })
 
     function requestSessionAction(action, label, glyph) {
@@ -454,7 +454,7 @@ Item {
                     width: parent.width
                     height: root.headerHeight
                     text: root.filterText
-                    placeholder: root.route === "root" ? "Buscar no Frost…" : "Buscar em " + root.routeTitle() + "…"
+                    placeholder: root.route === "root" ? "Search Frost…" : "Search in " + root.routeTitle() + "…"
                     glyph: root.route !== "root" && root.filterText === "" ? "󰅁" : "󰍉"
                     glyphOpacity: 0.78
                     placeholderOpacity: 0.62
@@ -611,10 +611,6 @@ Item {
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
-                                // Only real cursor movement moves the selection.
-                                // onEntered also fires when the keyboard scrolls
-                                // a row under a still mouse, which fought arrows.
-                                onPositionChanged: root.selectedIndex = rowItem.index
                                 onClicked: root.activate(rowItem.modelData)
                             }
                         }
@@ -663,10 +659,10 @@ Item {
                         spacing: 6
 
                         Repeater {
-                            model: [{"action": "poweroff", "glyph": "󰐥", "size": 20, "label": "Desligar"},
-                                    {"action": "lock", "glyph": "󰌾", "size": 16, "label": "Bloquear"},
-                                    {"action": "reboot", "glyph": "󰜉", "size": 18, "label": "Reiniciar"},
-                                    {"action": "logout", "glyph": "󰍃", "size": 18, "label": "Encerrar sessão"}]
+                            model: [{"action": "poweroff", "glyph": "󰐥", "size": 20, "label": "Shut down"},
+                                    {"action": "lock", "glyph": "󰌾", "size": 16, "label": "Lock"},
+                                    {"action": "reboot", "glyph": "󰜉", "size": 18, "label": "Restart"},
+                                    {"action": "logout", "glyph": "󰍃", "size": 18, "label": "Log out"}]
 
                             Rectangle {
                                 id: footerButton

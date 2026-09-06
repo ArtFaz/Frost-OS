@@ -57,7 +57,7 @@ RowLayout {
             }
 
             Text {
-                text: root.muted ? "Mudo" : root.volume + "%"
+                text: root.muted ? "Muted" : root.volume + "%"
                 color: root.muted ? Theme.secondaryText : Theme.foreground
                 font.family: root.fontFamily
                 font.pixelSize: root.compact ? 10 : 11
