@@ -69,7 +69,41 @@ if command -v ufw >/dev/null; then
   log 'ufw enabled, default deny incoming'
 fi
 
-# 4. zram tuning is delivered as package files; nothing to reconcile.
+# 4. mDNS: nss-mdns is installed but does nothing until nsswitch.conf asks for
+#    it. Insert mdns_minimal ahead of the regular resolver in the hosts line so
+#    .local names resolve. Surgical and idempotent; a copy is kept.
+nss=/etc/nsswitch.conf
+if [[ -f $nss ]] && command -v avahi-daemon >/dev/null && ! grep -q '^hosts:.*mdns' "$nss"; then
+  cp -a "$nss" "$nss.frost-saved"
+  sed -i -E 's/^(hosts:[[:space:]]+)(.*)$/\1mdns_minimal [NOTFOUND=return] \2/' "$nss"
+  log 'added mdns_minimal to /etc/nsswitch.conf'
+fi
+
+# 5. Login keyring: pam_gnome_keyring in the SDDM stack unlocks the login
+#    keyring with the login password, so libsecret apps do not prompt. Optional
+#    modules with a leading '-', so a missing module is never fatal. A copy is
+#    kept.
+pam_sddm=/etc/pam.d/sddm
+if [[ -f $pam_sddm ]] && [[ -e /usr/lib/security/pam_gnome_keyring.so ]] \
+   && ! grep -q 'pam_gnome_keyring' "$pam_sddm"; then
+  cp -a "$pam_sddm" "$pam_sddm.frost-saved"
+  sed -i -E '0,/^auth[[:space:]]/s//-auth       optional   pam_gnome_keyring.so\n&/' "$pam_sddm"
+  sed -i -E '0,/^session[[:space:]]/s//-session   optional   pam_gnome_keyring.so auto_start\n&/' "$pam_sddm"
+  log 'wired pam_gnome_keyring into /etc/pam.d/sddm'
+fi
+
+# 6. Mirrors: reflector owns /etc/xdg/reflector/reflector.conf, so it is
+#    reconciled here rather than shipped. reflector.timer is enabled by the
+#    bootstrap; this only gives it Frost's filters. A copy is kept.
+reflector_conf=/etc/xdg/reflector/reflector.conf
+if [[ -f $share/reflector/reflector.conf && -d /etc/xdg/reflector ]] \
+   && ! cmp -s "$share/reflector/reflector.conf" "$reflector_conf" 2>/dev/null; then
+  [[ -f $reflector_conf ]] && cp -a "$reflector_conf" "$reflector_conf.frost-saved"
+  install -Dm644 "$share/reflector/reflector.conf" "$reflector_conf"
+  log 'installed Frost reflector.conf'
+fi
+
+# 7. zram tuning is delivered as package files; nothing to reconcile.
 
 install -d -m0755 "$(dirname -- "$marker")"
 : > "$marker"

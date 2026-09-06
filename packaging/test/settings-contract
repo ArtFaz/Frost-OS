@@ -19,6 +19,7 @@ for rel in \
   default/sddm/frost/theme.conf \
   default/sddm/frost/Main.qml \
   default/pam/hyprlock \
+  default/reflector/reflector.conf \
   default/etc/sddm.conf.d/10-frost.conf \
   default/etc/sysctl.d/99-frost.conf \
   default/etc/systemd/zram-generator.conf \

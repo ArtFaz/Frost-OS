@@ -109,6 +109,7 @@ readonly FROST_SERVICES=(
   fstrim.timer                     # periodic SSD TRIM
   paccache.timer                   # prune the pacman cache
   fwupd-refresh.timer              # LVFS firmware metadata
+  reflector.timer                  # refresh the Arch mirrorlist weekly
   smartd.service                   # disk health, when smartmontools is present
   cups.socket                      # printing, when the printing feature is on
   tailscaled.service               # when the tailscale feature is on
@@ -405,6 +406,27 @@ else
     'hid the marked CachyOS apps from the launcher' \
     'no CachyOS launcher entries needed hiding' \
     'could not write the launcher overrides'
+
+  # Docker without sudo: the invoking user joins the docker group. Only when the
+  # group exists (i.e. docker is installed) and the user is not already in it.
+  if getent group docker >/dev/null && ! id -nG "$invoker" | tr ' ' '\n' | grep -qx docker; then
+    if try_run gpasswd -a "$invoker" docker; then
+      note "$invoker added to the docker group (re-login to take effect)"
+    else
+      note "could not add $invoker to the docker group"
+    fi
+  fi
+
+  # Tailscale without sudo: let the invoking user drive tailscaled. Needs the
+  # daemon reachable, so it is started first; best effort.
+  if command -v tailscale >/dev/null; then
+    try_run systemctl start tailscaled.service || true
+    if try_run tailscale set --operator="$invoker"; then
+      note "$invoker set as the tailscale operator"
+    else
+      note "could not set the tailscale operator (run 'sudo tailscale set --operator=$invoker' later)"
+    fi
+  fi
 fi
 
 step 'building the AUR apps'
@@ -498,6 +520,18 @@ else
     manual_aur_hint
   fi
   revoke_pacman_nopasswd
+fi
+
+# Docker publishes container ports straight through iptables, around ufw.
+# ufw-docker (from the AUR set) teaches ufw about them; it is idempotent.
+if command -v ufw-docker >/dev/null && command -v docker >/dev/null && command -v ufw >/dev/null; then
+  step 'teaching ufw about Docker'
+  if try_run ufw-docker install; then
+    try_run systemctl reload ufw.service || try_run ufw reload || true
+    note 'ufw-docker rules installed'
+  else
+    note 'ufw-docker install failed; run it later as root'
+  fi
 fi
 
 step 'verifying'
