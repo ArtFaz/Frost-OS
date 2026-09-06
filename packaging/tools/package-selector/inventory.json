@@ -1,5 +1,5 @@
 {
-  "inventoryVersion": "2026-09-05.1",
+  "inventoryVersion": "2026-09-05.2",
   "generatedFrom": [
     {
       "source": "clean CachyOS/Arch repo audit",
@@ -442,9 +442,12 @@
     {
       "name": "egl-wayland",
       "source": "arch",
-      "category": "CORE",
-      "default": "recommended",
-      "reason": "EGLStream Wayland support needed by NVIDIA GL clients",
+      "category": "HARDWARE",
+      "default": "optional",
+      "reason": "EGLStream Wayland support for NVIDIA GL clients; dead weight on any other GPU",
+      "hardware": [
+        "gpu-nvidia"
+      ],
       "sizeKib": 97
     },
     {
@@ -681,14 +684,6 @@
       "default": "required",
       "reason": "PulseAudio replacement layer on PipeWire",
       "sizeKib": 561
-    },
-    {
-      "name": "plymouth",
-      "source": "arch",
-      "category": "CORE",
-      "default": "recommended",
-      "reason": "Boot splash",
-      "sizeKib": 2242
     },
     {
       "name": "polkit",

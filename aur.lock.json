@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "inventoryVersion": "2026-09-05.1",
+  "inventoryVersion": "2026-09-05.2",
   "packages": [
     {"name":"anydesk-bin","pkgbase":"anydesk-bin","recipeUrl":"https://aur.archlinux.org/anydesk-bin.git","commit":"1ab396f348300d9b0559abc962e4f2d67d793c87"},
     {"name":"beekeeper-studio-bin","pkgbase":"beekeeper-studio-bin","recipeUrl":"https://aur.archlinux.org/beekeeper-studio-bin.git","commit":"0b88d8d382e131bef6ecf855a6b55e6a49197c6d"},

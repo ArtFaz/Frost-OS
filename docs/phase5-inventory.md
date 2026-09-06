@@ -156,23 +156,24 @@ Only after that may `frost-meta` be generated or changed (Phase 6).
 
 ### Record
 
-- **Manifest:** `frost-packages.json` at the repo root, `inventoryVersion 2026-09-05.1`.
-- **SHA-256:** `ad9d6485db5551938fd842e12b2f7ff08e95d105b2e8ef77399ec4ac39ac8d4f`
-  (supersedes `2026-08-30.1` / `db0a42b2…`, itself superseding `2026-08-29.5` /
-  `e7b2e221…` after a repo-source audit reclassified Omarchy-repo/AUR-only
-  packages — `nvim`→`neovim`, `mise-bin`→`mise`,
+- **Manifest:** `frost-packages.json` at the repo root, `inventoryVersion 2026-09-05.2`.
+- **SHA-256:** `311d7d6431406d63263e0934932a65bae7996775e69d1f2f28cefaaa55637df4`
+  (supersedes `2026-09-05.1` / `ad9d6485…`, `2026-08-30.1` / `db0a42b2…`,
+  `2026-08-29.5` / `e7b2e221…` — the last after a repo-source audit reclassified
+  Omarchy-repo/AUR-only packages: `nvim`→`neovim`, `mise-bin`→`mise`,
   `yaru-icon-theme`→`papirus-icon-theme`, `tobi-try`→`try`,
   `xdg-terminal-exec`/`yay`/`cliamp`/… moved to `aur`.)
-- **2026-09-05 pre-install trim:** `limine` and `limine-snapper-sync` removed
-  from the inventory — the CachyOS base owns the bootloader, and Frost is only
-  installed onto a base that already carries them (`limine-mkinitcpio-hook`
-  stays). `chromium`, `foot`, `tmux`, `evince` moved to `DROP` (they were
-  already in the manifest `exclude`). `frost-meta` `depends()` is unchanged
-  (still 166); only its header (`inventoryVersion`, `manifest sha256`, `pkgver`)
-  moved.
+- **2026-09-05 pre-install trim (`.1`):** `limine` and `limine-snapper-sync`
+  removed — the CachyOS base owns the bootloader, and Frost is only installed
+  onto a base that already carries them (`limine-mkinitcpio-hook` stays).
+  `chromium`, `foot`, `tmux`, `evince` moved to `DROP`.
+- **2026-09-05 dead-weight trim (`.2`):** `plymouth` removed (Frost never
+  regenerates the initramfs or touches the kernel cmdline, and ships no theme —
+  the package could not work); `egl-wayland` moved to `HARDWARE` gated on
+  `gpu-nvidia` (inert on any other GPU). `frost-meta` `depends()` 166 → 164.
 - **Lockfile:** `aur.lock.json` — 15 AUR selections, each pinned to a
   `git ls-remote` commit (`limine-snapper-sync` dropped).
-- **Resolution:** 194 packages (arch 176 · frost 3 · aur 15), no risks, no
+- **Resolution:** 192 packages (arch 174 · frost 3 · aur 15), no risks, no
   auto-added dependencies, no excluded-but-required packages.
 - **Profile:** `this-machine` (Vaio FE16, Ryzen 5 5825U, all-AMD).
 - **Features on:** `aur`, `bluetooth`, `development`, `gaming`, `media-production`,
